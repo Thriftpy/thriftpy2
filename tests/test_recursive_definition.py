@@ -3,7 +3,7 @@
 from thriftpy.parser import load
 
 
-def test_constants():
+def test_recursive_definition():
     thrift = load('./recursive_definition.thrift')
     assert thrift.Bar.thrift_spec == {1: (12, 'test', thrift.Foo, False)}
     assert thrift.Foo.thrift_spec == {
