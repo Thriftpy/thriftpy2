@@ -375,15 +375,30 @@ def p_field_type(p):
     p[0] = p[1]
 
 
+class CurrentIncompleteType(dict):
+    index = -1
+
+    def set_info(self, info):
+        self[self.index] = info
+        self.index -= 1
+        return self.index + 1
+
+
+incomplete_type = CurrentIncompleteType()
+
+
 def p_ref_type(p):
     '''ref_type : IDENTIFIER'''
     ref_type = thrift_stack[-1]
 
-    for name in p[1].split('.'):
+    for index, name in enumerate(p[1].split('.')):
         ref_type = getattr(ref_type, name, None)
         if ref_type is None:
-            raise ThriftParserError('No type found: %r, at line %d' %
-                                    (p[1], p.lineno(1)))
+            if index != len(p[1].split('.')) - 1:
+                raise ThriftParserError('No type found: %r, at line %d' %
+                                        (p[1], p.lineno(1)))
+            p[0] = incomplete_type.set_info((p[1], p.lineno(1)))
+            return
 
     if hasattr(ref_type, '_ttype'):
         p[0] = getattr(ref_type, '_ttype'), ref_type
