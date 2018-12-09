@@ -14,9 +14,9 @@ import contextlib
 import threading
 import uuid
 
-from thriftpy.thrift import TClient, TApplicationException, TMessageType, \
+from thriftpy2.thrift import TClient, TApplicationException, TMessageType, \
     TProcessor, TType
-from thriftpy.parser import load
+from thriftpy2.parser import load
 
 track_method = "__thriftpy_tracing_method_name__v2"
 track_thrift = load(os.path.join(os.path.dirname(__file__), "tracking.thrift"))

@@ -1,6 +1,6 @@
-========
+============
 ThriftPy2
-========
+============
 
 .. image:: https://travis-ci.com/Thriftpy/thriftpy2.svg?branch=develop
     :target: https://travis-ci.com/Thriftpy/thriftpy2
@@ -42,10 +42,10 @@ Then we can make a server:
 
 .. code:: python
 
-    import thriftpy
-    pingpong_thrift = thriftpy.load("pingpong.thrift", module_name="pingpong_thrift")
+    import thriftpy2
+    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
 
-    from thriftpy.rpc import make_server
+    from thriftpy2.rpc import make_server
 
     class Dispatcher(object):
         def ping(self):
@@ -58,10 +58,10 @@ And a client:
 
 .. code:: python
 
-    import thriftpy
-    pingpong_thrift = thriftpy.load("pingpong.thrift", module_name="pingpong_thrift")
+    import thriftpy2
+    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
 
-    from thriftpy.rpc import make_client
+    from thriftpy2.rpc import make_client
 
     client = make_client(pingpong_thrift.PingPong, '127.0.0.1', 6000)
     print(client.ping())
@@ -70,12 +70,12 @@ And it also supports asyncio on Python 3.5 or later:
 
 .. code:: python
 
-    import thriftpy
+    import thriftpy2
     import asyncio
-    from thriftpy.rpc import make_aio_client
+    from thriftpy2.rpc import make_aio_client
 
 
-    echo_thrift = thriftpy.load("echo.thrift", module_name="echo_thrift")
+    echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
 
 
     async def request():
@@ -87,11 +87,11 @@ And it also supports asyncio on Python 3.5 or later:
 .. code:: python
 
     import asyncio
-    import thriftpy
+    import thriftpy2
 
-    from thriftpy.rpc import make_aio_server
+    from thriftpy2.rpc import make_aio_server
 
-    echo_thrift = thriftpy.load("echo.thrift", module_name="echo_thrift")
+    echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
 
 
     class Dispatcher(object):
@@ -125,11 +125,11 @@ python lib):
 - Supports Python 2.7, Python 3.4+, PyPy and PyPy3.
 
 - Pure python implementation. No longer need to compile & install the 'thrift'
-  package. All you need is thriftpy and thrift file.
+  package. All you need is thriftpy2 and thrift file.
 
 - Compatible with Apache Thrift. You can use ThriftPy together with the
   official implementation servers and clients, such as a upstream server with
-  a thriftpy client or the opposite.
+  a thriftpy2 client or the opposite.
 
   Currently implemented protocols and transports:
 
@@ -152,10 +152,10 @@ python lib):
 - Can directly load thrift file as module, the sdk code will be generated on
   the fly.
 
-  For example, ``pingpong_thrift = thriftpy.load("pingpong.thrift", module_name="pingpong_thrift")``
+  For example, ``pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")``
   will load 'pingpong.thrift' as 'pingpong_thrift' module.
 
-  Or, when import hook enabled by ``thriftpy.install_import_hook()``, you can
+  Or, when import hook enabled by ``thriftpy2.install_import_hook()``, you can
   directly use ``import pingpong_thrift`` to import the 'pingpong.thrift' file
   as module, you may also use ``from pingpong_thrift import PingService`` to
   import specific object from the thrift module.
@@ -179,10 +179,10 @@ Contribute
 Contributors
 ============
 
-https://github.com/eleme/thriftpy/graphs/contributors
+https://github.com/Thriftpy/thriftpy2/graphs/contributors
 
 
 Changelog
 =========
 
-https://github.com/eleme/thriftpy/blob/master/CHANGES.rst
+https://github.com/Thriftpy/thriftpy2/blob/develop/CHANGES.rst

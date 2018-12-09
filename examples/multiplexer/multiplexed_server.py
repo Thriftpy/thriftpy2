@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import thriftpy
-from thriftpy.protocol import TBinaryProtocolFactory
-from thriftpy.server import TThreadedServer
-from thriftpy.thrift import TProcessor, TMultiplexedProcessor
-from thriftpy.transport import TBufferedTransportFactory, TServerSocket
+import thriftpy2
+from thriftpy2.protocol import TBinaryProtocolFactory
+from thriftpy2.server import TThreadedServer
+from thriftpy2.thrift import TProcessor, TMultiplexedProcessor
+from thriftpy2.transport import TBufferedTransportFactory, TServerSocket
 
 
-dd_thrift = thriftpy.load("dingdong.thrift", module_name="dd_thrift")
-pp_thrift = thriftpy.load("pingpong.thrift", module_name="pp_thrift")
+dd_thrift = thriftpy2.load("dingdong.thrift", module_name="dd_thrift")
+pp_thrift = thriftpy2.load("pingpong.thrift", module_name="pp_thrift")
 
 DD_SERVICE_NAME = "dd_thrift"
 PP_SERVICE_NAME = "pp_thrift"

@@ -7,9 +7,9 @@ import threading
 
 import pytest
 
-from thriftpy._compat import MODERN_SSL
-from thriftpy.transport import TTransportException, create_thriftpy_context
-from thriftpy.transport.sslsocket import TSSLSocket, TSSLServerSocket
+from thriftpy2._compat import MODERN_SSL
+from thriftpy2.transport import TTransportException, create_thriftpy_context
+from thriftpy2.transport.sslsocket import TSSLSocket, TSSLServerSocket
 
 
 def _echo_server(sock):

@@ -10,16 +10,16 @@ import ssl
 
 import pytest
 
-import thriftpy
+import thriftpy2
 
-thriftpy.install_import_hook()
+thriftpy2.install_import_hook()
 
-from thriftpy._compat import PY3  # noqa
-from thriftpy.rpc import make_server, client_context  # noqa
-from thriftpy.transport import TTransportException  # noqa
+from thriftpy2._compat import PY3  # noqa
+from thriftpy2.rpc import make_server, client_context  # noqa
+from thriftpy2.transport import TTransportException  # noqa
 
 
-addressbook = thriftpy.load(os.path.join(os.path.dirname(__file__),
+addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                          "addressbook.thrift"))
 unix_sock = "/tmp/thriftpy_test.sock"
 SSL_PORT = 50441

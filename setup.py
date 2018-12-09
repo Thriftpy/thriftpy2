@@ -10,7 +10,7 @@ from os.path import join, dirname
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
 
-with open(join(dirname(__file__), 'thriftpy', '__init__.py'), 'r') as f:
+with open(join(dirname(__file__), 'thriftpy2', '__init__.py'), 'r') as f:
     version = re.match(r".*__version__ = '(.*?)'", f.read(), re.S).group(1)
 
 install_requires = [
@@ -56,29 +56,29 @@ UNIX = platform.system() in ("Linux", "Darwin")
 if UNIX and not PYPY:
     # rebuild .c files if cython available
     if CYTHON:
-        cythonize("thriftpy/transport/cybase.pyx")
-        cythonize("thriftpy/transport/**/*.pyx")
-        cythonize("thriftpy/protocol/cybin/cybin.pyx")
+        cythonize("thriftpy2/transport/cybase.pyx")
+        cythonize("thriftpy2/transport/**/*.pyx")
+        cythonize("thriftpy2/protocol/cybin/cybin.pyx")
 
-    ext_modules.append(Extension("thriftpy.transport.cybase",
-                                 ["thriftpy/transport/cybase.c"]))
-    ext_modules.append(Extension("thriftpy.transport.buffered.cybuffered",
-                                 ["thriftpy/transport/buffered/cybuffered.c"]))
-    ext_modules.append(Extension("thriftpy.transport.memory.cymemory",
-                                 ["thriftpy/transport/memory/cymemory.c"]))
-    ext_modules.append(Extension("thriftpy.transport.framed.cyframed",
-                                 ["thriftpy/transport/framed/cyframed.c"]))
-    ext_modules.append(Extension("thriftpy.protocol.cybin",
-                                 ["thriftpy/protocol/cybin/cybin.c"]))
+    ext_modules.append(Extension("thriftpy2.transport.cybase",
+                                 ["thriftpy2/transport/cybase.c"]))
+    ext_modules.append(Extension("thriftpy2.transport.buffered.cybuffered",
+                                 ["thriftpy2/transport/buffered/cybuffered.c"]))
+    ext_modules.append(Extension("thriftpy2.transport.memory.cymemory",
+                                 ["thriftpy2/transport/memory/cymemory.c"]))
+    ext_modules.append(Extension("thriftpy2.transport.framed.cyframed",
+                                 ["thriftpy2/transport/framed/cyframed.c"]))
+    ext_modules.append(Extension("thriftpy2.protocol.cybin",
+                                 ["thriftpy2/protocol/cybin/cybin.c"]))
 
 setup(name="thriftpy2",
       version=version,
       description="Pure python implementation of Apache Thrift.",
-      keywords="thrift python thriftpy",
+      keywords="thrift python thriftpy thriftpy2",
       author="ThriftPy Organization",
       author_email="gotzehsing@gmail.com",
       packages=find_packages(exclude=['benchmark', 'docs', 'tests']),
-      package_data={"thriftpy": ["contrib/tracking/tracking.thrift"]},
+      package_data={"thriftpy2": ["contrib/tracking/tracking.thrift"]},
       entry_points={},
       url="https://thriftpy.readthedocs.org/",
       license="MIT",

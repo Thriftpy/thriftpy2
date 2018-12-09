@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from thriftpy.thrift import TType, TPayload
+from thriftpy2.thrift import TType, TPayload
 
-from thriftpy.transport.memory import TMemoryBuffer
-from thriftpy.protocol.binary import TBinaryProtocol
+from thriftpy2.transport.memory import TMemoryBuffer
+from thriftpy2.protocol.binary import TBinaryProtocol
 
-from thriftpy._compat import CYTHON
+from thriftpy2._compat import CYTHON
 
 
 class Struct(TPayload):
@@ -106,8 +106,8 @@ class MismatchTestCase(TestCase):
 
 
 if CYTHON:
-    from thriftpy.transport.memory import TCyMemoryBuffer
-    from thriftpy.protocol.cybin import TCyBinaryProtocol
+    from thriftpy2.transport.memory import TCyMemoryBuffer
+    from thriftpy2.protocol.cybin import TCyBinaryProtocol
 
     class CyMismatchTestCase(MismatchTestCase):
         BUFFER = TCyMemoryBuffer

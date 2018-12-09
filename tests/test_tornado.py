@@ -10,14 +10,14 @@ import socket
 import pytest
 from tornado import gen, testing
 
-import thriftpy
-from thriftpy.tornado import make_client
-from thriftpy.tornado import make_server
+import thriftpy2
+from thriftpy2.tornado import make_client
+from thriftpy2.tornado import make_server
 
 
 logging.basicConfig(level=logging.INFO)
 
-addressbook = thriftpy.load(path.join(path.dirname(__file__),
+addressbook = thriftpy2.load(path.join(path.dirname(__file__),
                                       "addressbook.thrift"))
 
 

@@ -3,7 +3,7 @@
 """This file is a demo for what the dynamiclly generated code would be like.
 """
 
-from thriftpy.thrift import (
+from thriftpy2.thrift import (
     TPayload,
     TType,
 )

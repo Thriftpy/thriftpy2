@@ -9,15 +9,15 @@ import time
 from os import path
 from unittest import TestCase
 
-import thriftpy
-from thriftpy.rpc import client_context, make_server
-from thriftpy.transport.buffered import TBufferedTransportFactory
-from thriftpy.protocol.binary import TBinaryProtocolFactory
+import thriftpy2
+from thriftpy2.rpc import client_context, make_server
+from thriftpy2.transport.buffered import TBufferedTransportFactory
+from thriftpy2.protocol.binary import TBinaryProtocolFactory
 
-from thriftpy._compat import CYTHON
+from thriftpy2._compat import CYTHON
 logging.basicConfig(level=logging.INFO)
 
-addressbook = thriftpy.load(path.join(path.dirname(__file__),
+addressbook = thriftpy2.load(path.join(path.dirname(__file__),
                                       "addressbook.thrift"))
 
 
@@ -91,8 +91,8 @@ class BufferedTransportTestCase(TestCase):
 
 
 if CYTHON:
-    from thriftpy.transport.buffered import TCyBufferedTransportFactory
-    from thriftpy.protocol.cybin import TCyBinaryProtocolFactory
+    from thriftpy2.transport.buffered import TCyBufferedTransportFactory
+    from thriftpy2.protocol.cybin import TCyBinaryProtocolFactory
 
     class TCyBufferedTransportTestCase(BufferedTransportTestCase):
         TRANSPORT_FACTORY = TCyBufferedTransportFactory()

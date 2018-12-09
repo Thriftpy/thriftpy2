@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from thriftpy.protocol import TJSONProtocol
-from thriftpy.thrift import TPayload, TType
-from thriftpy.transport import TMemoryBuffer
-from thriftpy._compat import u
+from thriftpy2.protocol import TJSONProtocol
+from thriftpy2.thrift import TPayload, TType
+from thriftpy2.transport import TMemoryBuffer
+from thriftpy2._compat import u
 
-import thriftpy.protocol.json as proto
+import thriftpy2.protocol.json as proto
 
 
 class TItem(TPayload):

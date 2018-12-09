@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import thriftpy
-from thriftpy.rpc import client_context
+import thriftpy2
+from thriftpy2.rpc import client_context
 
-pingpong = thriftpy.load("pingpong.thrift")
+pingpong = thriftpy2.load("pingpong.thrift")
 
 
 def main():
