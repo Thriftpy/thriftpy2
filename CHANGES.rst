@@ -1,6 +1,23 @@
 Changelog
 =========
 
+0.4.x
+~~~~~
+
+Version 0.4.0
+-------------
+
+Released on December 10, 2018.
+
+Non-Backward Compatible changes:
+
+- Rename all thriftpy to thriftpy2, via `#22`_.
+
+- Parse thrift without sequential dependency, via `#21`_.
+
+.. _`#22`: https://github.com/Thriftpy/thriftpy2/pull/22
+.. _`#21`: https://github.com/Thriftpy/thriftpy2/pull/21
+
 0.3.x
 ~~~~~
 

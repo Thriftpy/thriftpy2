@@ -12,7 +12,7 @@ const set<i32> tset = [1, 2, 3]
 const map<string, string> tmap1 = {"key": "val"}
 const map<string, Integer32> tmap2 = {"key": 32}
 
-# https://github.com/eleme/thriftpy/pull/69
+# https://github.com/Thriftpy/thriftpy2/pull/69
 enum Country {
     US = 1,
     UK = 2,
@@ -29,6 +29,6 @@ struct Person {
 
 const Person tom = {"name": "tom"}
 
-# https://github.com/eleme/thriftpy/issues/75
+# https://github.com/Thriftpy/thriftpy2/issues/75
 const map<Country, string> country_map = {
     Country.US: "US", Country.UK: "UK", Country.CA: "CA", Country.CN: "CN"}

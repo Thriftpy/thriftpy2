@@ -14,22 +14,22 @@ from unittest import TestCase
 import pytest
 from tornado import ioloop
 
-import thriftpy
-from thriftpy.tornado import make_server
-from thriftpy.rpc import make_client
-from thriftpy.transport.framed import TFramedTransportFactory
-from thriftpy.protocol.binary import TBinaryProtocolFactory
+import thriftpy2
+from thriftpy2.tornado import make_server
+from thriftpy2.rpc import make_client
+from thriftpy2.transport.framed import TFramedTransportFactory
+from thriftpy2.protocol.binary import TBinaryProtocolFactory
 
 try:
     import asyncio
 except ImportError:
     asyncio = None
 
-from thriftpy._compat import CYTHON
+from thriftpy2._compat import CYTHON
 logging.basicConfig(level=logging.INFO)
 
-addressbook = thriftpy.load(path.join(path.dirname(__file__),
-                                      "addressbook.thrift"))
+addressbook = thriftpy2.load(path.join(path.dirname(__file__),
+                                       "addressbook.thrift"))
 
 
 class Dispatcher(object):
@@ -113,8 +113,8 @@ class FramedTransportTestCase(TestCase):
 
 
 if CYTHON:
-    from thriftpy.transport.framed import TCyFramedTransportFactory
-    from thriftpy.protocol.cybin import TCyBinaryProtocolFactory
+    from thriftpy2.transport.framed import TCyFramedTransportFactory
+    from thriftpy2.protocol.cybin import TCyBinaryProtocolFactory
 
     class CyFramedTransportTestCase(FramedTransportTestCase):
         PROTOCOL_FACTORY = TCyBinaryProtocolFactory()

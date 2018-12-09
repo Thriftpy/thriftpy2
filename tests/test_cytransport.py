@@ -2,14 +2,14 @@
 
 import pytest
 
-from thriftpy._compat import PYPY
+from thriftpy2._compat import PYPY
 
 pytestmark = pytest.mark.skipif(PYPY, reason="cython not enabled in pypy.")
 
 if not PYPY:
-    from thriftpy.transport.framed import TCyFramedTransport
-    from thriftpy.transport.buffered import TCyBufferedTransport
-    from thriftpy.transport import TMemoryBuffer, TTransportException
+    from thriftpy2.transport.framed import TCyFramedTransport
+    from thriftpy2.transport.buffered import TCyBufferedTransport
+    from thriftpy2.transport import TMemoryBuffer, TTransportException
 
 
 def test_transport_mismatch():
@@ -37,12 +37,12 @@ def test_buffered_read():
 
 
 def test_transport_handle():
-    from thriftpy._compat import CYTHON
+    from thriftpy2._compat import CYTHON
     if not CYTHON:
         return
 
-    from thriftpy.transport import TSocket
-    from thriftpy.transport.memory import TCyMemoryBuffer
+    from thriftpy2.transport import TSocket
+    from thriftpy2.transport.memory import TCyMemoryBuffer
 
     s = TSocket()
     s.set_handle('the sock')

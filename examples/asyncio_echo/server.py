@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import thriftpy
+import thriftpy2
 
-from thriftpy.rpc import make_aio_server
+from thriftpy2.rpc import make_aio_server
 
-echo_thrift = thriftpy.load("echo.thrift", module_name="echo_thrift")
+echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
 
 
 class Dispatcher(object):

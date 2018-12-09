@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import thriftpy
-thriftpy.install_import_hook()
+import thriftpy2
+thriftpy2.install_import_hook()
 
 import const_thrift as const    # noqa
 
