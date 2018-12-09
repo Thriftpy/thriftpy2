@@ -657,7 +657,7 @@ def _parse_seq(p):
 
 
 def _cast(t, linno=0):  # noqa
-    if t < 0:
+    if isinstance(t, int) and t < 0:
         return _lazy_cast_const(t, linno)
     if t == TType.BOOL:
         return _cast_bool
