@@ -7,18 +7,18 @@ import time
 
 import pytest
 
-from thriftpy._compat import u
-from thriftpy.thrift import TType, TPayload, TDecodeException
-from thriftpy.transport import TSocket, TServerSocket
-from thriftpy.utils import hexlify
+from thriftpy2._compat import u
+from thriftpy2.thrift import TType, TPayload, TDecodeException
+from thriftpy2.transport import TSocket, TServerSocket
+from thriftpy2.utils import hexlify
 
-from thriftpy._compat import PYPY
+from thriftpy2._compat import PYPY
 pytestmark = pytest.mark.skipif(PYPY,
                                 reason="cython not enabled in pypy.")
 if not PYPY:
-    from thriftpy.protocol import cybin as proto
-    from thriftpy.transport.memory import TCyMemoryBuffer
-    from thriftpy.transport.buffered import TCyBufferedTransport
+    from thriftpy2.protocol import cybin as proto
+    from thriftpy2.transport.memory import TCyMemoryBuffer
+    from thriftpy2.transport.buffered import TCyBufferedTransport
 
 
 class TItem(TPayload):

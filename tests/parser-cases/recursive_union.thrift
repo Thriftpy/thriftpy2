@@ -1,4 +1,4 @@
-// https://github.com/eleme/thriftpy/issues/157
+// https://github.com/Thriftpy/thriftpy2/issues/157
 union Dynamic {
     1: bool boolean;
     2: i64 integer;

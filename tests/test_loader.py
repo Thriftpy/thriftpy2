@@ -2,12 +2,12 @@
 
 from __future__ import absolute_import
 
-from thriftpy import load
-from thriftpy.thrift import TPayload, TException, TType
+from thriftpy2 import load
+from thriftpy2.thrift import TPayload, TException, TType
 
-import thriftpy
+import thriftpy2
 
-thriftpy.install_import_hook()
+thriftpy2.install_import_hook()
 
 import addressbook as ab  # noqa
 import addressbook_thrift as ab_tt  # noqa

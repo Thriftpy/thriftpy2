@@ -1,4 +1,4 @@
-thriftpy vs apache thrift
+thriftpy2 vs apache thrift
 =========================
 
 The addressbook struct benchmark based on addressbook.thrift.
@@ -42,7 +42,7 @@ python2.7.6::
     encode  -> 0.59757399559
     decode  -> 0.74239397049
 
-python3.4.1 + thriftpy::
+python3.4.1 + thriftpy2::
 
     binary protocol struct benchmark for 100000 times:
     encode  -> 3.291545867919922
@@ -54,7 +54,7 @@ python3.4.1 + thriftpy::
 
 -----------------------------------
 
-thriftpy pack benchmark:
+thriftpy2 pack benchmark:
 
 pypy2.3::
 

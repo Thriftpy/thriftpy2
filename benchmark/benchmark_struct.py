@@ -1,10 +1,10 @@
 import time
 
-import thriftpy
-from thriftpy.utils import serialize, deserialize
-from thriftpy.protocol import TBinaryProtocolFactory, TCyBinaryProtocolFactory
+import thriftpy2
+from thriftpy2.utils import serialize, deserialize
+from thriftpy2.protocol import TBinaryProtocolFactory, TCyBinaryProtocolFactory
 
-addressbook = thriftpy.load("addressbook.thrift")
+addressbook = thriftpy2.load("addressbook.thrift")
 
 
 def make_addressbook():

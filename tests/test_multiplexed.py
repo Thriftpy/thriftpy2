@@ -8,19 +8,19 @@ import time
 
 import pytest
 
-import thriftpy
-from thriftpy.protocol import (
+import thriftpy2
+from thriftpy2.protocol import (
     TBinaryProtocolFactory,
     TMultiplexedProtocolFactory
 )
-from thriftpy.rpc import client_context
-from thriftpy.server import TThreadedServer
-from thriftpy.thrift import TProcessor, TMultiplexedProcessor
-from thriftpy.transport import TBufferedTransportFactory, TServerSocket
+from thriftpy2.rpc import client_context
+from thriftpy2.server import TThreadedServer
+from thriftpy2.thrift import TProcessor, TMultiplexedProcessor
+from thriftpy2.transport import TBufferedTransportFactory, TServerSocket
 
 
-mux = thriftpy.load(os.path.join(os.path.dirname(__file__),
-                                 "multiplexed.thrift"))
+mux = thriftpy2.load(os.path.join(os.path.dirname(__file__),
+                                  "multiplexed.thrift"))
 sock_path = "/tmp/thriftpy_test.sock"
 
 

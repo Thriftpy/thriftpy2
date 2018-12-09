@@ -4,7 +4,7 @@
 This file shows what dynamically generated
 """
 
-from thriftpy.thrift import (
+from thriftpy2.thrift import (
     TPayload,
     TException,
     TType,

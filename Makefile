@@ -1,7 +1,7 @@
 clean:
-	rm -vf thriftpy/protocol/cybin/*.c thriftpy/protocol/*.so
-	rm -vf thriftpy/transport/*.c thriftpy/transport/*.so
-	rm -vf thriftpy/transport/*/*.c thriftpy/transport/*/*.so
+	rm -vf thriftpy2/protocol/cybin/*.c thriftpy2/protocol/*.so
+	rm -vf thriftpy2/transport/*.c thriftpy2/transport/*.so
+	rm -vf thriftpy2/transport/*/*.c thriftpy2/transport/*/*.so
 	rm -vf dist/*
 
 build_ext: clean

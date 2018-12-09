@@ -1,8 +1,8 @@
 ========
-ThriftPy
+ThriftPy2
 ========
 
-ThriftPy is a pure python implementation of
+ThriftPy2 is a pure python implementation of
 `Apache Thrift <http://thrift.apache.org/>`_ in a pythonic way.
 
 The official thrift python lib is not pythonic at all, it needs a complicated
@@ -10,17 +10,17 @@ process of installation, and the generated sdk is very ugly. Everytime the
 thrift file changed you have to re-generate the sdk which causes more pain
 in development.
 
-ThriftPy helps that, it's compatible with Apache Thrift so you no longer need
+ThriftPy2 helps that, it's compatible with Apache Thrift so you no longer need
 to install 'thrift' package, it can import thrift file on the fly so you
 no longer need to re-generate the sdk again and again and again.
 
-Github: https://github.com/eleme/thriftpy
+Github: https://github.com/Thriftpy/thriftpy2
 
 
 Code Demo
 =========
 
-ThriftPy make it super easy to write server/client code with thrift. Let's
+ThriftPy2 make it super easy to write server/client code with thrift. Let's
 checkout this simple pingpong service demo.
 
 We need a 'pingpong.thrift' file:
@@ -35,10 +35,10 @@ Then we can make a server:
 
 .. code:: python
 
-    import thriftpy
-    pingpong_thrift = thriftpy.load("pingpong.thrift", module_name="pingpong_thrift")
+    import thriftpy2
+    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
 
-    from thriftpy.rpc import make_server
+    from thriftpy2.rpc import make_server
 
     class Dispatcher(object):
         def ping(self):
@@ -51,10 +51,10 @@ And a client:
 
 .. code:: python
 
-    import thriftpy
-    pingpong_thrift = thriftpy.load("pingpong.thrift", module_name="pingpong_thrift")
+    import thriftpy2
+    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
 
-    from thriftpy.rpc import make_client
+    from thriftpy2.rpc import make_client
 
     client = make_client(pingpong_thrift.PingPong, '127.0.0.1', 6000)
     client.ping()
@@ -69,17 +69,17 @@ usage examples.
 Features
 ========
 
-Currently ThriftPy have these features (also advantages over the upstream
+Currently ThriftPy2 have these features (also advantages over the upstream
 python lib):
 
 - Supports Python 2.7, Python 3.4+, PyPy and PyPy3.
 
 - Pure python implementation. No longer need to compile & install the 'thrift'
-  package. All you need is thriftpy and thrift file.
+  package. All you need is thriftpy2 and thrift file.
 
-- Compatible with Apache Thrift. You can use ThriftPy together with the
+- Compatible with Apache Thrift. You can use ThriftPy2 together with the
   official implementation servers and clients, such as a upstream server with
-  a thriftpy client or the opposite.
+  a thriftpy2 client or the opposite.
 
   Currently implemented protocols and transports:
 
@@ -97,10 +97,10 @@ python lib):
 - Can directly load thrift file as module, the sdk code will be generated on
   the fly.
 
-  For example, ``pingpong_thrift = thriftpy.load("pingpong.thrift", module_name="pingpong_thrift")``
+  For example, ``pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")``
   will load 'pingpong.thrift' as 'pingpong_thrift' module.
 
-  Or, when import hook enabled by ``thriftpy.install_import_hook()``, you can
+  Or, when import hook enabled by ``thriftpy2.install_import_hook()``, you can
   directly use ``import pingpong_thrift`` to import the 'pingpong.thrift' file
   as module, you may also use ``from pingpong_thrift import PingService`` to
   import specific object from the thrift module.
@@ -116,13 +116,13 @@ Install with pip.
 
 .. code:: bash
 
-    $ pip install thriftpy
+    $ pip install thriftpy2
 
 You may also install cython first to build cython extension locally.
 
 .. code:: bash
 
-    $ pip install cython thriftpy
+    $ pip install cython thriftpy2
 
 
 Usage Notice
@@ -139,9 +139,9 @@ the direct module.
 
 .. code:: python
 
-    from thriftpy.protocol.binary import TBinaryProtocolFactory
-    from thriftpy.transport.buffered import TBufferedTransportFactory
-    from thriftpy.transport.framed import TFramedTransportFactory
+    from thriftpy2.protocol.binary import TBinaryProtocolFactory
+    from thriftpy2.transport.buffered import TBufferedTransportFactory
+    from thriftpy2.transport.framed import TFramedTransportFactory
 
 
 Better Module
@@ -153,7 +153,7 @@ The direct loaded TObjects can't be pickled.
 
 .. code:: python
 
-    >>> ab = thriftpy.load("addressbook.thrift")
+    >>> ab = thriftpy2.load("addressbook.thrift")
     >>> pickle.dumps(ab.AddressBook())
     PicklingError: Can't pickle <class 'addressbook.AddressBook'>
 
@@ -161,7 +161,7 @@ TObjects can be pickled when load with `module_name` provided.
 
 .. code:: python
 
-    >>> ab = thriftpy.load("addressbook.thrift", "addressbook_thrift")
+    >>> ab = thriftpy2.load("addressbook.thrift", "addressbook_thrift")
     >>> pickle.dumps(ab.AddressBook())
     b'\x80\x03caddressbook_thrift\nAddressBook\nq\x00)\x81q\x01}q\x02X\x06\x00\x00\x00peopleq\x03Nsb.'
 
@@ -169,7 +169,7 @@ You can also use `from ... import ...` style after a standard module load.
 
 .. code:: python
 
-    >>> ab = thriftpy.load("addressbook.thrift", "addressbook_thrift")
+    >>> ab = thriftpy2.load("addressbook.thrift", "addressbook_thrift")
     >>> from addressbook_thrift import *
 
 
@@ -188,17 +188,17 @@ Some benchmark results::
     encode  -> 0.398949146271
     decode  -> 0.536000013351
 
-    # thriftpy & pypy2.3
+    # thriftpy2 & pypy2.3
     binary protocol struct benchmark for 100000 times:
     encode  -> 0.413738965988
     decode  -> 0.605606079102
 
-    # thriftpy & py3.4
+    # thriftpy2 & py3.4
     binary protocol struct benchmark for 100000 times:
     encode  -> 3.291545867919922
     decode  -> 4.337666034698486
 
-    # thriftpy & py3.4 + cython
+    # thriftpy2 & py3.4 + cython
     cybin protocol struct benchmark for 100000 times:
     encode  -> 0.5828649997711182
     decode  -> 0.8259570598602295
@@ -222,7 +222,7 @@ Contribute
 Contributors
 ============
 
-https://github.com/eleme/thriftpy/graphs/contributors
+https://github.com/Thriftpy/thriftpy2/graphs/contributors
 
 
 .. include:: ../CHANGES.rst

@@ -9,14 +9,14 @@ import time
 
 import pytest
 
-import thriftpy
-thriftpy.install_import_hook()  # noqa
+import thriftpy2
+thriftpy2.install_import_hook()  # noqa
 
-from thriftpy.http import make_server, client_context
+from thriftpy2.http import make_server, client_context
 
 
-addressbook = thriftpy.load(os.path.join(os.path.dirname(__file__),
-                                         "addressbook.thrift"))
+addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
+                                          "addressbook.thrift"))
 
 
 class Dispatcher():
