@@ -4,11 +4,13 @@ service PingPong {
 
 struct Foo {
     1: optional Bar test,
-    2: optional Some some,
+    2: optional SomeInt some_int,
 }
 
 struct Bar {
     1: optional Foo test,
 }
 
-typedef i32 Some
+const SomeInt SOME_INT = [1, 2, 3]
+
+typedef list<i32> SomeInt

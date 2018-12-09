@@ -13,7 +13,7 @@ import os
 import sys
 import types
 
-from .parser import parse, parse_fp, incomplete_type
+from .parser import parse, parse_fp, incomplete_type, _cast
 from .exc import ThriftParserError
 from ..thrift import TPayloadMeta
 
@@ -41,6 +41,10 @@ def load(path, module_name=None, include_dirs=None, include_dir=None):
 def fill_incomplete_ttype(tmodule, definition):
     # fill incomplete ttype
     if isinstance(definition, tuple):
+        # fill const value
+        if definition[0] == 'UNKNOWN_CONST':
+            ttype = get_definition(tmodule, incomplete_type[definition[1]][0], definition[3])
+            return _cast(ttype)(definition[2])
         # fill an incomplete alias ttype
         if definition[1] in incomplete_type:
             return (definition[0], get_definition(tmodule, *incomplete_type[definition[1]]))

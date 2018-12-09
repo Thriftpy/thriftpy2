@@ -108,7 +108,7 @@ def p_const(p):
              | CONST field_type IDENTIFIER '=' const_value sep'''
 
     try:
-        val = _cast(p[2])(p[5])
+        val = _cast(p[2], p.lineno(3))(p[5])
     except AssertionError:
         raise ThriftParserError('Type error for constant %s at line %d' %
                                 (p[3], p.lineno(3)))
@@ -656,7 +656,9 @@ def _parse_seq(p):
         p[0] = []
 
 
-def _cast(t):  # noqa
+def _cast(t, linno=0):  # noqa
+    if t < 0:
+        return _lazy_cast_const(t, linno)
     if t == TType.BOOL:
         return _cast_bool
     if t == TType.BYTE:
@@ -683,6 +685,12 @@ def _cast(t):  # noqa
         return _cast_enum(t)
     if t[0] == TType.STRUCT:
         return _cast_struct(t)
+
+
+def _lazy_cast_const(t, linno):
+    def _inner_cast(v):
+        return ('UNKNOWN_CONST', t, v, linno)
+    return _inner_cast
 
 
 def _cast_bool(v):
