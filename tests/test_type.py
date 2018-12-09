@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from thriftpy import load
-from thriftpy.thrift import TType
+from thriftpy2 import load
+from thriftpy2.thrift import TType
 
 
 def test_set():

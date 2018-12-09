@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-import thriftpy
+import thriftpy2
 import asyncio
-from thriftpy.rpc import make_aio_client
+from thriftpy2.rpc import make_aio_client
 
 
-echo_thrift = thriftpy.load("echo.thrift", module_name="echo_thrift")
+echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
 
 
 async def main():

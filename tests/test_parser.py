@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from thriftpy.thrift import TType
-from thriftpy.parser import load, load_fp
-from thriftpy.parser.exc import ThriftParserError, ThriftGrammerError
+from thriftpy2.thrift import TType
+from thriftpy2.parser import load, load_fp
+from thriftpy2.parser.exc import ThriftParserError, ThriftGrammerError
 
 
 def test_comments():

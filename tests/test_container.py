@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import thriftpy
+import thriftpy2
 
-from thriftpy.utils import serialize, deserialize
+from thriftpy2.utils import serialize, deserialize
 
-thriftpy.install_import_hook()
+thriftpy2.install_import_hook()
 
 import container_thrift as container  # noqa
 

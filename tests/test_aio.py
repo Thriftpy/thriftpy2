@@ -10,15 +10,15 @@ import time
 
 import pytest
 
-import thriftpy
+import thriftpy2
 
-thriftpy.install_import_hook()
+thriftpy2.install_import_hook()
 
-from thriftpy.rpc import make_aio_server, make_aio_client  # noqa
-from thriftpy.transport import TTransportException  # noqa
+from thriftpy2.rpc import make_aio_server, make_aio_client  # noqa
+from thriftpy2.transport import TTransportException  # noqa
 
-addressbook = thriftpy.load(os.path.join(os.path.dirname(__file__),
-                                         "addressbook.thrift"))
+addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
+                                          "addressbook.thrift"))
 unix_sock = "/tmp/aio_thriftpy_test.sock"
 SSL_PORT = 50442
 

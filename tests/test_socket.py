@@ -8,8 +8,8 @@ import sys
 
 import pytest
 
-from thriftpy.transport import TTransportException
-from thriftpy.transport.socket import TSocket, TServerSocket
+from thriftpy2.transport import TTransportException
+from thriftpy2.transport.socket import TSocket, TServerSocket
 
 
 def _test_socket(server_socket, client_socket):

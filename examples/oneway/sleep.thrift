@@ -1,5 +1,5 @@
 /**
- * Simple example to show how to use `oneway` with thriftpy.
+ * Simple example to show how to use `oneway` with thriftpy2.
  */
 service Sleep {
     /**

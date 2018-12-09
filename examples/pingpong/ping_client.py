@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import thriftpy
+import thriftpy2
 
-from thriftpy.rpc import client_context
+from thriftpy2.rpc import client_context
 
-pp_thrift = thriftpy.load("pingpong.thrift", module_name="pp_thrift")
+pp_thrift = thriftpy2.load("pingpong.thrift", module_name="pp_thrift")
 
 
 def main():

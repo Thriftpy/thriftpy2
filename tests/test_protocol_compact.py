@@ -2,10 +2,10 @@
 
 from io import BytesIO
 
-from thriftpy._compat import u
-from thriftpy.thrift import TType, TPayload
-from thriftpy.utils import hexlify
-from thriftpy.protocol import compact
+from thriftpy2._compat import u
+from thriftpy2.thrift import TType, TPayload
+from thriftpy2.utils import hexlify
+from thriftpy2.protocol import compact
 
 
 class TItem(TPayload):

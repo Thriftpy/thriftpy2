@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from thriftpy.transport.memory import TMemoryBuffer
-from thriftpy._compat import CYTHON
+from thriftpy2.transport.memory import TMemoryBuffer
+from thriftpy2._compat import CYTHON
 
 
 class MemoryTransport(TestCase):
@@ -23,7 +23,7 @@ class MemoryTransport(TestCase):
 
 
 if CYTHON:
-    from thriftpy.transport.memory import TCyMemoryBuffer
+    from thriftpy2.transport.memory import TCyMemoryBuffer
 
     class CyMemoryTransport(MemoryTransport):
         @staticmethod

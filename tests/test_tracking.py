@@ -26,7 +26,7 @@ import socket
 import tempfile
 import time
 
-import thriftpy
+import thriftpy2
 
 try:
     import dbm
@@ -35,23 +35,23 @@ except ImportError:
 
 import pytest
 
-from thriftpy.contrib.tracking import TTrackedProcessor, TTrackedClient, \
+from thriftpy2.contrib.tracking import TTrackedProcessor, TTrackedClient, \
     TrackerBase, track_thrift
-from thriftpy.contrib.tracking.tracker import ctx
+from thriftpy2.contrib.tracking.tracker import ctx
 
-from thriftpy.thrift import TProcessorFactory, TClient, TProcessor
-from thriftpy.server import TThreadedServer
-from thriftpy.transport import TServerSocket, TBufferedTransportFactory, \
+from thriftpy2.thrift import TProcessorFactory, TClient, TProcessor
+from thriftpy2.server import TThreadedServer
+from thriftpy2.transport import TServerSocket, TBufferedTransportFactory, \
     TTransportException, TSocket
-from thriftpy.protocol import TBinaryProtocolFactory
+from thriftpy2.protocol import TBinaryProtocolFactory
 from compatible.version_2.tracking import (
     TTrackedProcessor as TTrackedProcessorV2,
     TTrackedClient as TTrackedClientV2,
     TrackerBase as TrackerBaseV2,
 )
 
-addressbook = thriftpy.load(os.path.join(os.path.dirname(__file__),
-                                         "addressbook.thrift"))
+addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
+                                          "addressbook.thrift"))
 _, db_file = tempfile.mkstemp()
 
 

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import thriftpy
-from thriftpy.thrift import TProcessor
+import thriftpy2
+from thriftpy2.thrift import TProcessor
 
-pingpong = thriftpy.load("pingpong.thrift")
+pingpong = thriftpy2.load("pingpong.thrift")
 
 
 class Dispatcher(object):

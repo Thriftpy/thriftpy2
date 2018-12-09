@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import thriftpy
+import thriftpy2
 
-from thriftpy.rpc import client_context
+from thriftpy2.rpc import client_context
 
-tutorial_thrift = thriftpy.load("tutorial.thrift",
+tutorial_thrift = thriftpy2.load("tutorial.thrift",
                                 module_name="tutorial_thrift")
 
 

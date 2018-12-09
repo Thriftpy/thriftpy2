@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import thriftpy
-from thriftpy.rpc import client_context
-from thriftpy.protocol import (
+import thriftpy2
+from thriftpy2.rpc import client_context
+from thriftpy2.protocol import (
     TBinaryProtocolFactory,
     TMultiplexedProtocolFactory
     )
 
-dd_thrift = thriftpy.load("dingdong.thrift", module_name="dd_thrift")
-pp_thrift = thriftpy.load("pingpong.thrift", module_name="pp_thrift")
+dd_thrift = thriftpy2.load("dingdong.thrift", module_name="dd_thrift")
+pp_thrift = thriftpy2.load("pingpong.thrift", module_name="pp_thrift")
 
 DD_SERVICE_NAME = "dd_thrift"
 PP_SERVICE_NAME = "pp_thrift"
