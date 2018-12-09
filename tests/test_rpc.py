@@ -20,7 +20,7 @@ from thriftpy2.transport import TTransportException  # noqa
 
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
-                                         "addressbook.thrift"))
+                                          "addressbook.thrift"))
 unix_sock = "/tmp/thriftpy_test.sock"
 SSL_PORT = 50441
 

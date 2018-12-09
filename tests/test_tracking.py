@@ -51,7 +51,7 @@ from compatible.version_2.tracking import (
 )
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
-                                         "addressbook.thrift"))
+                                          "addressbook.thrift"))
 _, db_file = tempfile.mkstemp()
 
 

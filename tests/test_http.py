@@ -16,7 +16,7 @@ from thriftpy2.http import make_server, client_context
 
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
-                                         "addressbook.thrift"))
+                                          "addressbook.thrift"))
 
 
 class Dispatcher():

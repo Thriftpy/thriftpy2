@@ -32,7 +32,7 @@ def test_import_hook():
 def test_load():
     ab_1 = thriftpy2.load("addressbook.thrift")
     ab_2 = thriftpy2.load("addressbook.thrift",
-                         module_name="addressbook_thrift")
+                          module_name="addressbook_thrift")
 
     assert ab_1.__name__ == "addressbook"
     assert ab_2.__name__ == "addressbook_thrift"
@@ -59,9 +59,9 @@ def test_load_module():
 def test_duplicate_loads():
     # multiple loads with same module_name returns the same module
     ab_1 = thriftpy2.load("addressbook.thrift",
-                         module_name="addressbook_thrift")
+                          module_name="addressbook_thrift")
     ab_2 = thriftpy2.load("./addressbook.thrift",
-                         module_name="addressbook_thrift")
+                          module_name="addressbook_thrift")
     assert ab_1 == ab_2
 
 

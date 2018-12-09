@@ -20,7 +20,7 @@ from thriftpy2.transport import TBufferedTransportFactory, TServerSocket
 
 
 mux = thriftpy2.load(os.path.join(os.path.dirname(__file__),
-                                 "multiplexed.thrift"))
+                                  "multiplexed.thrift"))
 sock_path = "/tmp/thriftpy_test.sock"
 
 

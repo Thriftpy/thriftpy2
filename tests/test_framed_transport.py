@@ -29,7 +29,7 @@ from thriftpy2._compat import CYTHON
 logging.basicConfig(level=logging.INFO)
 
 addressbook = thriftpy2.load(path.join(path.dirname(__file__),
-                                      "addressbook.thrift"))
+                                       "addressbook.thrift"))
 
 
 class Dispatcher(object):

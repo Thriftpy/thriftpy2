@@ -18,7 +18,7 @@ from thriftpy2.tornado import make_server
 logging.basicConfig(level=logging.INFO)
 
 addressbook = thriftpy2.load(path.join(path.dirname(__file__),
-                                      "addressbook.thrift"))
+                                       "addressbook.thrift"))
 
 
 class Dispatcher(object):
