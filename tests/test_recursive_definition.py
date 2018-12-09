@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from thriftpy.parser import load
+from thriftpy2.parser import load
 
 
 def test_recursive_definition():
