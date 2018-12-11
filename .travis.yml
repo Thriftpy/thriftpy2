@@ -22,7 +22,7 @@ before_install:
   - sudo apt-get install -y python-dev gcc
 
 install:
-  - pip install cython tox
+  - pip install cython tox codecov
 
 script:
   - tox -e py
