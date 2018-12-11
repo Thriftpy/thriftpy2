@@ -6,12 +6,13 @@ python:
   - 3.4
   - 3.5
   - 3.6
-  - pypy
 
 matrix:
   include:
     - python: 3.6
       script: tox -e flake8
+    - python: pypy
+      script: tox -e pypy
     # This is a workaround to make 3.7 running in travis-ci
     # See https://github.com/travis-ci/travis-ci/issues/9815
     - python: 3.7
