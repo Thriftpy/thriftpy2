@@ -18,8 +18,14 @@ matrix:
       dist: xenial
       sudo: true
 
+before_install:
+  - sudo apt-get install -y python-dev gcc
+
 install:
   - pip install cython tox
 
 script:
   - tox -e py
+
+after_success:
+  - codecov
