@@ -28,4 +28,4 @@ script:
   - tox -e py
 
 after_success:
-  - codecov
+  - cd tests && codecov
