@@ -4,11 +4,12 @@ language: python
 python:
   - 2.7
   - 3.4
-  - 3.5
   - pypy
 
 matrix:
   include:
+    - python: 3.5
+      script: tox -e py35
     - python: 3.6
       script: tox -e flake8
     - python: 3.6
@@ -16,6 +17,7 @@ matrix:
     # This is a workaround to make 3.7 running in travis-ci
     # See https://github.com/travis-ci/travis-ci/issues/9815
     - python: 3.7
+      script: tox -e py37
       dist: xenial
       sudo: true
 
