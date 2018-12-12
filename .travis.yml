@@ -4,22 +4,31 @@ language: python
 python:
   - 2.7
   - 3.4
-  - 3.5
-  - 3.6
   - pypy
 
 matrix:
   include:
+    - python: 3.5
+      script: tox -e py35
     - python: 3.6
       script: tox -e flake8
+    - python: 3.6
+      script: tox -e coverage
     # This is a workaround to make 3.7 running in travis-ci
     # See https://github.com/travis-ci/travis-ci/issues/9815
     - python: 3.7
+      script: tox -e py37
       dist: xenial
       sudo: true
 
+before_install:
+  - sudo apt-get install -y python-dev gcc
+
 install:
-  - pip install cython tox
+  - pip install cython tox codecov
 
 script:
   - tox -e py
+
+after_success:
+  - cd tests && codecov
