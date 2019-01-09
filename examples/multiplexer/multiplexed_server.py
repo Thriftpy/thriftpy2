@@ -34,7 +34,7 @@ def main():
     mux_proc.register_processor(DD_SERVICE_NAME, dd_proc)
     mux_proc.register_processor(PP_SERVICE_NAME, pp_proc)
 
-    server = TThreadedServer(mux_proc, TServerSocket(),
+    server = TThreadedServer(mux_proc, TServerSocket("127.0.0.1", 9090),
                              iprot_factory=TBinaryProtocolFactory(),
                              itrans_factory=TBufferedTransportFactory())
     server.serve()
