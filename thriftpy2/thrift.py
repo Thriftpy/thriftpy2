@@ -240,7 +240,7 @@ class TClient(object):
 
 
 class TProcessor(object):
-    """Base class for procsessor, which works on two streams."""
+    """Base class for processor, which works on two streams."""
 
     def __init__(self, service, handler):
         self._service = service
@@ -324,7 +324,7 @@ class TMultiplexedProcessor(TProcessor):
     def process_in(self, iprot):
         api, type, seqid = iprot.read_message_begin()
         if type not in (TMessageType.CALL, TMessageType.ONEWAY):
-            raise TException("TMultiplex protocol only supports CALL & ONEWAY")
+            raise TException("TMultiplexed protocol only supports CALL & ONEWAY")
         if TMultiplexedProcessor.SEPARATOR not in api:
             raise TException("Service name not found in message. "
                              "You should use TMultiplexedProtocol in client.")
