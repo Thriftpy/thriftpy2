@@ -442,7 +442,7 @@ class TCompactProtocol(object):
                 f_container_spec = None
             else:
                 ftype, fname, f_container_spec, f_req = fspec
-            val = getattr(obj, fname)
+            val = getattr(obj, fname, None)
             if val is None:
                 continue
 
