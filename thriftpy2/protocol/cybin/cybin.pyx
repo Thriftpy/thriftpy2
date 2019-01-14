@@ -202,7 +202,7 @@ cdef inline write_struct(CyTransportBase buf, obj):
         else:
             container_spec = field_spec[2]
 
-        v = getattr(obj, f_name)
+        v = getattr(obj, f_name, None)
         if v is None:
             continue
 
