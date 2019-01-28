@@ -87,6 +87,23 @@ def test_client_socket_timeout():
     server_socket.close()
 
 
+def test_client_socket_open():
+    client_socket = TSocket(host="localhost", port=12345)
+    with pytest.raises(TTransportException) as e:
+        client_socket.open()
+    assert e.value.message == "Could not connect to ('localhost', 12345)"
+    assert not client_socket.is_open()
+
+    server_socket = TServerSocket(host="localhost", port=12345)
+    server_socket.listen()
+
+    client_socket.open()
+    assert client_socket.is_open()
+
+    server_socket.close()
+    client_socket.close()
+
+
 def test_client_socket_close():
     server_socket = TServerSocket(host="localhost", port=12345)
     server_socket.listen()
