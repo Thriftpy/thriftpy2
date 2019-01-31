@@ -99,6 +99,7 @@ class TSocket(object):
                 self.sock.settimeout(self.socket_timeout)
 
         except (socket.error, OSError):
+            self.close()
             raise TTransportException(
                 type=TTransportException.NOT_OPEN,
                 message="Could not connect to %s" % str(addr))
@@ -144,9 +145,9 @@ class TSocket(object):
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
             self.sock.close()
-            self.sock = None
         except (socket.error, OSError):
             pass
+        self.sock = None
 
 
 class TServerSocket(object):
