@@ -409,6 +409,7 @@ def p_ref_type(p):
 def p_simple_base_type(p):  # noqa
     '''simple_base_type : BOOL
                         | BYTE
+                        | I8
                         | I16
                         | I32
                         | I64
@@ -417,7 +418,7 @@ def p_simple_base_type(p):  # noqa
                         | BINARY'''
     if p[1] == 'bool':
         p[0] = TType.BOOL
-    if p[1] == 'byte':
+    if p[1] == 'byte' or p[1] == 'i8':
         p[0] = TType.BYTE
     if p[1] == 'i16':
         p[0] = TType.I16
