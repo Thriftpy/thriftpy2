@@ -14,6 +14,8 @@ def test_constants():
     thrift = load('parser-cases/constants.thrift')
     assert thrift.tbool is True
     assert thrift.tboolint is True
+    assert thrift.tbyte == 3
+    assert thrift.int8 == 3
     assert thrift.int16 == 3
     assert thrift.int32 == 800
     assert thrift.int64 == 123456789
