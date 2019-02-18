@@ -4,6 +4,19 @@ Changelog
 0.4.x
 ~~~~~
 
+Version 0.4.1
+-------------
+
+Released on February 18, 2019.
+
+- Close socket when got a connect error, via `2-#37`_.
+- Add i8 as alias for 'byte', via `2-#38`_.
+- Fix error when loading object which is dumped before changing the IDL, via `2-#34`_.
+
+.. _2-#37: https://github.com/Thriftpy/thriftpy2/pull/37
+.. _2-#38: https://github.com/Thriftpy/thriftpy2/pull/38
+.. _2-#34: https://github.com/Thriftpy/thriftpy2/pull/34
+
 Version 0.4.0
 -------------
 
