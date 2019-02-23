@@ -43,7 +43,8 @@ def fill_incomplete_ttype(tmodule, definition):
     if isinstance(definition, tuple):
         # fill const value
         if definition[0] == 'UNKNOWN_CONST':
-            ttype = get_definition(tmodule, incomplete_type[definition[1]][0], definition[3])
+            ttype = get_definition(
+                tmodule, incomplete_type[definition[1]][0], definition[3])
             return _cast(ttype)(definition[2])
         # fill an incomplete alias ttype
         if definition[1] in incomplete_type:
@@ -61,7 +62,7 @@ def fill_incomplete_ttype(tmodule, definition):
         for name, attr in definition.__dict__.items():
             if name.startswith('__'):  # skip inner attribute
                 continue
-            setattr(definition, name, fill_incomplete_ttype(tmodule, attr))
+            setattr(definition, name, fill_incomplete_ttype(definition, attr))
     # handle struct ttype
     elif isinstance(definition, TPayloadMeta):
         for index, value in definition.thrift_spec.items():
@@ -88,11 +89,15 @@ def fill_incomplete_ttype(tmodule, definition):
                         ),
                     ) + tuple(value[1:])
             # if the ttype which field's ttype contains is incomplete
-            elif isinstance(value[2], tuple):
+            elif value[2] in incomplete_type:
                 definition.thrift_spec[index] = (
                     value[0],
                     value[1],
-                    fill_incomplete_ttype(tmodule, value[2]),
+                    fill_incomplete_ttype(
+                        tmodule, get_definition(
+                            tmodule, *incomplete_type[value[2]]
+                        )
+                    ),
                     value[3])
     # handle service method
     elif hasattr(definition, "thrift_services"):
