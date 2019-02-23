@@ -93,8 +93,11 @@ def fill_incomplete_ttype(tmodule, definition):
                 definition.thrift_spec[index] = (
                     value[0],
                     value[1],
-                    get_definition(
-                            tmodule, *incomplete_type[value[2]]),
+                    fill_incomplete_ttype(
+                        tmodule, get_definition(
+                            tmodule, *incomplete_type[value[2]]
+                        )
+                    ),
                     value[3])
     # handle service method
     elif hasattr(definition, "thrift_services"):
