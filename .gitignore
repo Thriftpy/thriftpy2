@@ -45,3 +45,4 @@ pip-log.txt
 *.sublime-workspace
 *.sw[op]
 env/
+.vscode/
