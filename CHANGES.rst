@@ -4,6 +4,15 @@ Changelog
 0.4.x
 ~~~~~
 
+Version 0.4.2
+-------------
+
+Released on February 25, 2019.
+
+- Fix parser handling out-of-order definition bugs, via `2-#41`_.
+
+.. _2-#41: https://github.com/Thriftpy/thriftpy2/pull/42
+
 Version 0.4.1
 -------------
 
@@ -69,7 +78,7 @@ Released on August 26, 2016.
 - performance improvement by dynamically compile spec'd `__init__`
   functions, via `#210`_ and `#227`_.
 - performance improvement by refine cython encoding/decoding,
-  via `#211`_ and `#212_`.
+  via `#211`_ and `#212`_.
 
 - bugfix for type error in `cast_byte` parser and improve include dirs
   function, via `#214`_
