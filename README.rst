@@ -25,16 +25,15 @@ ThriftPy: https://github.com/eleme/thriftpy has been deprecated, ThriftPy2 aims 
 
 
 Migrate from Thriftpy?
-============
-
+======================
 
 All you need is:
 
 .. code:: python
 
     import thriftpy2 as thriftpy
-    
-    
+
+
 That's it! thriftpy2 is fully compatible with thriftpy.
 
 
@@ -215,4 +214,4 @@ https://github.com/Thriftpy/thriftpy2/graphs/contributors
 Changelog
 =========
 
-https://github.com/Thriftpy/thriftpy2/blob/develop/CHANGES.rst
+https://github.com/Thriftpy/thriftpy2/blob/master/CHANGES.rst
