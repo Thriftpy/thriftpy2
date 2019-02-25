@@ -39,47 +39,58 @@ def load(path, module_name=None, include_dirs=None, include_dir=None):
 
 
 def fill_incomplete_ttype(tmodule, definition):
-    # fill incomplete ttype
+    """Second pass of parser to handle out-of-order definitions.
+    """
+    # construct incomplete types' thrift_spec
     if isinstance(definition, tuple):
-        # fill const value
+        # construct const value
         if definition[0] == 'UNKNOWN_CONST':
             ttype = get_definition(
                 tmodule, incomplete_type[definition[1]][0], definition[3])
             return _cast(ttype)(definition[2])
-        # fill an incomplete alias ttype
-        if definition[1] in incomplete_type:
-            return (definition[0], get_definition(tmodule, *incomplete_type[definition[1]]))
-        # fill service method which has incomplete arg, return ttype
+        # construct incomplete alias type
+        elif definition[1] in incomplete_type:
+            return (
+                definition[0],
+                get_definition(tmodule, *incomplete_type[definition[1]])
+            )
+        # construct incomplete type which is contained in service method's args
         elif definition[0] in incomplete_type:
             real_type = get_definition(
-                tmodule, *incomplete_type[definition[0]])
+                tmodule, *incomplete_type[definition[0]]
+            )
             return (real_type[0], definition[1], real_type[1], definition[2])
-        # fill incomplete compound ttype
+        # construct incomplete compound type
         elif isinstance(definition[1], tuple):
-            return (definition[0], fill_incomplete_ttype(tmodule, definition[1]))
-    # handle thrift module
+            return (
+                definition[0],
+                fill_incomplete_ttype(tmodule, definition[1])
+            )
+    # if type is a thrift module, search it if there are incomplete types
     elif isinstance(definition, types.ModuleType):
         for name, attr in definition.__dict__.items():
             if name.startswith('__'):  # skip inner attribute
                 continue
             setattr(definition, name, fill_incomplete_ttype(definition, attr))
-    # handle struct ttype
+    # if type is a struct, search it if there are incomplete types
     elif isinstance(definition, TPayloadMeta):
         for index, value in definition.thrift_spec.items():
-            # if the ttype of field is incomplete
+            # if the ttype of the field is a single type and it is incompleted
             if value[0] in incomplete_type:
                 real_type = fill_incomplete_ttype(
                     tmodule, get_definition(
-                        tmodule, *incomplete_type[value[0]]))
-                # if deletion ttype is a compound type
+                        tmodule, *incomplete_type[value[0]]
+                    )
+                )
+                # if the incomplete ttype is a compound type
                 if isinstance(real_type, tuple):
                     definition.thrift_spec[index] = (
                         real_type[0],
                         value[1],
                         real_type[1],
                         value[2]
-                        )
-                # if deletion ttype is a built-in ttype
+                    )
+                # if the incomplete ttype is a built-in ttype
                 else:
                     definition.thrift_spec[index] = (
                         fill_incomplete_ttype(
@@ -88,7 +99,8 @@ def fill_incomplete_ttype(tmodule, definition):
                             )
                         ),
                     ) + tuple(value[1:])
-            # if the ttype which field's ttype contains is incomplete
+            # if the field's ttype is a compound type
+            # and it contains incomplete types
             elif value[2] in incomplete_type:
                 definition.thrift_spec[index] = (
                     value[0],
@@ -99,7 +111,7 @@ def fill_incomplete_ttype(tmodule, definition):
                         )
                     ),
                     value[3])
-    # handle service method
+    # if it is a service method definition
     elif hasattr(definition, "thrift_services"):
         for name, attr in definition.__dict__.items():
             if not hasattr(attr, "thrift_spec"):
@@ -110,6 +122,8 @@ def fill_incomplete_ttype(tmodule, definition):
 
 
 def get_definition(thrift, name, lineno):
+    """Get definition from thrift module and incomplete type map.
+    """
     ref_type = thrift
     for n in name.split('.'):
         ref_type = getattr(thrift, n, None)
