@@ -70,6 +70,9 @@ class Dispatcher(object):
         time.sleep(ms / 1000.0)
         return True
 
+    def close(self, ms):
+        return
+
 
 @pytest.fixture(scope="module")
 def server(request):
@@ -244,3 +247,8 @@ def test_ssl_client_timeout():
     with pytest.raises(socket.timeout if PY3 else ssl.SSLError):
         with ssl_client(timeout=500) as c:
             c.sleep(1000)
+
+
+def test_close_method():
+    with client() as c:
+        c.tclose(1)

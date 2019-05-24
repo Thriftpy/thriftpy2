@@ -180,6 +180,11 @@ class TClient(object):
         if _api in self._service.thrift_services:
             return functools.partial(self._req, _api)
 
+        # close method is a reserved method name defined as below
+        # so we need to handle it alone
+        if _api == 'tclose':
+            return functools.partial(self._req, 'close')
+
         raise AttributeError("{} instance has no attribute '{}'".format(
             self.__class__.__name__, _api))
 
@@ -324,7 +329,7 @@ class TMultiplexedProcessor(TProcessor):
     def process_in(self, iprot):
         api, type, seqid = iprot.read_message_begin()
         if type not in (TMessageType.CALL, TMessageType.ONEWAY):
-            raise TException("TMultiplexed protocol only supports CALL & ONEWAY")
+            raise TException("TMultiplexed protocol only supports CALL & ONEWAY")  # noqa
         if TMultiplexedProcessor.SEPARATOR not in api:
             raise TException("Service name not found in message. "
                              "You should use TMultiplexedProtocol in client.")
