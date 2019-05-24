@@ -180,7 +180,7 @@ class TClient(object):
         if _api in self._service.thrift_services:
             return functools.partial(self._req, _api)
 
-        # close method is a reserved method name definitioned as below
+        # close method is a reserved method name defined as below
         # so we need to handle it alone
         if _api == 'tclose':
             return functools.partial(self._req, 'close')
