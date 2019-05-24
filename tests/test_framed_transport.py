@@ -83,7 +83,7 @@ class FramedTransportTestCase(TestCase):
 
     def mk_client(self):
         return make_client(addressbook.AddressBookService,
-                           '127.0.0.1', self.port,
+                           url='127.0.0.1:'+self.port,
                            proto_factory=self.PROTOCOL_FACTORY,
                            trans_factory=self.TRANSPORT_FACTORY)
 
