@@ -3,9 +3,17 @@
 from __future__ import absolute_import
 
 import contextlib
+import sys
 import warnings
 
-from thriftpy2._compat import PY35
+from thriftpy2._compat import PY3, PY35
+if PY3:
+    import urllib
+else:
+    import urllib2 as urllib
+    import urlparse
+    urllib.parse = urlparse
+
 
 from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.server import TThreadedServer
@@ -23,12 +31,16 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
                 proto_factory=TBinaryProtocolFactory(),
                 trans_factory=TBufferedTransportFactory(),
                 timeout=None,
-                cafile=None, ssl_context=None, certfile=None, keyfile=None):
+                cafile=None, ssl_context=None, certfile=None, keyfile=None, url=None):
     if unix_socket:
         socket = TSocket(unix_socket=unix_socket)
         if certfile:
             warnings.warn("SSL only works with host:port, not unix_socket.")
-    elif host and port:
+    elif host and port or url:
+        if url is not None:
+            _url = urllib.parse.urlparse(url)
+            host = _url.hostname or host
+            port = _url.port or port
         if cafile or ssl_context:
             socket = TSSLSocket(host, port, socket_timeout=timeout,
                                 cafile=cafile,

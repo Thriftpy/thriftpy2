@@ -8,6 +8,13 @@ from .transport.buffered import TAsyncBufferedTransportFactory
 from .socket import TAsyncSocket, TAsyncServerSocket
 from .server import TAsyncServer
 
+from thriftpy2._compat import PY3
+if PY3:
+    import urllib
+else:
+    import urllib2 as urllib
+    import urlparse
+    urllib.parse = urlparse
 
 @asyncio.coroutine
 def make_client(service, host="localhost", port=9090, unix_socket=None,
@@ -16,17 +23,22 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
                 socket_timeout=3000, connect_timeout=None,
                 cafile=None, ssl_context=None,
                 certfile=None, keyfile=None,
-                validate=True):
+                validate=True,
+                url=None):
     if unix_socket:
         socket = TAsyncSocket(unix_socket=unix_socket)
         if certfile:
             warnings.warn("SSL only works with host:port, not unix_socket.")
-    elif host and port:
-            socket = TAsyncSocket(
-                host, port,
-                socket_timeout=socket_timeout, connect_timeout=connect_timeout,
-                cafile=cafile, ssl_context=ssl_context,
-                certfile=certfile, keyfile=keyfile, validate=validate)
+    elif host and port or url:
+        if url is not None:
+            _url = urllib.parse.urlparse(url)
+            host = _url.hostname or host
+            port = _url.port or port
+        socket = TAsyncSocket(
+            host, port,
+            socket_timeout=socket_timeout, connect_timeout=connect_timeout,
+            cafile=cafile, ssl_context=ssl_context,
+            certfile=certfile, keyfile=keyfile, validate=validate)
     else:
         raise ValueError("Either host/port or unix_socket must be provided.")
 
