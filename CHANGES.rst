@@ -4,6 +4,16 @@ Changelog
 0.4.x
 ~~~~~
 
+Version 0.4.3
+-------------
+
+Released on May 24, 2019.
+
+- Fix cannot call thrift method which name's close, via `2-#42`_.
+
+.. _2-#42: https://github.com/Thriftpy/thriftpy2/pull/55
+
+
 Version 0.4.2
 -------------
 
