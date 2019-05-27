@@ -210,6 +210,11 @@ Contributors
 
 https://github.com/Thriftpy/thriftpy2/graphs/contributors
 
+Sponsored by:
+
+.. image:: ./docs/jetbrains.svg
+    :target: https://www.jetbrains.com/?from=ThriftPy
+
 
 Changelog
 =========
