@@ -22,7 +22,7 @@ from thriftpy2.transport import (
 def make_client(service, host="localhost", port=9090, unix_socket=None,
                 proto_factory=TBinaryProtocolFactory(),
                 trans_factory=TBufferedTransportFactory(),
-                timeout=None,
+                timeout=3000,
                 cafile=None, ssl_context=None, certfile=None, keyfile=None):
     if unix_socket:
         socket = TSocket(unix_socket=unix_socket)
