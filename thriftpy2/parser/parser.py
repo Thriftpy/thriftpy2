@@ -748,6 +748,8 @@ def _cast_set(t):
     assert t[0] == TType.SET
 
     def __cast_set(v):
+        if len(v) == 0 and isinstance(v, dict):
+            v = set()
         assert isinstance(v, (list, set))
         map(_cast(t[1]), v)
         if not isinstance(v, set):

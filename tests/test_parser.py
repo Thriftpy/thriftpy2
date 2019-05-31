@@ -124,21 +124,26 @@ def test_structs():
     assert thrift.Person.default_spec == [
         ('name', None), ('address', None)
     ]
+    assert thrift.MetaData.thrift_spec == {
+        1: (TType.SET, 'tags', TType.STRING, False)
+    }
     assert thrift.Email.thrift_spec == {
         1: (TType.STRING, 'subject', False),
         2: (TType.STRING, 'content', False),
         3: (TType.STRUCT, 'sender', thrift.Person, False),
         4: (TType.STRUCT, 'recver', thrift.Person, True),
+        5: (TType.STRUCT, 'metadata', thrift.MetaData, False),
     }
     assert thrift.Email.default_spec == [
         ('subject', 'Subject'), ('content', None),
-        ('sender', None), ('recver', None)
+        ('sender', None), ('recver', None), ('metadata', None)
     ]
     assert thrift.email == thrift.Email(
         subject='Hello',
         content='Long time no see',
         sender=thrift.Person(name='jack', address='jack@gmail.com'),
-        recver=thrift.Person(name='chao', address='chao@gmail.com')
+        recver=thrift.Person(name='chao', address='chao@gmail.com'),
+        metadata=thrift.MetaData(tags=set())
     )
 
 
