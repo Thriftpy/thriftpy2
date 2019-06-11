@@ -4,6 +4,18 @@ Changelog
 0.4.x
 ~~~~~
 
+Version 0.4.4
+-------------
+
+Released on June 11, 2019.
+
+- Enable include_package_data in setup.py, via `2-#44`_.
+- Fix parse error on empty set field value, via `2-#43`_.
+
+.. _2-#43: https://github.com/Thriftpy/thriftpy2/pull/62
+.. _2-#44: https://github.com/Thriftpy/thriftpy2/pull/63
+
+
 Version 0.4.3
 -------------
 
