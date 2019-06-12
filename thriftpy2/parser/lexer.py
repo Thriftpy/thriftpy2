@@ -200,7 +200,7 @@ def t_BOOLCONSTANT(t):
 
 
 def t_DUBCONSTANT(t):
-    r'[+-]?\d+(?=\.|[Ee])(\.\d*)?([Ee][+-]?\d+)?'
+    r'[+-]?((\d+(?=\.|[Ee])(\.\d*)?)|(\.\d+))([Ee][+-]?\d+)?'
     t.value = float(t.value)
     return t
 

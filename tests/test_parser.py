@@ -283,6 +283,7 @@ def test_doubles():
     assert isinstance(thrift.value3, float) and thrift.value3 == 100000.0
     assert isinstance(thrift.value4, float) and thrift.value4 == -1.5e-05
     assert isinstance(thrift.value5, float) and thrift.value5 == 150000.0
+    assert isinstance(thrift.value6, float) and thrift.value6 == 0.13
 
 
 def test_annotations():
