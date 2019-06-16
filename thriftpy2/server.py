@@ -37,8 +37,8 @@ class TServer(object):
 class TSimpleServer(TServer):
     """Simple single-threaded server that just pumps around one transport."""
 
-    def __init__(self, *args):
-        TServer.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        TServer.__init__(self, *args, **kwargs)
         self.closed = False
 
     def serve(self):
