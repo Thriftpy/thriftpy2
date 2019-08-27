@@ -3,6 +3,17 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.5
+-------------
+
+Released on August 27, 2019.
+
+- Support kwargs style parameters passing in TSimpleServer, via `2-#67`_.
+- Fix #65 allow double const to ommit integer part, via `2-#66`_.
+
+.. _2-#67: https://github.com/Thriftpy/thriftpy2/pull/67
+.. _2-#66: https://github.com/Thriftpy/thriftpy2/pull/66
+
 
 Version 0.4.4
 -------------
