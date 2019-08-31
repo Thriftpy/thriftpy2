@@ -191,10 +191,22 @@ class TClient(object):
     def __dir__(self):
         return self._service.thrift_services
 
+    def _validate_required_args(self, _api, api_args):
+        thrift_spec = getattr(self._service, _api + "_args").thrift_spec
+        for item in thrift_spec.items():
+            arg = item[1][1]
+            required = item[1][2]
+            if required and arg not in api_args:
+                raise TApplicationException(
+                    TApplicationException.UNKNOWN_METHOD,
+                    '{arg} is required argument for {service}.{api}'.format(
+                        arg=arg, service=self._service, api=_api))
+
     def _req(self, _api, *args, **kwargs):
         _kw = args2kwargs(getattr(self._service, _api + "_args").thrift_spec,
                           *args)
         kwargs.update(_kw)
+        self._validate_required_args(_api, kwargs)
         result_cls = getattr(self._service, _api + "_result")
 
         self._send(_api, **kwargs)
