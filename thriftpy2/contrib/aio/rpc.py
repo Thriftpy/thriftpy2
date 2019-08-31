@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-import warnings
 import asyncio
 import warnings
+
+from thriftpy2._compat import PY3
+if PY3:
+    import urllib
+else:
+    import urllib2 as urllib
+    import urlparse
+    urllib.parse = urlparse
+
 from .processor import TAsyncProcessor
 from .client import TAsyncClient
 from .protocol.binary import TAsyncBinaryProtocolFactory
@@ -9,14 +18,19 @@ from .socket import TAsyncSocket, TAsyncServerSocket
 from .server import TAsyncServer
 
 
+
 @asyncio.coroutine
-def make_client(service, host="localhost", port=9090, unix_socket=None,
+def make_client(service, host='localhost', port=9090, unix_socket=None,
                 proto_factory=TAsyncBinaryProtocolFactory(),
                 trans_factory=TAsyncBufferedTransportFactory(),
                 socket_timeout=3000, connect_timeout=None,
                 cafile=None, ssl_context=None,
                 certfile=None, keyfile=None,
-                validate=True):
+                validate=True, url=''):
+    if url:
+        parsed_url = urllib.parse.urlparse(url)
+        host = parsed_url.hostname or host
+        port = parsed_url.port or port
     if unix_socket:
         socket = TAsyncSocket(unix_socket=unix_socket)
         if certfile:
@@ -28,7 +42,7 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
                 cafile=cafile, ssl_context=ssl_context,
                 certfile=certfile, keyfile=keyfile, validate=validate)
     else:
-        raise ValueError("Either host/port or unix_socket must be provided.")
+        raise ValueError("Either host/port or unix_socket or url must be provided.")
 
     transport = trans_factory.get_transport(socket)
     protocol = proto_factory.get_protocol(transport)

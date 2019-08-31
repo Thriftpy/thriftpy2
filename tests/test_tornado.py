@@ -77,15 +77,31 @@ class TornadoRPCTestCase(testing.AsyncTestCase):
         return make_client(addressbook.AddressBookService,
                            '127.0.0.1', self.port, io_loop=self.io_loop)
 
+    def mk_client_with_url(self):
+        return make_client(addressbook.AddressBookService,
+                           io_loop=self.io_loop,
+                           url='tcp://127.0.0.1:{port}'.format(port=self.port))
+
     def setUp(self):
         super(TornadoRPCTestCase, self).setUp()
         self.server = self.mk_server()
         self.client = self.io_loop.run_sync(self.mk_client)
+        self.client_with_url = self.io_loop.run_sync(self.mk_client_with_url)
 
     def tearDown(self):
         self.server.stop()
         self.client.close()
+        self.client_with_url.close()
         super(TornadoRPCTestCase, self).tearDown()
+
+    @testing.gen_test
+    @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
+    def test_make_client(self):
+        linus = addressbook.Person(name='Linus Torvalds')
+        success = yield self.client_with_url.add(linus)
+        assert success
+        success = yield self.client.add(linus)
+        assert not success
 
     @testing.gen_test
     @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
