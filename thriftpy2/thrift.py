@@ -13,12 +13,22 @@ import functools
 import linecache
 import types
 
-from ._compat import with_metaclass
+from ._compat import with_metaclass, PY3
+if PY3:
+    from itertools import zip_longest
+else:
+    from itertools import izip_longest as zip_longest
 
 
-def args2kwargs(thrift_spec, *args):
-    arg_names = [item[1][1] for item in sorted(thrift_spec.items())]
-    return dict(zip(arg_names, args))
+def args2kwargs(thrift_spec, *args, **kwargs):
+    for item, value in zip_longest(sorted(thrift_spec.items()), args):
+        arg_name = item[1][1]
+        required = item[1][2]
+        if value is not None:
+            kwargs[item[1][1]] = value
+        if required and arg_name not in kwargs:
+            raise ValueError(arg_name)
+    return kwargs
 
 
 def parse_spec(ttype, spec=None):
@@ -191,22 +201,16 @@ class TClient(object):
     def __dir__(self):
         return self._service.thrift_services
 
-    def _validate_required_args(self, _api, api_args):
-        thrift_spec = getattr(self._service, _api + "_args").thrift_spec
-        for item in thrift_spec.items():
-            arg = item[1][1]
-            required = item[1][2]
-            if required and arg not in api_args:
-                raise TApplicationException(
+    def _req(self, _api, *args, **kwargs):
+        try:
+            kwargs = args2kwargs(getattr(self._service, _api + "_args").thrift_spec,
+                          *args, **kwargs)
+        except ValueError as e:
+            raise TApplicationException(
                     TApplicationException.UNKNOWN_METHOD,
                     '{arg} is required argument for {service}.{api}'.format(
-                        arg=arg, service=self._service, api=_api))
+                        arg=e.args[0], service=self._service, api=_api))
 
-    def _req(self, _api, *args, **kwargs):
-        _kw = args2kwargs(getattr(self._service, _api + "_args").thrift_spec,
-                          *args)
-        kwargs.update(_kw)
-        self._validate_required_args(_api, kwargs)
         result_cls = getattr(self._service, _api + "_result")
 
         self._send(_api, **kwargs)
