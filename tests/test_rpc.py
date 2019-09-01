@@ -144,6 +144,18 @@ def ssl_client(timeout=3000):
                           keyfile="ssl/client.key")
 
 
+def ssl_client_with_url(timeout=3000):
+    return client_context(addressbook.AddressBookService,
+                          url="https://localhost:{port}".format(port=SSL_PORT),
+                          timeout=timeout, cafile="ssl/CA.pem",
+                          certfile="ssl/client.crt", keyfile="ssl/client.key")
+
+
+def test_clients_with_url(ssl_server):
+    with ssl_client() as c1, ssl_client_with_url() as c2:
+        assert c1.hello("world") == c2.hello("world")
+
+
 def test_void_api(server):
     with client() as c:
         assert c.ping() is None

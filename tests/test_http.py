@@ -106,6 +106,16 @@ def client(timeout=3000):
                           host="127.0.0.1", port=6080, timeout=timeout)
 
 
+def client_context_with_url(timeout=3000):
+    return client_context(addressbook.AddressBookService,
+                          url="http://127.0.0.1:6080", timeout=timeout)
+
+
+def test_client_context(server):
+    with client() as c1, client_context_with_url() as c2:
+        assert c1.hello("world") == c2.hello("world")
+
+
 def test_void_api(server):
     with client() as c:
         assert c.ping() is None
