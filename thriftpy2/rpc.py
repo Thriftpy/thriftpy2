@@ -5,7 +5,14 @@ from __future__ import absolute_import
 import contextlib
 import warnings
 
-from thriftpy2._compat import PY35
+from thriftpy2._compat import PY3, PY35
+if PY3:
+    import urllib
+else:
+    import urllib2 as urllib
+    import urlparse
+    urllib.parse = urlparse
+    urllib.parse.quote = urllib.quote
 
 from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.server import TThreadedServer
@@ -22,8 +29,12 @@ from thriftpy2.transport import (
 def make_client(service, host="localhost", port=9090, unix_socket=None,
                 proto_factory=TBinaryProtocolFactory(),
                 trans_factory=TBufferedTransportFactory(),
-                timeout=3000,
-                cafile=None, ssl_context=None, certfile=None, keyfile=None):
+                timeout=3000, cafile=None, ssl_context=None, certfile=None,
+                keyfile=None, url=""):
+    if url:
+        parsed_url = urllib.parse.urlparse(url)
+        host = parsed_url.hostname or host
+        port = parsed_url.port or port
     if unix_socket:
         socket = TSocket(unix_socket=unix_socket)
         if certfile:
@@ -37,7 +48,7 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
         else:
             socket = TSocket(host, port, socket_timeout=timeout)
     else:
-        raise ValueError("Either host/port or unix_socket must be provided.")
+        raise ValueError("Either host/port or unix_socket or url must be provided.")
 
     transport = trans_factory.get_transport(socket)
     protocol = proto_factory.get_protocol(transport)
@@ -78,7 +89,13 @@ def client_context(service, host="localhost", port=9090, unix_socket=None,
                    proto_factory=TBinaryProtocolFactory(),
                    trans_factory=TBufferedTransportFactory(),
                    timeout=None, socket_timeout=3000, connect_timeout=3000,
-                   cafile=None, ssl_context=None, certfile=None, keyfile=None):
+                   cafile=None, ssl_context=None, certfile=None, keyfile=None,
+                   url=""):
+    if url:
+        parsed_url = urllib.parse.urlparse(url)
+        host = parsed_url.hostname or host
+        port = parsed_url.port or port
+
     if timeout:
         warnings.warn("`timeout` deprecated, use `socket_timeout` and "
                       "`connect_timeout` instead.")
@@ -103,7 +120,7 @@ def client_context(service, host="localhost", port=9090, unix_socket=None,
                              connect_timeout=connect_timeout,
                              socket_timeout=socket_timeout)
     else:
-        raise ValueError("Either host/port or unix_socket must be provided.")
+        raise ValueError("Either host/port or unix_socket or url must be provided.")
 
     try:
         transport = trans_factory.get_transport(socket)

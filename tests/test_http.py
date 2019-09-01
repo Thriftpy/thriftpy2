@@ -12,7 +12,7 @@ import pytest
 import thriftpy2
 thriftpy2.install_import_hook()  # noqa
 
-from thriftpy2.http import make_server, client_context
+from thriftpy2.http import make_server, make_client, client_context  # noqa
 from thriftpy2.thrift import TApplicationException
 
 
@@ -104,6 +104,28 @@ def person():
 def client(timeout=3000):
     return client_context(addressbook.AddressBookService,
                           host="127.0.0.1", port=6080, timeout=timeout)
+
+
+def client_context_with_url(timeout=3000):
+    return client_context(addressbook.AddressBookService,
+                          url="http://127.0.0.1:6080", timeout=timeout)
+
+
+def client_with_url(timeout=3000):
+    return make_client(addressbook.AddressBookService,
+                       url="http://127.0.0.1:6080", timeout=timeout)
+
+
+def test_client_context(server):
+    with client() as c1, client_context_with_url() as c2:
+        assert c1.hello("world") == c2.hello("world")
+
+
+def test_clients(server):
+    with client() as c1:
+        c2 = client_with_url()
+        assert c1.hello("world") == c2.hello("world")
+        c2.close()
 
 
 def test_void_api(server):

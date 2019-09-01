@@ -87,13 +87,29 @@ class FramedTransportTestCase(TestCase):
                            proto_factory=self.PROTOCOL_FACTORY,
                            trans_factory=self.TRANSPORT_FACTORY)
 
+    def mk_client_with_url(self):
+        return make_client(addressbook.AddressBookService,
+                           proto_factory=self.PROTOCOL_FACTORY,
+                           trans_factory=self.TRANSPORT_FACTORY,
+                           url='thrift://127.0.0.1:{port}'.format(
+                               port=self.port))
+
     def setUp(self):
         self.mk_server()
         time.sleep(0.1)
         self.client = self.mk_client()
+        self.client_created_using_url = self.mk_client_with_url()
 
     def tearDown(self):
         self.io_loop.stop()
+
+    @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
+    def test_make_client(self):
+        linus = addressbook.Person('Linus Torvalds')
+        success = self.client_created_using_url.add(linus)
+        assert success
+        success = self.client.add(linus)
+        assert not success
 
     @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
     def test_able_to_communicate(self):

@@ -29,6 +29,14 @@ from .thrift import TApplicationException, TProcessor, TClient
 
 # TODO need TCyTornadoStreamTransport to work with cython binary protocol
 from .protocol.binary import TBinaryProtocolFactory
+from ._compat import PY3
+if PY3:
+    import urllib
+else:
+    import urllib2 as urllib
+    import urlparse
+    urllib.parse = urlparse
+    urllib.parse.quote = urllib.quote
 
 import logging
 import socket
@@ -243,10 +251,15 @@ def make_server(
 
 @gen.coroutine
 def make_client(
-        service, host, port, proto_factory=TBinaryProtocolFactory(),
+        service, host='localhost', port=9090, proto_factory=TBinaryProtocolFactory(),
         io_loop=None, ssl_options=None,
         connect_timeout=TTornadoStreamTransport.DEFAULT_CONNECT_TIMEOUT,
-        read_timeout=TTornadoStreamTransport.DEFAULT_READ_TIMEOUT):
+        read_timeout=TTornadoStreamTransport.DEFAULT_READ_TIMEOUT,
+        url=''):
+    if url:
+        parsed_url = urllib.parse.urlparse(url)
+        host = parsed_url.hostname or host
+        port = parsed_url.port or port
     transport = TTornadoStreamTransport(
         host, port, io_loop=io_loop,
         ssl_options=ssl_options, read_timeout=read_timeout)
