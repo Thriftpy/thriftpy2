@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import functools
-from thriftpy2.thrift import args2kwargs
+from thriftpy2.thrift import args_to_kwargs
 from thriftpy2.thrift import TApplicationException, TMessageType
 
 
@@ -26,9 +26,14 @@ class TAsyncClient:
 
     @asyncio.coroutine
     def _req(self, _api, *args, **kwargs):
-        _kw = args2kwargs(getattr(self._service, _api + "_args").thrift_spec,
-                          *args)
-        kwargs.update(_kw)
+        try:
+            kwargs = args_to_kwargs(getattr(self._service, _api + "_args").thrift_spec,
+                          *args, **kwargs)
+        except ValueError as e:
+            raise TApplicationException(
+                    TApplicationException.UNKNOWN_METHOD,
+                    'missing required argument {arg} for {service}.{api}'.format(
+                        arg=e.args[0], service=self._service.__name__, api=_api))
         result_cls = getattr(self._service, _api + "_result")
 
         yield from self._send(_api, **kwargs)

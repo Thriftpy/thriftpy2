@@ -16,6 +16,7 @@ thriftpy2.install_import_hook()
 
 from thriftpy2.rpc import make_aio_server, make_aio_client  # noqa
 from thriftpy2.transport import TTransportException  # noqa
+from thriftpy2.thrift import TApplicationException  # noqa
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
@@ -161,6 +162,16 @@ async def test_void_api_with_ssl(aio_ssl_server):
 async def test_string_api(aio_server):
     c = await client()
     assert await c.hello("world") == "hello world"
+    c.close()
+
+
+@pytest.mark.asyncio
+async def test_required_argument(aio_server):
+    c = await client()
+    assert await c.hello("") == "hello "
+
+    with pytest.raises(TApplicationException):
+        await c.hello()
     c.close()
 
 

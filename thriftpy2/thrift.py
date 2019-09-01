@@ -13,12 +13,22 @@ import functools
 import linecache
 import types
 
-from ._compat import with_metaclass
+from ._compat import with_metaclass, PY3
+if PY3:
+    from itertools import zip_longest
+else:
+    from itertools import izip_longest as zip_longest
 
 
-def args2kwargs(thrift_spec, *args):
-    arg_names = [item[1][1] for item in sorted(thrift_spec.items())]
-    return dict(zip(arg_names, args))
+def args_to_kwargs(thrift_spec, *args, **kwargs):
+    for item, value in zip_longest(sorted(thrift_spec.items()), args):
+        arg_name = item[1][1]
+        required = item[1][-1]
+        if value is not None:
+            kwargs[item[1][1]] = value
+        if required and arg_name not in kwargs:
+            raise ValueError(arg_name)
+    return kwargs
 
 
 def parse_spec(ttype, spec=None):
@@ -192,9 +202,15 @@ class TClient(object):
         return self._service.thrift_services
 
     def _req(self, _api, *args, **kwargs):
-        _kw = args2kwargs(getattr(self._service, _api + "_args").thrift_spec,
-                          *args)
-        kwargs.update(_kw)
+        try:
+            kwargs = args_to_kwargs(getattr(self._service, _api + "_args").thrift_spec,
+                          *args, **kwargs)
+        except ValueError as e:
+            raise TApplicationException(
+                    TApplicationException.UNKNOWN_METHOD,
+                    '{arg} is required argument for {service}.{api}'.format(
+                        arg=e.args[0], service=self._service.__name__, api=_api))
+
         result_cls = getattr(self._service, _api + "_result")
 
         self._send(_api, **kwargs)
