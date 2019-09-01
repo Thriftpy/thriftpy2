@@ -20,10 +20,10 @@ else:
     from itertools import izip_longest as zip_longest
 
 
-def args2kwargs(thrift_spec, *args, **kwargs):
+def args_to_kwargs(thrift_spec, *args, **kwargs):
     for item, value in zip_longest(sorted(thrift_spec.items()), args):
         arg_name = item[1][1]
-        required = item[1][2]
+        required = item[1][-1]
         if value is not None:
             kwargs[item[1][1]] = value
         if required and arg_name not in kwargs:
@@ -203,13 +203,13 @@ class TClient(object):
 
     def _req(self, _api, *args, **kwargs):
         try:
-            kwargs = args2kwargs(getattr(self._service, _api + "_args").thrift_spec,
+            kwargs = args_to_kwargs(getattr(self._service, _api + "_args").thrift_spec,
                           *args, **kwargs)
         except ValueError as e:
             raise TApplicationException(
                     TApplicationException.UNKNOWN_METHOD,
                     '{arg} is required argument for {service}.{api}'.format(
-                        arg=e.args[0], service=self._service, api=_api))
+                        arg=e.args[0], service=self._service.__name__, api=_api))
 
         result_cls = getattr(self._service, _api + "_result")
 

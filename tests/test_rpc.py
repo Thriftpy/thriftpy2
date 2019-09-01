@@ -17,6 +17,7 @@ thriftpy2.install_import_hook()
 from thriftpy2._compat import PY3  # noqa
 from thriftpy2.rpc import make_server, client_context  # noqa
 from thriftpy2.transport import TTransportException  # noqa
+from thriftpy2.thrift import TApplicationException  # noqa
 
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
@@ -156,6 +157,13 @@ def test_void_api_with_ssl(ssl_server):
 def test_string_api(server):
     with client() as c:
         assert c.hello("world") == "hello world"
+
+
+def test_required_argument(server):
+    with client() as c:
+        assert c.hello("") == "hello "
+        with pytest.raises(TApplicationException):
+            c.hello()
 
 
 def test_string_api_with_ssl(ssl_server):

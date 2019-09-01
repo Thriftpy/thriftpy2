@@ -13,6 +13,7 @@ import thriftpy2
 thriftpy2.install_import_hook()  # noqa
 
 from thriftpy2.http import make_server, client_context
+from thriftpy2.thrift import TApplicationException
 
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
@@ -113,6 +114,14 @@ def test_void_api(server):
 def test_string_api(server):
     with client() as c:
         assert c.hello("world") == "hello world"
+
+
+def test_required_argument(server):
+    with client() as c:
+        with pytest.raises(TApplicationException):
+            c.hello()
+
+        assert c.hello(name="") == "hello "
 
 
 def test_huge_res(server):
