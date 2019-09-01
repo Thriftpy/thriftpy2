@@ -146,12 +146,13 @@ def ssl_client(timeout=3000):
 
 def ssl_client_with_url(timeout=3000):
     return client_context(addressbook.AddressBookService,
-                          url="https://localhost:{port}".format(port=SSL_PORT),
+                          url="thrift://localhost:{port}".format(
+                              port=SSL_PORT),
                           timeout=timeout, cafile="ssl/CA.pem",
                           certfile="ssl/client.crt", keyfile="ssl/client.key")
 
 
-def test_clients_with_url(ssl_server):
+def test_clients(ssl_server):
     with ssl_client() as c1, ssl_client_with_url() as c2:
         assert c1.hello("world") == c2.hello("world")
 

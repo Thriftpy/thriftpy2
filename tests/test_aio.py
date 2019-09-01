@@ -144,6 +144,25 @@ async def ssl_client(timeout=3000):
         keyfile="ssl/client.key")
 
 
+async def ssl_client_with_url(timeout=3000):
+    return await make_aio_client(
+        addressbook.AddressBookService,
+        url="thrift://localhost:{port}".format(port=SSL_PORT),
+        socket_timeout=timeout,
+        cafile="ssl/CA.pem", certfile="ssl/client.crt",
+        keyfile="ssl/client.key"
+    )
+
+
+@pytest.mark.asyncio
+async def test_clients(aio_ssl_server):
+    c1 = await ssl_client()
+    c2 = await ssl_client_with_url()
+    assert await c1.hello("world") == await c2.hello("world")
+    c1.close()
+    c2.close()
+
+
 @pytest.mark.asyncio
 async def test_void_api(aio_server):
     c = await client()

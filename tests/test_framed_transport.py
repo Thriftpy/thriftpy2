@@ -91,7 +91,8 @@ class FramedTransportTestCase(TestCase):
         return make_client(addressbook.AddressBookService,
                            proto_factory=self.PROTOCOL_FACTORY,
                            trans_factory=self.TRANSPORT_FACTORY,
-                           url='tcp://127.0.0.1:{port}'.format(port=self.port))
+                           url='thrift://127.0.0.1:{port}'.format(
+                               port=self.port))
 
     def setUp(self):
         self.mk_server()
