@@ -36,7 +36,7 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
         host = parsed_url.hostname or host
         port = parsed_url.port or port
     if unix_socket:
-        socket = TSocket(unix_socket=unix_socket)
+        socket = TSocket(unix_socket=unix_socket, socket_timeout=timeout)
         if certfile:
             warnings.warn("SSL only works with host:port, not unix_socket.")
     elif host and port:
