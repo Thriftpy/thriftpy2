@@ -128,8 +128,7 @@ def struct_to_json(val):
     return outobj
 
 
-def struct_to_obj(val, spec):
-    obj = spec()
+def struct_to_obj(val, obj):
     for fid, field_spec in obj.thrift_spec.items():
         field_type, field_name = field_spec[:2]
 
