@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import json
 import struct
 
+from thriftpy2._compat import u
 from thriftpy2.thrift import TType
 
 from .exc import TProtocolException
@@ -19,7 +20,7 @@ def json_value(ttype, val, spec=None):
         TType.I32: (int, (val, )),
         TType.I64: (int, (val, )),
         TType.DOUBLE: (float, (val, )),
-        TType.STRING: (str, (val, )),
+        TType.STRING: (u, (val, )),
         TType.BOOL: (bool, (val, )),
         TType.STRUCT: (struct_to_json, (val, )),
         TType.SET: (list_to_json, (val, spec)),
@@ -38,9 +39,9 @@ def obj_value(ttype, val, spec=None):
         TType.I32: (int, (val, )),
         TType.I64: (int, (val, )),
         TType.DOUBLE: (float, (val, )),
-        TType.STRING: (str, (val, )),
+        TType.STRING: (u, (val, )),
         TType.BOOL: (bool, (val, )),
-        TType.STRUCT: (struct_to_obj, (val, spec())),
+        TType.STRUCT: (struct_to_obj, (val, spec)),
         TType.SET: (list_to_obj, (val, spec)),
         TType.LIST: (list_to_obj, (val, spec)),
         TType.MAP: (map_to_obj, (val, spec)),
@@ -127,7 +128,8 @@ def struct_to_json(val):
     return outobj
 
 
-def struct_to_obj(val, obj):
+def struct_to_obj(val, spec):
+    obj = spec()
     for fid, field_spec in obj.thrift_spec.items():
         field_type, field_name = field_spec[:2]
 
