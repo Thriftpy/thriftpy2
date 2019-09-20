@@ -9,47 +9,45 @@ from thriftpy2.thrift import TType
 
 from .exc import TProtocolException
 
-INTEGER = (TType.BYTE, TType.I16, TType.I32, TType.I64)
-FLOAT = (TType.DOUBLE,)
-
 VERSION = 1
 
 
 def json_value(ttype, val, spec=None):
-    if ttype in INTEGER or ttype in FLOAT or ttype == TType.STRING:
-        return val
-
-    if ttype == TType.BOOL:
-        return True if val else False
-
-    if ttype == TType.STRUCT:
-        return struct_to_json(val)
-
-    if ttype in (TType.SET, TType.LIST):
-        return list_to_json(val, spec)
-
-    if ttype == TType.MAP:
-        return map_to_json(val, spec)
+    TTYPE_TO_JSONFUNC_MAP = {
+        TType.BYTE: (int, (val, )),
+        TType.I16: (int, (val, )),
+        TType.I32: (int, (val, )),
+        TType.I64: (int, (val, )),
+        TType.DOUBLE: (float, (val, )),
+        TType.STRING: (str, (val, )),
+        TType.BOOL: (bool, (val, )),
+        TType.STRUCT: (struct_to_json, (val, )),
+        TType.SET: (list_to_json, (val, spec)),
+        TType.LIST: (list_to_json, (val, spec)),
+        TType.MAP: (map_to_json, (val, spec)),
+    }
+    func, args = TTYPE_TO_JSONFUNC_MAP.get(ttype)
+    if func:
+        return func(*args)
 
 
 def obj_value(ttype, val, spec=None):
-    if ttype in INTEGER:
-        return int(val)
-
-    if ttype in FLOAT:
-        return float(val)
-
-    if ttype in (TType.STRING, TType.BOOL):
-        return val
-
-    if ttype == TType.STRUCT:
-        return struct_to_obj(val, spec())
-
-    if ttype in (TType.SET, TType.LIST):
-        return list_to_obj(val, spec)
-
-    if ttype == TType.MAP:
-        return map_to_obj(val, spec)
+    TTYPE_TO_OBJFUNC_MAP = {
+        TType.BYTE: (int, (val, )),
+        TType.I16: (int, (val, )),
+        TType.I32: (int, (val, )),
+        TType.I64: (int, (val, )),
+        TType.DOUBLE: (float, (val, )),
+        TType.STRING: (str, (val, )),
+        TType.BOOL: (bool, (val, )),
+        TType.STRUCT: (struct_to_obj, (val, spec())),
+        TType.SET: (list_to_obj, (val, spec)),
+        TType.LIST: (list_to_obj, (val, spec)),
+        TType.MAP: (map_to_obj, (val, spec)),
+    }
+    func, args = TTYPE_TO_OBJFUNC_MAP.get(ttype)
+    if func:
+        return func(*args)
 
 
 def map_to_obj(val, spec):
