@@ -41,7 +41,6 @@ def obj_value(ttype, val, spec=None):
         TType.DOUBLE: (float, (val, )),
         TType.STRING: (u, (val, )),
         TType.BOOL: (bool, (val, )),
-        TType.STRUCT: (struct_to_obj, (val, spec)),
         TType.SET: (list_to_obj, (val, spec)),
         TType.LIST: (list_to_obj, (val, spec)),
         TType.MAP: (map_to_obj, (val, spec)),
@@ -50,6 +49,12 @@ def obj_value(ttype, val, spec=None):
     if func:
         return func(*args)
 
+    # Special case: since `spec` needs to get called if TType is STRUCT,
+    # if we initialize inside `TTYPE_TO_OBJFUNC_MAP` it will get called
+    # everytime the function gets called and incur in exception as
+    # `TypeError: 'NoneType' object is not callable`.
+    if ttype == TType.STRUCT:
+        return struct_to_obj(val, spec())
 
 def map_to_obj(val, spec):
     res = {}
