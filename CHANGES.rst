@@ -3,6 +3,25 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.6
+-------------
+
+Released on September 24, 2019.
+
+- Follow strict datatype in TJsonProtocol, via `2-#85`_.
+- Add timeout support to asyncio contrib, via `2-#84`_.
+- Enable socket_timeout on unix_socket, via `2-#83`_.
+- Add url support as optional argument to make_client, via `2-#80`_.
+- Enforce required arguments, fixes #72, via `2-#81`_.
+
+.. _2-#80: https://github.com/Thriftpy/thriftpy2/pull/80
+.. _2-#81: https://github.com/Thriftpy/thriftpy2/pull/81
+.. _2-#83: https://github.com/Thriftpy/thriftpy2/pull/83
+.. _2-#84: https://github.com/Thriftpy/thriftpy2/pull/84
+.. _2-#85: https://github.com/Thriftpy/thriftpy2/pull/85
+
+
+
 Version 0.4.5
 -------------
 
