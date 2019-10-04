@@ -503,7 +503,7 @@ thrift_cache = {}
 
 
 def parse(path, module_name=None, include_dirs=None, include_dir=None,
-          lexer=None, parser=None, enable_cache=True):
+          lexer=None, parser=None, enable_cache=True, encoding='utf-8'):
     """Parse a single thrift file to module object, e.g.::
 
         >>> from thriftpy2.parser.parser import parse
@@ -569,6 +569,9 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
         raise ThriftParserError('thriftpy2 does not support generating module '
                                 'with path in protocol \'{}\''.format(
                                     url_scheme))
+
+    if isinstance(data, bytes):
+        data = data.decode(encoding)
 
     if module_name is not None and not module_name.endswith('_thrift'):
         raise ThriftParserError('thriftpy2 can only generate module with '
