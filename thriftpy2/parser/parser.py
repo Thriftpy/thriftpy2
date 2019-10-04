@@ -14,7 +14,7 @@ import types
 from ply import lex, yacc
 from .lexer import *  # noqa
 from .exc import ThriftParserError, ThriftGrammerError
-from thriftpy2._compat import urlopen, urlparse
+from thriftpy2._compat import urlopen, urlparse, PY3
 from ..thrift import gen_init, TType, TPayload, TException
 
 
@@ -570,7 +570,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
                                 'with path in protocol \'{}\''.format(
                                     url_scheme))
 
-    if isinstance(data, bytes):
+    if PY3 and isinstance(data, bytes):
         data = data.decode(encoding)
 
     if module_name is not None and not module_name.endswith('_thrift'):
