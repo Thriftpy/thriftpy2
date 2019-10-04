@@ -3,6 +3,16 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.7
+-------------
+
+Released on October 4, 2019.
+
+- Fix loading remote IDL file failed on Python 3, via `2-#88`_.
+
+.. _2-#88: https://github.com/Thriftpy/thriftpy2/pull/88
+
+
 Version 0.4.6
 -------------
 
