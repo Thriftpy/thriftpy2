@@ -3,6 +3,16 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.8
+-------------
+
+Released on October 27, 2019.
+
+- Fix NoneType TypeError happened when calling method struct_to_obj, via `2-#94`_.
+
+.. _2-#94: https://github.com/Thriftpy/thriftpy2/pull/94
+
+
 Version 0.4.7
 -------------
 
