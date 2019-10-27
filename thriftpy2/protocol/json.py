@@ -33,7 +33,14 @@ def json_value(ttype, val, spec=None):
 
 
 def obj_value(ttype, val, spec=None):
-    TTYPE_TO_OBJFUNC_MAP = {
+    # Special case: since `spec` needs to get called if TType is STRUCT,
+    # if we initialize inside `TTYPE_TO_OBJFUNC_MAP` it will get called
+    # everytime the function gets called and incur in exception as
+    # `TypeError: 'NoneType' object is not callable`.
+    if ttype == TType.STRUCT:
+        return struct_to_obj(val, spec())
+    else:
+        TTYPE_TO_OBJFUNC_MAP = {
         TType.BYTE: (int, (val, )),
         TType.I16: (int, (val, )),
         TType.I32: (int, (val, )),
@@ -48,13 +55,6 @@ def obj_value(ttype, val, spec=None):
     func, args = TTYPE_TO_OBJFUNC_MAP.get(ttype)
     if func:
         return func(*args)
-
-    # Special case: since `spec` needs to get called if TType is STRUCT,
-    # if we initialize inside `TTYPE_TO_OBJFUNC_MAP` it will get called
-    # everytime the function gets called and incur in exception as
-    # `TypeError: 'NoneType' object is not callable`.
-    if ttype == TType.STRUCT:
-        return struct_to_obj(val, spec())
 
 def map_to_obj(val, spec):
     res = {}
