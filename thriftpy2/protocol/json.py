@@ -41,20 +41,20 @@ def obj_value(ttype, val, spec=None):
         return struct_to_obj(val, spec())
     else:
         TTYPE_TO_OBJFUNC_MAP = {
-        TType.BYTE: (int, (val, )),
-        TType.I16: (int, (val, )),
-        TType.I32: (int, (val, )),
-        TType.I64: (int, (val, )),
-        TType.DOUBLE: (float, (val, )),
-        TType.STRING: (u, (val, )),
-        TType.BOOL: (bool, (val, )),
-        TType.SET: (list_to_obj, (val, spec)),
-        TType.LIST: (list_to_obj, (val, spec)),
-        TType.MAP: (map_to_obj, (val, spec)),
-    }
-    func, args = TTYPE_TO_OBJFUNC_MAP.get(ttype)
-    if func:
-        return func(*args)
+            TType.BYTE: (int, (val, )),
+            TType.I16: (int, (val, )),
+            TType.I32: (int, (val, )),
+            TType.I64: (int, (val, )),
+            TType.DOUBLE: (float, (val, )),
+            TType.STRING: (u, (val, )),
+            TType.BOOL: (bool, (val, )),
+            TType.SET: (list_to_obj, (val, spec)),
+            TType.LIST: (list_to_obj, (val, spec)),
+            TType.MAP: (map_to_obj, (val, spec)),
+        }
+        func, args = TTYPE_TO_OBJFUNC_MAP.get(ttype)
+        if func:
+            return func(*args)
 
 def map_to_obj(val, spec):
     res = {}
