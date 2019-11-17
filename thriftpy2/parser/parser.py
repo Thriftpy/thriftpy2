@@ -114,6 +114,7 @@ def p_const(p):
                                 (p[3], p.lineno(3)))
     setattr(thrift_stack[-1], p[3], val)
     _add_thrift_meta('consts', val)
+    _add_thrift_meta('consts_names', p[3])
 
 
 def p_const_value(p):
