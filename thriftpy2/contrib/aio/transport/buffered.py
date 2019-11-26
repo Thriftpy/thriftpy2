@@ -36,7 +36,7 @@ class TAsyncBufferedTransport(TTransportBase):
         if len(ret) != 0:
             return ret
 
-        buf = yield from self._trans.read(max(sz, self._buf_size))
+        buf = yield from self._trans.read(min(sz, self._buf_size))
         self._rbuf = BytesIO(buf)
         return self._rbuf.read(sz)
 
