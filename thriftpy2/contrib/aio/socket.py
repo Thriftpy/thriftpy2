@@ -18,6 +18,22 @@ from thriftpy2.transport._ssl import (
 )
 
 
+@asyncio.coroutine
+def readall(read_fn, sz):
+    buff = b''
+    have = 0
+    while have < sz:
+        chunk = yield from read_fn(sz - have)
+        have += len(chunk)
+        buff += chunk
+
+        if len(chunk) == 0:
+            raise TTransportException(TTransportException.END_OF_FILE,
+                                      "End of file reading from transport")
+
+    return buff
+
+
 class TAsyncSocket(object):
     """Socket implementation for client side."""
 
@@ -164,7 +180,7 @@ class TAsyncSocket(object):
                 message="Could not connect to %s" % str(addr))
 
     @asyncio.coroutine
-    def read(self, sz):
+    def _read(self, sz):
         try:
             buff = yield from asyncio.wait_for(
                 self.reader.read(sz),
@@ -188,6 +204,10 @@ class TAsyncSocket(object):
             raise TTransportException(type=TTransportException.END_OF_FILE,
                                       message='TSocket read 0 bytes')
         return buff
+
+    @asyncio.coroutine
+    def read(self, sz):
+        return (yield from readall(self._read, sz))
 
     def write(self, buff):
         self.writer.write(buff)
