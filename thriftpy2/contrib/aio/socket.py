@@ -165,9 +165,12 @@ class TAsyncSocket(object):
 
     @asyncio.coroutine
     def read(self, sz):
+        if sz == 0:  # Special case
+            return b''
+
         try:
             buff = yield from asyncio.wait_for(
-                self.reader.read(sz),
+                self.reader.readexactly(sz),
                 self.connect_timeout
             )
         except socket.error as e:
