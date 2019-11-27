@@ -183,9 +183,13 @@ class TAsyncSocket(object):
                 # in lib/cpp/src/transport/TSocket.cpp.
                 self.close()
                 # Trigger the check to raise the END_OF_FILE exception below.
-                buff = ''
+                buff = b''
             else:
                 raise
+        except asyncio.IncompleteReadError:
+            self.close()
+            # Trigger the check to raise the END_OF_FILE exception below.
+            buff = b''
 
         if len(buff) == 0:
             raise TTransportException(type=TTransportException.END_OF_FILE,
