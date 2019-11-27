@@ -2,8 +2,23 @@
 import asyncio
 from io import BytesIO
 
-from thriftpy2.transport import TTransportBase
-from ..socket import readall
+from thriftpy2.transport import TTransportBase, TTransportException
+
+
+@asyncio.coroutine
+def readall(read_fn, sz):
+    buff = b''
+    have = 0
+    while have < sz:
+        chunk = yield from read_fn(sz - have)
+        have += len(chunk)
+        buff += chunk
+
+        if len(chunk) == 0:
+            raise TTransportException(TTransportException.END_OF_FILE,
+                                      "End of file reading from transport")
+
+    return buff
 
 
 class TAsyncBufferedTransport(TTransportBase):
@@ -36,7 +51,7 @@ class TAsyncBufferedTransport(TTransportBase):
         if len(ret) != 0:
             return ret
 
-        buf = yield from self._trans.read(min(sz, self._buf_size))
+        buf = yield from self._trans.read(max(sz, self._buf_size))
         self._rbuf = BytesIO(buf)
         return self._rbuf.read(sz)
 
