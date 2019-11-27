@@ -3,6 +3,16 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.9
+-------------
+
+Released on November 27, 2019.
+
+- Fix unexpected data length in aio buffer transport, via `2-#102`_.
+
+.. _2-#102: https://github.com/Thriftpy/thriftpy2/pull/102
+
+
 Version 0.4.8
 -------------
 
