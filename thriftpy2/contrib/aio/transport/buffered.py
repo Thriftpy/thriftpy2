@@ -49,7 +49,7 @@ class TAsyncBufferedTransport(TTransportBase):
     def _read(self, sz):
         ret = self._rbuf.read(sz)
 
-        rest_len = len(ret) - sz
+        rest_len = sz - len(ret)
         if rest_len == 0:
             return ret
 
