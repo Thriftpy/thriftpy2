@@ -48,12 +48,18 @@ class TAsyncBufferedTransport(TTransportBase):
     @asyncio.coroutine
     def _read(self, sz):
         ret = self._rbuf.read(sz)
-        if len(ret) != 0:
+
+        rest_len = len(ret) - sz
+        if rest_len == 0:
             return ret
 
-        buf = yield from self._trans.read(max(sz, self._buf_size))
+        buf = yield from self._trans.read(max(rest_len, self._buf_size))
+
+        ret = ret + buf[:rest_len]
+        buf = buf[rest_len:]
+
         self._rbuf = BytesIO(buf)
-        return self._rbuf.read(sz)
+        return ret
 
     @asyncio.coroutine
     def read(self, sz):
