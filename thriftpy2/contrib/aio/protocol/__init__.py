@@ -1,0 +1,2 @@
+from .binary import TAsyncBinaryProtocol, TAsyncBinaryProtocolFactory
+from .compact import TAsyncCompactProtocol, TAsyncCompactProtocolFactory
