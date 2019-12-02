@@ -399,18 +399,12 @@ class TCompactProtocol(object):
         self.trans.write(pack('!b', byte))
 
     def write_bool(self, bool):
-        if self._bool_fid and self._bool_fid > self._last_fid \
-                and self._bool_fid - self._last_fid <= 15:
-            if bool:
-                ctype = CompactType.TRUE
-            else:
-                ctype = CompactType.FALSE
+        ctype = CompactType.TRUE if bool else CompactType.FALSE
+        if self._bool_fid is not None:
             self._write_field_header(ctype, self._bool_fid)
+            self._bool_fid = None
         else:
-            if bool:
-                self.write_byte(CompactType.TRUE)
-            else:
-                self.write_byte(CompactType.FALSE)
+            self.write_byte(ctype)
 
     def write_i16(self, i16):
         write_varint(self.trans, make_zig_zag(i16, 16))
