@@ -3,6 +3,7 @@ import os
 import asyncio
 # import uvloop
 import threading
+import random
 
 # asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -14,14 +15,20 @@ import thriftpy2
 
 thriftpy2.install_import_hook()
 
+from thriftpy2.contrib.aio.transport import (  # noqa
+    TAsyncBufferedTransportFactory,
+    TAsyncFramedTransportFactory,
+)
+from thriftpy2.contrib.aio.protocol import (  # noqa
+    TAsyncBinaryProtocolFactory,
+    TAsyncCompactProtocolFactory,
+)
 from thriftpy2.rpc import make_aio_server, make_aio_client  # noqa
 from thriftpy2.transport import TTransportException  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
-unix_sock = "/tmp/aio_thriftpy_test.sock"
-SSL_PORT = 50442
 
 
 class Dispatcher:
@@ -79,37 +86,7 @@ class Dispatcher:
         return True
 
 
-@pytest.fixture(scope="module")
-def aio_server(request):
-    loop = asyncio.new_event_loop()
-    server = make_aio_server(
-        addressbook.AddressBookService,
-        Dispatcher(),
-        unix_socket=unix_sock,
-        loop=loop
-    )
-    st = threading.Thread(target=server.serve)
-    st.daemon = True
-    st.start()
-    time.sleep(0.1)
-
-
-@pytest.fixture(scope="module")
-def aio_ssl_server(request):
-    loop = asyncio.new_event_loop()
-    ssl_server = make_aio_server(
-        addressbook.AddressBookService, Dispatcher(),
-        host='localhost', port=SSL_PORT,
-        certfile="ssl/server.pem", keyfile="ssl/server.key", loop=loop
-    )
-    st = threading.Thread(target=ssl_server.serve)
-    st.daemon = True
-    st.start()
-    time.sleep(0.1)
-
-
-@pytest.fixture(scope="module")
-def person():
+def _create_person():
     phone1 = addressbook.PhoneNumber()
     phone1.type = addressbook.PhoneType.MOBILE
     phone1.number = '555-1212'
@@ -128,175 +105,190 @@ def person():
     return alice
 
 
-async def client(timeout=3000):
-    return await make_aio_client(
-        addressbook.AddressBookService,
-        unix_socket=unix_sock, socket_timeout=timeout
-    )
+class _TestAIO:
+    # Base test case for all async tests
+    TRANSPORT_FACTORY = NotImplemented
+    PROTOCOL_FACTORY = NotImplemented
+
+    @classmethod
+    def setup_class(cls):
+        cls._start_server()
+        cls.person = _create_person()
+
+    @classmethod
+    def _start_server(cls):
+        loop = asyncio.new_event_loop()
+        server = make_aio_server(
+            addressbook.AddressBookService,
+            Dispatcher(),
+            trans_factory=cls.TRANSPORT_FACTORY,
+            proto_factory=cls.PROTOCOL_FACTORY,
+            loop=loop,
+            **cls.server_kwargs(),
+        )
+        st = threading.Thread(target=server.serve)
+        st.daemon = True
+        st.start()
+        time.sleep(0.1)
+
+    @classmethod
+    def server_kwargs(cls):
+        name = cls.__name__.lower()
+        return {'unix_socket': '/tmp/aio_thriftpy_test_{}.sock'.format(name)}
+
+    @classmethod
+    def client_kwargs(cls):
+        return cls.server_kwargs()
+
+    async def client(self, timeout: int = 3000000):
+        return await make_aio_client(
+            addressbook.AddressBookService,
+            trans_factory=self.TRANSPORT_FACTORY,
+            proto_factory=self.PROTOCOL_FACTORY,
+            socket_timeout=timeout,
+            **self.client_kwargs(),
+        )
+
+    @pytest.mark.asyncio
+    async def test_void_api(self):
+        c = await self.client()
+        assert await c.ping() is None
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_string_api(self):
+        c = await self.client()
+        assert await c.hello("world") == "hello world"
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_required_argument(self):
+        c = await self.client()
+        assert await c.hello("") == "hello "
+
+        with pytest.raises(TApplicationException):
+            await c.hello()
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_huge_res(self):
+        c = await self.client()
+        big_str = "world" * 100000
+        assert await c.hello(big_str) == "hello " + big_str
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_tstruct_req(self):
+        c = await self.client()
+        assert await c.add(self.person) is True
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_tstruct_res(self):
+        c = await self.client()
+        assert self.person == await c.get("Alice")
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_complex_tstruct(self):
+        c = await self.client()
+        assert len(await c.get_phonenumbers("Alice", 0)) == 0
+        assert len(await c.get_phonenumbers("Alice", 1000)) == 1000
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_exception(self):
+        with pytest.raises(addressbook.PersonNotExistsError):
+            c = await self.client()
+            await c.remove("Bob")
+
+    @pytest.mark.asyncio
+    async def test_client_socket_timeout(self):
+        with pytest.raises(asyncio.TimeoutError):
+            try:
+                c = await self.client(timeout=500)
+                await c.sleep(1000)
+            except:  # noqa: E722
+                c.close()
+                raise
 
 
-async def ssl_client(timeout=3000):
-    return await make_aio_client(
-        addressbook.AddressBookService,
-        host='localhost', port=SSL_PORT,
-        socket_timeout=timeout,
-        cafile="ssl/CA.pem", certfile="ssl/client.crt",
-        keyfile="ssl/client.key")
+class SSLServerMixin:
+
+    @classmethod
+    def setup_class(cls):
+        cls.port = random.randint(55000, 56000)
+        cls._start_server()
+
+    @classmethod
+    def server_kwargs(cls):
+        return {
+            'host': 'localhost',
+            'port': cls.port,
+            'certfile': "ssl/server.pem",
+            'keyfile': "ssl/server.key",
+        }
+
+    @classmethod
+    def client_kwargs(cls):
+        kw = cls.server_kwargs()
+        kw['cafile'] = "ssl/CA.pem"
+        return kw
+
+    async def client_with_url(self, timeout: int = 3000):
+        kw = self.client_kwargs()
+        kw['url'] = "thrift://{}:{}".format(kw.pop('host'), kw.pop('port'))
+        return await make_aio_client(
+            addressbook.AddressBookService,
+            trans_factory=self.TRANSPORT_FACTORY,
+            proto_factory=self.PROTOCOL_FACTORY,
+            socket_timeout=timeout,
+            **kw,
+        )
+
+    @pytest.mark.asyncio
+    async def test_clients(self):
+        c1 = await self.client()
+        c2 = await self.client_with_url()
+        assert await c1.hello("world") == await c2.hello("world")
+        c1.close()
+        c2.close()
 
 
-async def ssl_client_with_url(timeout=3000):
-    return await make_aio_client(
-        addressbook.AddressBookService,
-        url="thrift://localhost:{port}".format(port=SSL_PORT),
-        socket_timeout=timeout,
-        cafile="ssl/CA.pem", certfile="ssl/client.crt",
-        keyfile="ssl/client.key"
-    )
+class TestAIOBufferedBinary(_TestAIO):
+    TRANSPORT_FACTORY = TAsyncBufferedTransportFactory()
+    PROTOCOL_FACTORY = TAsyncBinaryProtocolFactory()
 
 
-@pytest.mark.asyncio
-async def test_clients(aio_ssl_server):
-    c1 = await ssl_client()
-    c2 = await ssl_client_with_url()
-    assert await c1.hello("world") == await c2.hello("world")
-    c1.close()
-    c2.close()
+class TestAIOBufferedCompact(_TestAIO):
+    TRANSPORT_FACTORY = TAsyncBufferedTransportFactory()
+    PROTOCOL_FACTORY = TAsyncCompactProtocolFactory()
 
 
-@pytest.mark.asyncio
-async def test_void_api(aio_server):
-    c = await client()
-    assert await c.ping() is None
-    c.close()
+class TestAIOFramedBinary(_TestAIO):
+    TRANSPORT_FACTORY = TAsyncFramedTransportFactory()
+    PROTOCOL_FACTORY = TAsyncBinaryProtocolFactory()
 
 
-@pytest.mark.asyncio
-async def test_void_api_with_ssl(aio_ssl_server):
-    c = await ssl_client()
-    assert await c.ping() is None
-    c.close()
+class TestAIOFramedCompact(_TestAIO):
+    TRANSPORT_FACTORY = TAsyncFramedTransportFactory()
+    PROTOCOL_FACTORY = TAsyncCompactProtocolFactory()
 
 
-@pytest.mark.asyncio
-async def test_string_api(aio_server):
-    c = await client()
-    assert await c.hello("world") == "hello world"
-    c.close()
+class TestAIOBufferedBinarySSL(SSLServerMixin, TestAIOBufferedBinary):
+    pass
 
 
-@pytest.mark.asyncio
-async def test_required_argument(aio_server):
-    c = await client()
-    assert await c.hello("") == "hello "
-
-    with pytest.raises(TApplicationException):
-        await c.hello()
-    c.close()
+class TestAIOBufferedCompactSSL(SSLServerMixin, TestAIOBufferedCompact):
+    pass
 
 
-@pytest.mark.asyncio
-async def test_string_api_with_ssl(aio_ssl_server):
-    c = await client()
-    assert await c.hello("world") == "hello world"
-    c.close()
+class TestAIOFramedBinarySSL(SSLServerMixin, TestAIOFramedBinary):
+    pass
 
 
-@pytest.mark.asyncio
-async def test_huge_res(aio_server):
-    c = await client()
-    big_str = "world" * 100000
-    assert await c.hello(big_str) == "hello " + big_str
-    c.close()
-
-
-@pytest.mark.asyncio
-async def test_huge_res_with_ssl(aio_ssl_server):
-    c = await ssl_client()
-    big_str = "world" * 100000
-    assert await c.hello(big_str) == "hello " + big_str
-    c.close()
-
-
-@pytest.mark.asyncio
-async def test_tstruct_req(person):
-    c = await client()
-    assert await c.add(person) is True
-    c.close()
-
-
-@pytest.mark.asyncio
-async def test_tstruct_req_with_ssl(person):
-    c = await ssl_client()
-    assert await c.add(person) is True
-    c.close()
-
-
-@pytest.mark.asyncio
-async def test_tstruct_res(person):
-    c = await client()
-    assert person == await c.get("Alice")
-    c.close()
-
-
-@pytest.mark.asyncio
-async def test_tstruct_res_with_ssl(person):
-    c = await ssl_client()
-    assert person == await c.get("Alice")
-    c.close()
-
-
-@pytest.mark.asyncio
-async def test_complex_tstruct():
-    c = await client()
-    assert len(await c.get_phonenumbers("Alice", 0)) == 0
-    assert len(await c.get_phonenumbers("Alice", 1000)) == 1000
-    c.close()
-
-
-@pytest.mark.asyncio
-async def test_complex_tstruct_with_ssl():
-    c = await ssl_client()
-    assert len(await c.get_phonenumbers("Alice", 0)) == 0
-    assert len(await c.get_phonenumbers("Alice", 1000)) == 1000
-    c.close()
-
-
-@pytest.mark.asyncio
-async def test_exception():
-    with pytest.raises(addressbook.PersonNotExistsError):
-        c = await client()
-        await c.remove("Bob")
-
-
-@pytest.mark.asyncio
-async def test_exception_iwth_ssl():
-    with pytest.raises(addressbook.PersonNotExistsError):
-        c = await ssl_client()
-        await c.remove("Bob")
-
-
-@pytest.mark.asyncio
-async def test_client_socket_timeout():
-    with pytest.raises(asyncio.TimeoutError):
-        try:
-            c = await ssl_client(timeout=500)
-            await c.sleep(1000)
-        except:  # noqa: E722
-            c.close()
-            raise
-
-
-@pytest.mark.asyncio
-async def test_ssl_socket_timeout():
-    # SSL socket timeout raises socket.timeout since Python 3.2.
-    # http://bugs.python.org/issue10272
-    with pytest.raises(asyncio.TimeoutError):
-        try:
-            c = await ssl_client(timeout=500)
-            await c.sleep(1000)
-        except:  # noqa: E722
-            c.close()
-            raise
+class TestAIOFramedCompactSSL(SSLServerMixin, TestAIOFramedCompact):
+    pass
 
 
 @pytest.mark.asyncio
