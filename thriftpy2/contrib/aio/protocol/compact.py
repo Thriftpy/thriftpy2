@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 
 import asyncio
-from struct import pack, unpack
+from struct import unpack
 
 from thriftpy2.protocol.exc import TProtocolException
 from thriftpy2.thrift import TException, TType
