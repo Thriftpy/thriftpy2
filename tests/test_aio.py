@@ -116,17 +116,22 @@ class _TestAIO:
         cls.person = _create_person()
 
     @classmethod
+    def teardown_class(cls):
+        asyncio.get_event_loop().run_until_complete(cls.server.close())
+        del cls.server
+        del cls.person
+
+    @classmethod
     def _start_server(cls):
-        loop = asyncio.new_event_loop()
-        server = make_aio_server(
+        cls.server = make_aio_server(
             addressbook.AddressBookService,
             Dispatcher(),
             trans_factory=cls.TRANSPORT_FACTORY,
             proto_factory=cls.PROTOCOL_FACTORY,
-            loop=loop,
+            loop=asyncio.new_event_loop(),
             **cls.server_kwargs(),
         )
-        st = threading.Thread(target=server.serve)
+        st = threading.Thread(target=cls.server.serve)
         st.daemon = True
         st.start()
         time.sleep(0.1)
@@ -198,19 +203,17 @@ class _TestAIO:
 
     @pytest.mark.asyncio
     async def test_exception(self):
+        c = await self.client()
         with pytest.raises(addressbook.PersonNotExistsError):
-            c = await self.client()
             await c.remove("Bob")
+        c.close()
 
     @pytest.mark.asyncio
     async def test_client_socket_timeout(self):
+        c = await self.client(timeout=500)
         with pytest.raises(asyncio.TimeoutError):
-            try:
-                c = await self.client(timeout=500)
-                await c.sleep(1000)
-            except:  # noqa: E722
-                c.close()
-                raise
+            await c.sleep(1000)
+        c.close()
 
 
 class SSLServerMixin:
@@ -218,7 +221,7 @@ class SSLServerMixin:
     @classmethod
     def setup_class(cls):
         cls.port = random.randint(55000, 56000)
-        cls._start_server()
+        super().setup_class()
 
     @classmethod
     def server_kwargs(cls):
