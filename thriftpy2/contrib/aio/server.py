@@ -22,7 +22,7 @@ class TAsyncServer(TServer):
         try:
             self.loop.run_forever()
         except:
-            self.close()
+            self.loop.run_until_complete(self.close())
             raise
 
     def init_server(self):
