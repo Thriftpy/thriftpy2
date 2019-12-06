@@ -64,7 +64,7 @@ class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
         return name, type, seqid
 
     @asyncio.coroutine
-    def read_message_end(self):
+    def read_message_end(self):  # TAsyncClient expects coroutine
         assert len(self._structs) == 0
 
     @asyncio.coroutine
@@ -88,16 +88,13 @@ class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
 
         return None, self._get_ttype(type), fid
 
-    @asyncio.coroutine
     def read_field_end(self):
         pass
 
-    @asyncio.coroutine
     def read_struct_begin(self):
         self._structs.append(self._last_fid)
         self._last_fid = 0
 
-    @asyncio.coroutine
     def read_struct_end(self):
         self._last_fid = self._structs.pop()
 
@@ -120,7 +117,6 @@ class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
             size = yield from self._read_size()
         return type, size
 
-    @asyncio.coroutine
     def read_collection_end(self):
         pass
 
@@ -166,7 +162,7 @@ class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
 
     @asyncio.coroutine
     def read_struct(self, obj):
-        yield from self.read_struct_begin()
+        self.read_struct_begin()
         while True:
             fname, ftype, fid = yield from self.read_field_begin()
             if ftype == TType.STOP:
@@ -189,8 +185,8 @@ class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
                     setattr(obj, fname, val)
                 else:
                     yield from self.skip(ftype)
-            yield from self.read_field_end()
-        yield from self.read_struct_end()
+            self.read_field_end()
+        self.read_struct_end()
 
     @asyncio.coroutine
     def read_val(self, ttype, spec=None):
@@ -220,7 +216,7 @@ class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
             for i in range(sz):
                 result.append((yield from self.read_val(v_type, v_spec)))
 
-            yield from self.read_collection_end()
+            self.read_collection_end()
             return result
 
         elif ttype == TType.MAP:
@@ -242,14 +238,14 @@ class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
                 for _ in range(sz):
                     yield from self.skip(sk_type)
                     yield from self.skip(sv_type)
-                yield from self.read_collection_end()
+                self.read_collection_end()
                 return {}
 
             for i in range(sz):
                 k_val = yield from self.read_val(k_type, k_spec)
                 v_val = yield from self.read_val(v_type, v_spec)
                 result[k_val] = v_val
-            yield from self.read_collection_end()
+            self.read_collection_end()
             return result
 
         elif ttype == TType.STRUCT:
@@ -278,33 +274,33 @@ class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
             yield from self.read_string()
 
         elif ttype == TType.STRUCT:
-            yield from self.read_struct_begin()
+            self.read_struct_begin()
             while True:
                 name, ttype, id = yield from self.read_field_begin()
                 if ttype == TType.STOP:
                     break
                 yield from self.skip(ttype)
-                yield from self.read_field_end()
-            yield from self.read_struct_end()
+                self.read_field_end()
+            self.read_struct_end()
 
         elif ttype == TType.MAP:
             ktype, vtype, size = yield from self.read_map_begin()
             for i in range(size):
                 yield from self.skip(ktype)
                 yield from self.skip(vtype)
-            yield from self.read_collection_end()
+            self.read_collection_end()
 
         elif ttype == TType.SET:
             etype, size = yield from self.read_collection_begin()
             for i in range(size):
                 yield from self.skip(etype)
-            yield from self.read_collection_end()
+            self.read_collection_end()
 
         elif ttype == TType.LIST:
             etype, size = yield from self.read_collection_begin()
             for i in range(size):
                 yield from self.skip(etype)
-            yield from self.read_collection_end()
+            self.read_collection_end()
 
 
 class TAsyncCompactProtocolFactory(object):
