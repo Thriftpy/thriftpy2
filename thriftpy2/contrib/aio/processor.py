@@ -58,6 +58,7 @@ class TAsyncProcessor(object):
         else:
             raise
 
+    @asyncio.coroutine
     def process(self, iprot, oprot):
         api, seqid, result, call = yield from self.process_in(iprot)
 
