@@ -111,6 +111,20 @@ def fill_incomplete_ttype(tmodule, definition):
                         )
                     ),
                     value[3])
+            # if the field's ttype is a nest compound type
+            # and it contains incomplete type
+            elif isinstance(value[2], tuple):
+                def walk(part):
+                    if isinstance(part, tuple):
+                        return tuple(walk(x) for x in part)
+                    if part in incomplete_type:
+                        return get_definition(tmodule, *incomplete_type[part])
+                    return part
+                definition.thrift_spec[index] = (
+                    value[0],
+                    value[1],
+                    tuple(walk(value[2])),
+                    value[3])
     # if it is a service method definition
     elif hasattr(definition, "thrift_services"):
         for name, attr in definition.__dict__.items():
