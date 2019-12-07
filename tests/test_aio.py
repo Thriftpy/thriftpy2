@@ -13,19 +13,17 @@ import pytest
 
 import thriftpy2
 
-thriftpy2.install_import_hook()
-
-from thriftpy2.contrib.aio.transport import (  # noqa
+from thriftpy2.contrib.aio.transport import (
     TAsyncBufferedTransportFactory,
     TAsyncFramedTransportFactory,
 )
-from thriftpy2.contrib.aio.protocol import (  # noqa
+from thriftpy2.contrib.aio.protocol import (
     TAsyncBinaryProtocolFactory,
     TAsyncCompactProtocolFactory,
 )
-from thriftpy2.rpc import make_aio_server, make_aio_client  # noqa
-from thriftpy2.transport import TTransportException  # noqa
-from thriftpy2.thrift import TApplicationException  # noqa
+from thriftpy2.rpc import make_aio_server, make_aio_client
+from thriftpy2.transport import TTransportException
+from thriftpy2.thrift import TApplicationException
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
