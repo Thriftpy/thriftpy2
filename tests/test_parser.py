@@ -289,3 +289,12 @@ def test_doubles():
 def test_annotations():
     load('parser-cases/annotations.thrift')
     load('parser-cases/issue_252.thrift')
+
+
+def test_nest_incomplete_type():
+    thrift = load('parser-cases/nest_incomplete_type.thrift')
+    assert thrift.Container.thrift_spec == {
+        1: (15, 'field1', (13, (11, (12, thrift.A))), False),
+        2: (15, 'field2', (15, (12, thrift.A)), False),
+        3: (15, 'field3', (15, (15, (12, thrift.A))), False)
+    }
