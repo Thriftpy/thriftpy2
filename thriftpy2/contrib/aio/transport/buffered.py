@@ -2,26 +2,10 @@
 import asyncio
 from io import BytesIO
 
-from thriftpy2.transport import TTransportBase, TTransportException
+from . import TAsyncTransportBase
 
 
-@asyncio.coroutine
-def readall(read_fn, sz):
-    buff = b''
-    have = 0
-    while have < sz:
-        chunk = yield from read_fn(sz - have)
-        have += len(chunk)
-        buff += chunk
-
-        if len(chunk) == 0:
-            raise TTransportException(TTransportException.END_OF_FILE,
-                                      "End of file reading from transport")
-
-    return buff
-
-
-class TAsyncBufferedTransport(TTransportBase):
+class TAsyncBufferedTransport(TAsyncTransportBase):
     """Class that wraps another transport and buffers its I/O.
 
     The implementation uses a (configurable) fixed-size read buffer
@@ -60,10 +44,6 @@ class TAsyncBufferedTransport(TTransportBase):
 
         self._rbuf = BytesIO(buf)
         return ret
-
-    @asyncio.coroutine
-    def read(self, sz):
-        return (yield from readall(self._read, sz))
 
     def write(self, buf):
         self._wbuf.write(buf)

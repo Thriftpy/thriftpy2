@@ -6,11 +6,11 @@ import struct
 import asyncio
 from io import BytesIO
 
-from thriftpy2.transport import TTransportBase
-from .buffered import TAsyncBufferedTransport, readall
+from . import TAsyncTransportBase, readall
+from .buffered import TAsyncBufferedTransport
 
 
-class TAsyncFramedTransport(TTransportBase):
+class TAsyncFramedTransport(TAsyncTransportBase):
     """Class that wraps another transport and frames its I/O when writing."""
     def __init__(self, trans):
         self._trans = trans
