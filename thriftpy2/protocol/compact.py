@@ -6,6 +6,7 @@ import array
 from struct import pack, unpack
 
 from .exc import TProtocolException
+from .base import TProtocolBase
 from ..thrift import TException
 from ..thrift import TType
 
@@ -113,7 +114,7 @@ TTYPES = dict((v, k) for k, v in CTYPES.items())
 TTYPES[CompactType.FALSE] = TType.BOOL
 
 
-class TCompactProtocol(object):
+class TCompactProtocol(TProtocolBase):
     """Compact implementation of the Thrift protocol driver."""
     PROTOCOL_ID = 0x82
     VERSION = 1
@@ -123,7 +124,7 @@ class TCompactProtocol(object):
     TYPE_SHIFT_AMOUNT = 5
 
     def __init__(self, trans, decode_response=True):
-        self.trans = trans
+        TProtocolBase.__init__(self, trans)
         self._last_fid = 0
         self._bool_fid = None
         self._bool_value = None
