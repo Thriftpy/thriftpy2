@@ -13,6 +13,8 @@ from thriftpy2.protocol.compact import (
     TCompactProtocol,
 )
 
+from . import TAsyncProtocolBase
+
 
 @asyncio.coroutine
 def read_varint(trans):
@@ -28,7 +30,8 @@ def read_varint(trans):
         shift += 7
 
 
-class TAsyncCompactProtocol(TCompactProtocol):  # Inherit all of the writing
+class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
+                            TAsyncProtocolBase):
     """Compact implementation of the Thrift protocol driver."""
     PROTOCOL_ID = 0x82
     VERSION = 1

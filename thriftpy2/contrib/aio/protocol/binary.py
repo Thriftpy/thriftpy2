@@ -20,6 +20,8 @@ from thriftpy2.protocol.binary import (
     write_val
 )
 
+from . import TAsyncProtocolBase
+
 
 @asyncio.coroutine
 def read_message_begin(inbuf, strict=True):
@@ -229,13 +231,13 @@ def skip(inbuf, ftype):
             yield from skip(inbuf, f_type)
 
 
-class TAsyncBinaryProtocol(object):
+class TAsyncBinaryProtocol(TAsyncProtocolBase):
     """Binary implementation of the Thrift protocol driver."""
 
     def __init__(self, trans,
                  strict_read=True, strict_write=True,
                  decode_response=True):
-        self.trans = trans
+        TAsyncProtocolBase.__init__(self, trans)
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
