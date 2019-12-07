@@ -13,7 +13,7 @@ from thriftpy2.protocol.compact import (
     TCompactProtocol,
 )
 
-from . import TAsyncProtocolBase
+from .base import TAsyncProtocolBase
 
 
 @asyncio.coroutine

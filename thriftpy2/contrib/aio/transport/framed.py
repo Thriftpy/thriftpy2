@@ -6,7 +6,7 @@ import struct
 import asyncio
 from io import BytesIO
 
-from . import TAsyncTransportBase, readall
+from .base import TAsyncTransportBase, readall
 from .buffered import TAsyncBufferedTransport
 
 

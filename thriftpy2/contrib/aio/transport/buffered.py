@@ -2,7 +2,7 @@
 import asyncio
 from io import BytesIO
 
-from . import TAsyncTransportBase
+from .base import TAsyncTransportBase
 
 
 class TAsyncBufferedTransport(TAsyncTransportBase):

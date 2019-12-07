@@ -20,7 +20,7 @@ from thriftpy2.protocol.binary import (
     write_val
 )
 
-from . import TAsyncProtocolBase
+from .base import TAsyncProtocolBase
 
 
 @asyncio.coroutine
