@@ -25,11 +25,42 @@ def readall(read_fn, sz):
 class TTransportBase(object):
     """Base class for Thrift transport layer."""
 
+    def is_open(self):
+        """Check if this transport is open."""
+        raise NotImplementedError
+
+    def open(self):
+        """
+        Prepare this transport for usage and allocate any necessary resources
+        like sockets or sessions.
+        """
+        raise NotImplementedError
+
+    def close(self):
+        """Clean up and deallocate any resources allocated in open()."""
+        raise NotImplementedError
+
     def _read(self, sz):
+        """
+        Internal read method which can read up to `sz` bytes but doesn't
+        need to return them all.
+        """
         raise NotImplementedError
 
     def read(self, sz):
+        """Get exactly `sz` bytes from the underlying connection."""
         return readall(self._read, sz)
+
+    def write(self, buf):
+        """
+        Submit some data to tbe written to the connection. May be
+        buffered until flush is called.
+        """
+        raise NotImplementedError
+
+    def flush(self):
+        """Ensure that all internal buffers are emptied into the connection."""
+        raise NotImplementedError
 
 
 class TTransportException(TException):
