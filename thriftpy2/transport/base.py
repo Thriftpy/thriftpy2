@@ -46,7 +46,17 @@ class TTransportBase(object):
         raise NotImplementedError
 
     def read(self, sz):
-        """Get exactly `sz` bytes from the underlying connection."""
+        """
+        Get exactly `sz` bytes from the underlying connection.
+
+        When implementing a custom transport, this method must return exactly
+        `sz` bytes if it is expected to be called from the protocol layer. If
+        it intends to wrapped by another transport, like TBufferedTransport,
+        it should return whatever the underlying connection/transport can get.
+        The wrapping transport will take care of ensuring `sz` bytes are
+        returned. For a more in depth discussion, see:
+        https://github.com/Thriftpy/thriftpy2/pull/108#discussion_r355131677
+        """
         return readall(self._read, sz)
 
     def write(self, buf):
