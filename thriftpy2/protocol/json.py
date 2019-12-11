@@ -4,11 +4,13 @@ from __future__ import absolute_import
 
 import json
 import struct
+from warnings import warn
 
 from thriftpy2._compat import u
 from thriftpy2.thrift import TType
 
 from .exc import TProtocolException
+from .base import TProtocolBase
 
 VERSION = 1
 
@@ -149,7 +151,7 @@ def struct_to_obj(val, obj):
     return obj
 
 
-class TJSONProtocol(object):
+class TJSONProtocol(TProtocolBase):
     """A JSON protocol.
 
     The message in the transport are encoded as this: 4 bytes represents
@@ -161,7 +163,7 @@ class TJSONProtocol(object):
     big-endian.
     """
     def __init__(self, trans):
-        self.trans = trans
+        TProtocolBase.__init__(self, trans)
         self._meta = {"version": VERSION}
         self._data = None
 
@@ -211,6 +213,9 @@ class TJSONProtocol(object):
 
         self._write_len(len(data))
         self.trans.write(data.encode("utf-8"))
+
+    def skip(self, ttype):
+        warn("TJsonProtocol doesn't support skipping. Ignoring.")
 
 
 class TJSONProtocolFactory(object):

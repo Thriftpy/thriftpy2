@@ -7,6 +7,7 @@ import struct
 from ..thrift import TType
 
 from .exc import TProtocolException
+from .base import TProtocolBase
 
 # VERSION_MASK = 0xffff0000
 VERSION_MASK = -65536
@@ -353,13 +354,13 @@ def skip(inbuf, ftype):
             skip(inbuf, f_type)
 
 
-class TBinaryProtocol(object):
+class TBinaryProtocol(TProtocolBase):
     """Binary implementation of the Thrift protocol driver."""
 
     def __init__(self, trans,
                  strict_read=True, strict_write=True,
                  decode_response=True):
-        self.trans = trans
+        TProtocolBase.__init__(self, trans)
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response

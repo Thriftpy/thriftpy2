@@ -6,7 +6,7 @@ import struct
 from io import BytesIO
 
 from thriftpy2._compat import CYTHON
-from .. import TTransportBase, readall
+from ..base import TTransportBase, readall
 from ..buffered import TBufferedTransport
 
 
