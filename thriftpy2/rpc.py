@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import contextlib
+import socket
 import warnings
 
 from thriftpy2._compat import PY3, PY35
@@ -30,7 +31,7 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
                 proto_factory=TBinaryProtocolFactory(),
                 trans_factory=TBufferedTransportFactory(),
                 timeout=3000, cafile=None, ssl_context=None, certfile=None,
-                keyfile=None, url=""):
+                keyfile=None, url="", socket_family=socket.AF_INET):
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
@@ -42,11 +43,11 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
     elif host and port:
         if cafile or ssl_context:
             socket = TSSLSocket(host, port, socket_timeout=timeout,
-                                cafile=cafile,
+                                socket_family=socket_family, cafile=cafile,
                                 certfile=certfile, keyfile=keyfile,
                                 ssl_context=ssl_context)
         else:
-            socket = TSocket(host, port, socket_timeout=timeout)
+            socket = TSocket(host, port, socket_family=socket_family, socket_timeout=timeout)
     else:
         raise ValueError("Either host/port or unix_socket or url must be provided.")
 
