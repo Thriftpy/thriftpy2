@@ -6,6 +6,22 @@ Changelog
 Version 0.4.9
 -------------
 
+Released on Jan 1, 2020.
+
+- Add TAsyncCompactProtocol and TAsyncFramedTransport, via `2-#103`_.
+- Add TAsyncProtocolBase and TAsyncTransportBase, via `2-#108`_.
+- Add __str__ on TProtocolException, , via `2-#109`_.
+- Support passing socket_family in make_client, via `2-#110`_.
+
+.. _2-#103: https://github.com/Thriftpy/thriftpy2/pull/103
+.. _2-#108: https://github.com/Thriftpy/thriftpy2/pull/108
+.. _2-#109: https://github.com/Thriftpy/thriftpy2/pull/109
+.. _2-#110: https://github.com/Thriftpy/thriftpy2/pull/110
+
+
+Version 0.4.9
+-------------
+
 Released on November 27, 2019.
 
 - Fix unexpected data length in aio buffer transport, via `2-#102`_.
