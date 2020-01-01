@@ -3,7 +3,7 @@ Changelog
 
 0.4.x
 ~~~~~
-Version 0.4.9
+Version 0.4.10
 -------------
 
 Released on Jan 1, 2020.
