@@ -18,15 +18,22 @@ from .socket import TAsyncSocket, TAsyncServerSocket
 from .server import TAsyncServer
 
 
-
 @asyncio.coroutine
 def make_client(service, host='localhost', port=9090, unix_socket=None,
                 proto_factory=TAsyncBinaryProtocolFactory(),
                 trans_factory=TAsyncBufferedTransportFactory(),
-                socket_timeout=3000, connect_timeout=None,
+                timeout=3000, connect_timeout=None,
                 cafile=None, ssl_context=None,
                 certfile=None, keyfile=None,
-                validate=True, url=''):
+                validate=True, url='',
+                socket_timeout=None):
+    if socket_timeout is not None:
+        warnings.warn(
+            "The 'socket_timeout' argument is deprecated. "
+            "Please use 'timeout' instead.",
+            DeprecationWarning,
+        )
+        timeout = socket_timeout
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
@@ -34,15 +41,15 @@ def make_client(service, host='localhost', port=9090, unix_socket=None,
     if unix_socket:
         socket = TAsyncSocket(unix_socket=unix_socket,
                               connect_timeout=connect_timeout,
-                              socket_timeout=socket_timeout)
+                              socket_timeout=timeout)
         if certfile:
             warnings.warn("SSL only works with host:port, not unix_socket.")
     elif host and port:
-            socket = TAsyncSocket(
-                host, port,
-                socket_timeout=socket_timeout, connect_timeout=connect_timeout,
-                cafile=cafile, ssl_context=ssl_context,
-                certfile=certfile, keyfile=keyfile, validate=validate)
+        socket = TAsyncSocket(
+            host, port,
+            socket_timeout=timeout, connect_timeout=connect_timeout,
+            cafile=cafile, ssl_context=ssl_context,
+            certfile=certfile, keyfile=keyfile, validate=validate)
     else:
         raise ValueError("Either host/port or unix_socket or url must be provided.")
 

@@ -4,6 +4,7 @@ import asyncio
 # import uvloop
 import threading
 import random
+from unittest.mock import patch
 
 # asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -151,7 +152,7 @@ class _TestAIO:
             addressbook.AddressBookService,
             trans_factory=self.TRANSPORT_FACTORY,
             proto_factory=self.PROTOCOL_FACTORY,
-            socket_timeout=timeout,
+            timeout=timeout,
             **self.client_kwargs(),
         )
 
@@ -246,7 +247,7 @@ class SSLServerMixin:
             addressbook.AddressBookService,
             trans_factory=self.TRANSPORT_FACTORY,
             proto_factory=self.PROTOCOL_FACTORY,
-            socket_timeout=timeout,
+            timeout=timeout,
             **kw,
         )
 
@@ -304,3 +305,57 @@ async def test_client_connect_timeout():
             connect_timeout=1000
         )
         await c.hello('test')
+
+
+class TestDeprecatedTimeoutKwarg:
+    """
+    Replace TAsyncSocket with a Mock object that raises a RuntimeError
+    when called. This allows us to check that timeout vs. socket_timeout
+    arguments are properly handled without actually creating the client.
+
+    This class should be removed when the socket_timeout argument is removed.
+    """
+    def setup(self):
+        # Create and apply a fresh patch for each test.
+        self.async_sock = patch(
+            'thriftpy2.contrib.aio.rpc.TAsyncSocket',
+            side_effect=RuntimeError,
+        ).__enter__()
+
+    def teardown_(self):
+        self.async_sock.__exit__()  # Clean up patch
+
+    @pytest.mark.asyncio
+    async def test_no_timeout_given(self):
+        await self._make_client()
+        assert self._given_timeout() == 3000  # Default value
+
+    @pytest.mark.asyncio
+    async def test_timeout_given(self):
+        await self._make_client(timeout=1234)
+        assert self._given_timeout() == 1234
+
+    @pytest.mark.asyncio
+    async def test_socket_timeout_given(self):
+        await self._make_client(warning=DeprecationWarning, socket_timeout=555)
+        assert self._given_timeout() == 555
+
+    @staticmethod
+    async def _make_client(warning=None, **kwargs):
+        """
+        Helper method to create the client and check that the proper warning
+        is emitted (if any) and that the patch is properly applied by
+        consuming the RuntimeError.
+        """
+        with pytest.warns(warning),\
+                pytest.raises(RuntimeError):  # Consume error
+            await make_aio_client(addressbook.AddressBookService, **kwargs)
+
+    def _given_timeout(self):
+        """Get the timeout provided to TAsyncSocket."""
+        try:
+            self.async_sock.assert_called_once()
+        except AttributeError:  # Python 3.5
+            assert self.async_sock.call_count == 1
+        _args, kwargs = self.async_sock.call_args
+        return kwargs['socket_timeout']
