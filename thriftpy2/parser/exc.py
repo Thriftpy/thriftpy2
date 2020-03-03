@@ -11,5 +11,5 @@ class ThriftLexerError(ThriftParserError):
     pass
 
 
-class ThriftGrammerError(ThriftParserError):
+class ThriftGrammarError(ThriftParserError):
     pass
