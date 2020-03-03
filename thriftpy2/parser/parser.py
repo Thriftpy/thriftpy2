@@ -391,14 +391,26 @@ def p_ref_type(p):
     '''ref_type : IDENTIFIER'''
     ref_type = thrift_stack[-1]
 
-    for index, name in enumerate(p[1].split('.')):
-        ref_type = getattr(ref_type, name, None)
-        if ref_type is None:
-            if index != len(p[1].split('.')) - 1:
-                raise ThriftParserError('No type found: %r, at line %d' %
-                                        (p[1], p.lineno(1)))
-            p[0] = incomplete_type.set_info((p[1], p.lineno(1)))
-            return
+    for attr in dir(ref_type):
+        if attr in {'__doc__', '__loader__', '__name__', '__package__',
+                    '__spec__', '__thrift_file__', '__thrift_meta__'}:
+            continue
+        if p[1].startswith(attr + '.'):
+            name = p[1][len(attr)+1:]
+            included_ref_type = getattr(ref_type, attr)
+            resolved_ref_type = getattr(included_ref_type, name, None)
+            if resolved_ref_type is not None:
+                ref_type = resolved_ref_type
+                break
+    else:
+        for index, name in enumerate(p[1].split('.')):
+            ref_type = getattr(ref_type, name, None)
+            if ref_type is None:
+                if index != len(p[1].split('.')) - 1:
+                    raise ThriftParserError('No type found: %r, at line %d' %
+                                            (p[1], p.lineno(1)))
+                p[0] = incomplete_type.set_info((p[1], p.lineno(1)))
+                return
 
     if hasattr(ref_type, '_ttype'):
         p[0] = getattr(ref_type, '_ttype'), ref_type
