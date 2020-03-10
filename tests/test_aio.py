@@ -50,6 +50,9 @@ class Dispatcher:
 
     @asyncio.coroutine
     def remove(self, name):
+        if not name:
+            # undeclared exception
+            raise ValueError('name cannot be empty')
         try:
             self.ab.people.pop(name)
             return True
@@ -208,6 +211,13 @@ class _TestAIO:
         c = await self.client()
         with pytest.raises(addressbook.PersonNotExistsError):
             await c.remove("Bob")
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_undeclared_exception(self):
+        c = await self.client()
+        with pytest.raises(TTransportException):
+            await c.remove('')
         c.close()
 
     @pytest.mark.asyncio

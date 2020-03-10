@@ -211,7 +211,8 @@ class TTrackedProcessor(TProcessor, VersionMixin):
             result.success = call()
         except Exception as e:
             # raise if api don't have throws
-            self.handle_exception(e, result)
+            if not self.handle_exception(e, result):
+                raise
 
         if not result.oneway:
             if self.check_version(
