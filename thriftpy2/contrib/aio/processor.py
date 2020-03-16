@@ -54,9 +54,8 @@ class TAsyncProcessor(object):
             _, exc_name, exc_cls, _ = result.thrift_spec[k]
             if isinstance(e, exc_cls):
                 setattr(result, exc_name, e)
-                break
-        else:
-            raise
+                return True
+        return False
 
     @asyncio.coroutine
     def process(self, iprot, oprot):
@@ -69,7 +68,8 @@ class TAsyncProcessor(object):
             result.success = yield from call()
         except Exception as e:
             # raise if api don't have throws
-            self.handle_exception(e, result)
+            if not self.handle_exception(e, result):
+                raise
 
         if not result.oneway:
             yield from self.send_result(oprot, api, result, seqid)

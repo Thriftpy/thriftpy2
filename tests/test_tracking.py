@@ -50,6 +50,13 @@ from compatible.version_2.tracking import (
     TrackerBase as TrackerBaseV2,
 )
 
+try:
+    from pytest_cov.embed import cleanup_on_sigterm
+except ImportError:
+    pass
+else:
+    cleanup_on_sigterm()
+
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
 _, db_file = tempfile.mkstemp()
@@ -135,6 +142,9 @@ class Dispatcher(object):
         return True
 
     def get(self, name):
+        if not name:
+            # undeclared exception
+            raise ValueError('name cannot be empty')
         raise addressbook.PersonNotExistsError()
 
 
@@ -161,9 +171,9 @@ class TSampleServer(TThreadedServer):
             pass
         except Exception:
             raise
-
-        itrans.close()
-        otrans.close()
+        finally:
+            itrans.close()
+            otrans.close()
 
 
 def gen_server(port, tracker=tracker, processor=TTrackedProcessor):
@@ -188,6 +198,7 @@ def server(request):
     def fin():
         if ps.is_alive():
             ps.terminate()
+            ps.join()
 
     request.addfinalizer(fin)
     return ser
@@ -201,6 +212,7 @@ def server1(request):
     def fin():
         if ps.is_alive():
             ps.terminate()
+            ps.join()
 
     request.addfinalizer(fin)
     return ser
@@ -214,6 +226,7 @@ def server2(request):
     def fin():
         if ps.is_alive():
             ps.terminate()
+            ps.join()
 
     request.addfinalizer(fin)
     return ser
@@ -227,6 +240,7 @@ def native_server(request):
     def fin():
         if ps.is_alive():
             ps.terminate()
+            ps.join()
 
     request.addfinalizer(fin)
     return ser
@@ -241,6 +255,7 @@ def tracked_server_v2(request):
     def fin():
         if ps.is_alive():
             ps.terminate()
+            ps.join()
 
     request.addfinalizer(fin)
     return ser
@@ -366,6 +381,12 @@ def test_exception(server, dbm_db, tracker_ctx):
 
     header = pickle.loads(db[headers[0]])
     assert header["status"] is False
+
+
+def test_undeclared_exception(server, dbm_db, tracker_ctx):
+    with pytest.raises(TTransportException):
+        with client() as c:
+            c.get('')
 
 
 def test_request_id_func():
