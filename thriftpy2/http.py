@@ -217,13 +217,16 @@ class THttpClient(object):
         self.__wbuf.write(buf)
 
     def flush(self):
+        # Pull data out of buffer
+        # Do this before opening a new connection in case there isn't data
+        data = self.__wbuf.getvalue()
+        self.__wbuf = BytesIO()
+        if not data:  # No data to flush, ignore
+            return
+
         if self.isOpen():
             self.close()
         self.open()
-
-        # Pull data out of buffer
-        data = self.__wbuf.getvalue()
-        self.__wbuf = BytesIO()
 
         # HTTP request
         self.__http.putrequest('POST', self.path, skip_host=True)
