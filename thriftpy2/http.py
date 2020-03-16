@@ -54,23 +54,10 @@ else:
 
 from thriftpy2.thrift import TProcessor, TClient
 from thriftpy2.server import TServer
-from thriftpy2.transport import (
-    TTransportBase,
-    TMemoryBuffer
-)
-# Explicitly use Python version instead of Cython version for libraries below
-# to address some mystery issues for now.
-#
-# Avoid TypeError: Cannot convert TBufferedTransport to
-# thriftpy2.transport.cybase.CyTransportBase.
-from thriftpy2.protocol.binary import TBinaryProtocolFactory
-# Avoid raised error of too small buffer allocated by TCyBufferedTransport.
-# Also, using TCyBufferedTransportFactory will let THttpClient write a broken
-# string to server, which making server freezed in transport.readall() method.
-from thriftpy2.transport.buffered import (
-    TBufferedTransport,
-    TBufferedTransportFactory,
-)
+from thriftpy2.transport import TTransportBase, TMemoryBuffer
+
+from thriftpy2.protocol import TBinaryProtocolFactory
+from thriftpy2.transport import TBufferedTransportFactory
 
 
 HTTP_URI = '{scheme}://{host}:{port}{path}'
@@ -120,6 +107,7 @@ class THttpServer(TServer):
     def __init__(self,
                  processor,
                  server_address,
+                 itrans_factory,
                  iprot_factory,
                  server_class=http_server.HTTPServer):
         """Set up protocol factories and HTTP server.
@@ -127,7 +115,8 @@ class THttpServer(TServer):
         See TServer for protocol factories.
         """
         TServer.__init__(self, processor, trans=None,
-                         itrans_factory=None, iprot_factory=iprot_factory,
+                         itrans_factory=itrans_factory,
+                         iprot_factory=iprot_factory,
                          otrans_factory=None, oprot_factory=None)
 
         thttpserver = self
@@ -137,12 +126,18 @@ class THttpServer(TServer):
 
             def do_POST(self):
                 # Don't care about the request path.
-                itrans = TFileObjectTransport(self.rfile)
-                otrans = TFileObjectTransport(self.wfile)
-                itrans = TBufferedTransport(
-                    itrans, int(self.headers['Content-Length']))
-                otrans = TMemoryBuffer()
+                # Pre-read all of the data into a BytesIO. Buffered transport
+                # was previously configured to read everything on the first
+                # consumption, but that was a hack relying on the internal
+                # mechanism and prevents other transports from working, so
+                # replicate that properly to prevent timeout issues
+                content_len = int(self.headers['Content-Length'])
+                buf = BytesIO(self.rfile.read(content_len))
+                itrans = TFileObjectTransport(buf)
+                itrans = thttpserver.itrans_factory.get_transport(itrans)
                 iprot = thttpserver.iprot_factory.get_protocol(itrans)
+
+                otrans = TMemoryBuffer()
                 oprot = thttpserver.oprot_factory.get_protocol(otrans)
                 try:
                     thttpserver.processor.process(iprot, oprot)
@@ -222,13 +217,16 @@ class THttpClient(object):
         self.__wbuf.write(buf)
 
     def flush(self):
+        # Pull data out of buffer
+        # Do this before opening a new connection in case there isn't data
+        data = self.__wbuf.getvalue()
+        self.__wbuf = BytesIO()
+        if not data:  # No data to flush, ignore
+            return
+
         if self.isOpen():
             self.close()
         self.open()
-
-        # Pull data out of buffer
-        data = self.__wbuf.getvalue()
-        self.__wbuf = BytesIO()
 
         # HTTP request
         self.__http.putrequest('POST', self.path, skip_host=True)
@@ -323,8 +321,10 @@ def client_context(service, host='localhost', port=9090, path='', scheme='http',
 
 
 def make_server(service, handler, host, port,
-                proto_factory=TBinaryProtocolFactory()):
+                proto_factory=TBinaryProtocolFactory(),
+                trans_factory=TBufferedTransportFactory()):
     processor = TProcessor(service, handler)
     server = THttpServer(processor, (host, port),
+                         itrans_factory=trans_factory,
                          iprot_factory=proto_factory)
     return server

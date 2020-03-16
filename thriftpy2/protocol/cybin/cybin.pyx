@@ -460,7 +460,7 @@ cdef class TCyBinaryProtocol(object):
         write_i32(self.trans, seqid)
 
     def write_message_end(self):
-        self.trans.c_flush()
+        pass
 
     def read_struct(self, obj):
         try:
