@@ -211,7 +211,8 @@ class TTornadoServer(tcpserver.TCPServer):
                         result.success = yield gen.maybe_future(call())
                     except Exception as e:
                         # raise if api don't have throws
-                        self._processor.handle_exception(e, result)
+                        if not self._processor.handle_exception(e, result):
+                            raise
 
                     self._processor.send_result(oprot, api, result, seqid)
         except Exception:

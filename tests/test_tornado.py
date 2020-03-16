@@ -13,6 +13,7 @@ from tornado import gen, testing
 import thriftpy2
 from thriftpy2.tornado import make_client
 from thriftpy2.tornado import make_server
+from thriftpy2.transport import TTransportException
 
 
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +40,9 @@ class Dispatcher(object):
         """
         Person get(1: string name) throws (1: PersonNotExistsError not_exists);
         """
+        if not name:
+            # undeclared exception
+            raise ValueError('name cannot be empty')
         if name not in self.registry:
             raise addressbook.PersonNotExistsError(
                 'Person "{}" does not exist!'.format(name))
@@ -51,6 +55,9 @@ class Dispatcher(object):
         """
         # delay action for later
         yield gen.Task(self.io_loop.add_callback)
+        if not name:
+            # undeclared exception
+            raise ValueError('name cannot be empty')
         if name not in self.registry:
             raise addressbook.PersonNotExistsError(
                 'Person "{}" does not exist!'.format(name))
@@ -128,6 +135,17 @@ class TornadoRPCTestCase(testing.AsyncTestCase):
 
     @testing.gen_test
     @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
+    def test_synchronous_undeclared_exception(self):
+        exc = None
+        try:
+            yield self.client.get('')
+        except Exception as e:
+            exc = e
+
+        assert isinstance(exc, TTransportException)
+
+    @testing.gen_test
+    @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
     def test_asynchronous_result(self):
         dennis = addressbook.Person(name='Dennis Ritchie')
         yield self.client.add(dennis)
@@ -143,3 +161,13 @@ class TornadoRPCTestCase(testing.AsyncTestCase):
         except Exception as e:
             exc = e
         assert isinstance(exc, addressbook.PersonNotExistsError)
+
+    @testing.gen_test
+    @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
+    def test_asynchronous_undeclared_exception(self):
+        exc = None
+        try:
+            yield self.client.remove('')
+        except Exception as e:
+            exc = e
+        assert isinstance(exc, TTransportException)
