@@ -68,9 +68,26 @@ def init_func_generator(cls, spec):
             pass
         return __init__
 
-    varnames, defaults = zip(*spec)
+    if hasattr(cls, 'thrift_spec'):
+        args = []
+        kwargs = []
+        varnames = []
+        defaults = []
+        for spec_element, t_spec in zip(spec, cls.thrift_spec.values()):
+            varnames.append(spec_element[0])
+            if t_spec[-1]:
+                args.append(spec_element[0])
+            else:
+                kwargs.append(spec_element)
+                defaults.append(spec_element[1])
+        defaults = tuple(defaults) if defaults else None
 
-    args = ', '.join(map('{0[0]}={0[1]!r}'.format, spec))
+        args.extend(map('{0[0]}={0[1]!r}'.format, kwargs))
+        args = ', '.join(args)
+    else:
+        varnames, defaults = zip(*spec)
+        args = ', '.join(map('{0[0]}={0[1]!r}'.format, spec))
+
     init = "def __init__(self, {}):\n".format(args)
     init += "\n".join(map('    self.{0} = {0}'.format, varnames))
 
