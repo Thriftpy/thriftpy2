@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# Transport for json protocol that apache thrift files will understand
-# unfortunately, thriftpy2's TJSONProtocol is not compatible with apache's
-
-# This implementation simply passes the calls to the apache thrift implementation
+"""
+Transport for json protocol that apache thrift files will understand
+unfortunately, thriftpy2's TJSONProtocol is not compatible with apache's
+"""
 import json
 import base64
 
@@ -52,11 +52,15 @@ def flatten(suitable_for_isinstance):
 
 
 class TApacheJSONProtocolFactory:
-    def get_protocol(self, trans):
+    @staticmethod
+    def get_protocol(trans):
         return TApacheJSONProtocol(trans)
 
 
 class TApacheJSONProtocol(TProtocolBase):
+    """
+    Protocol that implements the Apache JSON Protocol
+    """
 
     def __init__(self, trans):
         super().__init__(trans)
@@ -138,7 +142,7 @@ class TApacheJSONProtocol(TProtocolBase):
         result = {}
         for field_idx, thrift_spec in thrift_obj.thrift_spec.items():
             ttype, field_name, spec = thrift_spec[:3]
-            if type(spec) is int:
+            if isinstance(spec, int):
                 spec = (spec,)
             val = getattr(thrift_obj, field_name)
             if val is not None:
@@ -177,7 +181,7 @@ class TApacheJSONProtocol(TProtocolBase):
         :return:
         """
         # if the result is a python type, return it:
-        if type(data) in (str, int, float, bool, bytes) or data is None:
+        if isinstance(data, (str, int, float, bool, bytes)) or data is None:
             if base_type in (TType.I08, TType.I16, TType.I32, TType.I64):
                 return int(data)
             if base_type == TType.BOOL:
