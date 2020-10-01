@@ -51,12 +51,12 @@ def flatten(suitable_for_isinstance):
     return tuple(types)
 
 
-class TJSONProtocolFactory:
+class TApacheJSONProtocolFactory:
     def get_protocol(self, trans):
-        return TJSONProtocol(trans)
+        return TApacheJSONProtocol(trans)
 
 
-class TJSONProtocol(TProtocolBase):
+class TApacheJSONProtocol(TProtocolBase):
 
     def __init__(self, trans):
         super().__init__(trans)
