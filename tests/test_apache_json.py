@@ -3,7 +3,7 @@ import json
 import thriftpy2
 from thriftpy2.thrift import TProcessor
 from thriftpy2.transport import TMemoryBuffer
-from thriftpy2.protocol.apache_json import TJSONProtocolFactory
+from thriftpy2.protocol import TApacheJSONProtocolFactory
 
 
 def recursive_vars(obj):
@@ -81,7 +81,7 @@ def test_thrift_transport():
             return t
 
     tp2_thrift_processor = TProcessor(test_thrift.TestService, Handler())
-    tp2_factory = TJSONProtocolFactory()
+    tp2_factory = TApacheJSONProtocolFactory()
     iprot = tp2_factory.get_protocol(TMemoryBuffer(request_data))
     obuf = TMemoryBuffer()
     oprot = tp2_factory.get_protocol(obuf)
