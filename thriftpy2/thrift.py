@@ -104,6 +104,7 @@ class TType(object):
     LIST = 15
     UTF8 = 16
     UTF16 = 17
+    BINARY = 18
 
     _VALUES_TO_NAMES = {
         STOP: 'STOP',
@@ -123,7 +124,8 @@ class TType(object):
         SET: 'SET',
         LIST: 'LIST',
         UTF8: 'UTF8',
-        UTF16: 'UTF16'
+        UTF16: 'UTF16',
+        BINARY: 'BINARY'
     }
 
 
