@@ -178,6 +178,10 @@ class TJSONProtocol(TProtocolBase):
         """
         # if the result is a python type, return it:
         if type(data) in (str, int, float, bool, bytes) or data is None:
+            if base_type in (TType.I08, TType.I16, TType.I32, TType.I64):
+                return int(data)
+            if base_type == TType.BOOL:
+                return bool(data)
             return data
 
         if isinstance(base_type, tuple):
@@ -225,7 +229,7 @@ class TJSONProtocol(TProtocolBase):
                     }
                 else:
                     result[field_name] = {
-                        'tf': int,
+                        'tf': bool,
                         'i8': int,
                         'i16': int,
                         'i32': int,
