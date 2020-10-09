@@ -69,7 +69,7 @@ class TApacheJSONProtocol(TProtocolBase):
     def _load_data(self):
         val = self.trans.getvalue()
         if val:
-            self.req = json.loads(self.trans.getvalue().decode('utf8'))
+            self.req = json.loads(val.decode('utf8'))
         else:
             self.req = None
 
