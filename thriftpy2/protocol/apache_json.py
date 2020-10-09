@@ -63,7 +63,7 @@ class TApacheJSONProtocol(TProtocolBase):
     """
 
     def __init__(self, trans):
-        super().__init__(trans)
+        TProtocolBase.__init__(self, trans)
         self._load_data()
 
     def _load_data(self):
