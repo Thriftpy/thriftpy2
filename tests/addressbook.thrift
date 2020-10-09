@@ -1,4 +1,5 @@
 include "container.thrift"
+include "multi.level.thrift"
 
 const i16 DEFAULT_LIST_SIZE = 10
 
@@ -26,6 +27,7 @@ typedef map<string, Person> PersonMap
 
 struct AddressBook {
     1: optional PersonMap people,
+    2: optional multi.level.TestMultiLevelStruct test_struct,
 }
 
 exception PersonNotExistsError {
