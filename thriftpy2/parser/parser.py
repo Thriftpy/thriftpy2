@@ -403,7 +403,7 @@ def p_ref_type(p):
                 ref_type = resolved_ref_type
                 break
     else:
-        for index, name in enumerate(p[1].split('.')):
+        for index, name in enumerate(p[1].rsplit('.', 1)):
             ref_type = getattr(ref_type, name, None)
             if ref_type is None:
                 if index != len(p[1].split('.')) - 1:
