@@ -69,11 +69,18 @@ class TApacheJSONProtocol(TProtocolBase):
 
     def _load_data(self):
         data = b""
+        l_braces = 0
         while True:
-            new_data = self.trans.read(32)
-            print("Received", new_data)
+            # read(sz) will wait until it has read exactly sz bytes,
+            # so we must read until we get a balanced json list in absence of knowing
+            # how long the json string will be
+            new_data = self.trans.read(1)
+            if new_data == b"[":
+                l_braces += 1
+            elif new_data == b"]":
+                l_braces -= 1
             data += new_data
-            if not new_data:
+            if l_braces == 0:
                 break
         if data:
             self._req = json.loads(data.decode('utf8'))
