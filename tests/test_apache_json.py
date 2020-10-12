@@ -1,10 +1,15 @@
 from __future__ import absolute_import
 import json
+import time
+from multiprocessing import Process
 
 import thriftpy2
 from thriftpy2.protocol import TApacheJSONProtocolFactory
 from thriftpy2.thrift import TProcessor
-from thriftpy2.transport import TMemoryBuffer
+from thriftpy2.transport import TMemoryBuffer, TBufferedTransportFactory
+
+from thriftpy2.http import make_server as make_http_server, make_client as make_http_client
+from thriftpy2.rpc import make_server as make_rpc_server, make_client as make_rpc_client
 
 
 def recursive_vars(obj):
@@ -104,3 +109,91 @@ def test_thrift_transport():
     final_data = obuf.getvalue()
     assert json.loads(request_data.decode('utf8'))[4]['1'] ==\
            json.loads(final_data.decode('utf8'))[4]['0']
+
+
+def test_http_client():
+    test_thrift = thriftpy2.load(
+        "apache_json_test.thrift",
+        module_name="test_thrift"
+    )
+
+    class Handler:
+        @staticmethod
+        def test(t):
+            return t
+
+    def run_server():
+        server = make_http_server(
+            test_thrift.TestService,
+            handler=Handler(),
+            host='localhost',
+            port=9090,
+            proto_factory=TApacheJSONProtocolFactory(),
+            trans_factory=TBufferedTransportFactory()
+        )
+        server.serve()
+    proc = Process(target=run_server,)
+    proc.start()
+    time.sleep(0.5)
+
+    try:
+        test_object = test_thrift.Test(
+            tdouble=12.3456,
+            tint=567
+        )
+
+        client = make_http_client(
+            test_thrift.TestService,
+            proto_factory=TApacheJSONProtocolFactory(),
+            trans_factory=TBufferedTransportFactory()
+         )
+        res = client.test(test_object)
+        assert recursive_vars(res) == recursive_vars(test_object)
+    finally:
+        proc.kill()
+
+
+def test_rpc_client():
+    test_thrift = thriftpy2.load(
+        "apache_json_test.thrift",
+        module_name="test_thrift"
+    )
+
+    class Handler:
+        @staticmethod
+        def test(t):
+            return t
+
+    def run_server():
+        server = make_rpc_server(
+            test_thrift.TestService,
+            handler=Handler(),
+            host='localhost',
+            port=9090,
+            proto_factory=TApacheJSONProtocolFactory(),
+            trans_factory=TBufferedTransportFactory()
+        )
+        server.serve()
+    proc = Process(target=run_server,)
+    proc.start()
+    time.sleep(0.5)
+    err = None
+    try:
+        test_object = test_thrift.Test(
+            tdouble=12.3456,
+            tint=567
+        )
+
+        client = make_rpc_client(
+            test_thrift.TestService,
+            proto_factory=TApacheJSONProtocolFactory(),
+            trans_factory=TBufferedTransportFactory()
+         )
+        res = client.test(test_object)
+        assert recursive_vars(res) == recursive_vars(test_object)
+    except Exception as e:
+       err = e
+    finally:
+        proc.kill()
+    if err:
+        raise err
