@@ -170,3 +170,4 @@ def test_client(server_func):
         assert recursive_vars(res) == recursive_vars(test_object)
     finally:
         proc.terminate()
+    time.sleep(1)
