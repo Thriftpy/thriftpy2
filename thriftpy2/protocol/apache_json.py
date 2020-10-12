@@ -70,16 +70,21 @@ class TApacheJSONProtocol(TProtocolBase):
     def _load_data(self):
         data = b""
         l_braces = 0
+        in_string = False
         while True:
             # read(sz) will wait until it has read exactly sz bytes,
             # so we must read until we get a balanced json list in absence of knowing
             # how long the json string will be
+
             new_data = self.trans.read(1)
-            if new_data == b"[":
-                l_braces += 1
-            elif new_data == b"]":
-                l_braces -= 1
             data += new_data
+            if new_data == b'"' and not data.endswith(b'\\"'):
+                in_string = not in_string
+            if not in_string:
+                if new_data == b"[":
+                    l_braces += 1
+                elif new_data == b"]":
+                    l_braces -= 1
             if l_braces == 0:
                 break
         if data:
@@ -108,7 +113,7 @@ class TApacheJSONProtocol(TProtocolBase):
 
     def write_struct(self, obj):
         """
-        Write json to self.trans following apche style jsonification of `obj`
+        Write json to self.trans following apache style jsonification of `obj`
         :param obj: A thriftpy2 object
         :return:
         """
