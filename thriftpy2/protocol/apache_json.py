@@ -178,7 +178,7 @@ class TApacheJSONProtocol(TProtocolBase):
                     # format is [key_type, value_type, length, dict]
                     result[field_idx] = {
                         CTYPES[ttype]: [key_type, val_type, len(val),
-                                        {k: self._thrift_to_dict(v, spec) for k, v in val.items()}]
+                                        {self._thrift_to_dict(k, key_type): self._thrift_to_dict(v, spec) for k, v in val.items()}]
                     }
                 elif ttype == TType.BINARY:
                     result[field_idx] = {
@@ -202,7 +202,10 @@ class TApacheJSONProtocol(TProtocolBase):
             if base_type in (TType.I08, TType.I16, TType.I32, TType.I64):
                 return int(data)
             if base_type == TType.BOOL:
-                return bool(data)
+                return {
+                    'true': True,
+                    'false': False
+                }[data.lower()]
             return data
 
         if isinstance(base_type, tuple):

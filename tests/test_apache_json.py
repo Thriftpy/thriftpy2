@@ -180,7 +180,7 @@ def test_rpc_client():
             port=9090,
             proto_factory=proto_factory(),
             trans_factory=trans_factory(),
-            client_timeout=60000
+            client_timeout=3000
         )
         server.serve()
 
@@ -192,7 +192,9 @@ def test_rpc_client():
         test_object = test_thrift.Test(
             tdouble=12.3456,
             tint=567,
-            tstr='A test \'{["string'
+            tstr='A test \'{["string',
+            tmap_of_bool2str={True: "true string", False: "false string"},
+            tmap_of_bool2int={True: 0, False: 1}
         )
 
         client = make_rpc_client(
@@ -201,7 +203,7 @@ def test_rpc_client():
             port=9090,
             proto_factory=proto_factory(),
             trans_factory=trans_factory(),
-            timeout=60000
+            timeout=3000
         )
         res = client.test(test_object)
         assert recursive_vars(res) == recursive_vars(test_object)
