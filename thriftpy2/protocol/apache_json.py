@@ -65,19 +65,25 @@ class TApacheJSONProtocol(TProtocolBase):
 
     def __init__(self, trans):
         TProtocolBase.__init__(self, trans)
-        self._load_data()
+        self._req = None
 
     def _load_data(self):
-        val = self.trans.getvalue()
-        if val:
-            self.req = json.loads(val.decode('utf8'))
+        data = b""
+        while True:
+            new_data = self.trans.read(32)
+            print("Received", new_data)
+            data += new_data
+            if not new_data:
+                break
+        if data:
+            self._req = json.loads(data.decode('utf8'))
         else:
-            self.req = None
+            self._req = None
 
     def read_message_begin(self):
-        if not self.req:
+        if not self._req:
             self._load_data()
-        return self.req[1:4]
+        return self._req[1:4]
 
     def read_message_end(self):
         pass
@@ -100,10 +106,8 @@ class TApacheJSONProtocol(TProtocolBase):
         :return:
         """
         doc = [VERSION, self.api, self.ttype, self.seqid, self._thrift_to_dict(obj)]
-        self.trans.write(json.dumps(
-                doc
-            )
-        )
+        json_str = json.dumps(doc)
+        self.trans.write(json_str.encode("utf8"))
 
     def _thrift_to_dict(self, thrift_obj, item_type=None):
         """
@@ -260,4 +264,4 @@ class TApacheJSONProtocol(TProtocolBase):
         :param obj:
         :return:
         """
-        return self._dict_to_thrift(self.req[4], obj)
+        return self._dict_to_thrift(self._req[4], obj)
