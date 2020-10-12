@@ -153,7 +153,7 @@ def test_http_client():
         res = client.test(test_object)
         assert recursive_vars(res) == recursive_vars(test_object)
     finally:
-        proc.kill()
+        proc.terminate()
 
 
 def test_rpc_client():
@@ -206,6 +206,6 @@ def test_rpc_client():
     except Exception as e:
         err = e
     finally:
-        proc.kill()
+        proc.terminate()
     if err:
         raise err
