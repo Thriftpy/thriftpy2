@@ -26,4 +26,4 @@ __all__ = ['TBinaryProtocol', 'TBinaryProtocolFactory',
            'TJSONProtocol', 'TJSONProtocolFactory',
            'TApacheJSONProtocol', 'TApacheJSONProtocolFactory',
            'TMultiplexedProtocol', 'TMultiplexedProtocolFactory',
-           'TCompactProtocol', 'TCompactProtocolFactory', ]
+           'TCompactProtocol', 'TCompactProtocolFactory']
