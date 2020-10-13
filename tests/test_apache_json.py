@@ -4,6 +4,7 @@ import json
 import time
 from multiprocessing import Process
 
+import six
 import thriftpy2
 from thriftpy2.http import make_server as make_http_server,\
     make_client as make_http_client
@@ -16,7 +17,11 @@ from thriftpy2.transport.buffered import TBufferedTransportFactory
 
 
 def recursive_vars(obj):
-    if type(obj) in (bytes, int, float, str, bool):
+    if isinstance(obj, six.string_types):
+        return six.ensure_str(obj)
+    if isinstance(obj, six.binary_type):
+        return six.ensure_binary(obj)
+    if isinstance(obj, (int, float, str, bool)):
         return obj
     if isinstance(obj, dict):
         return {k: recursive_vars(v) for k, v in obj.items()}
