@@ -3,6 +3,16 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.12
+-------------
+
+Released on Oct 13, 2020.
+
+- Support include files with dot in name, via `2-#125`_.
+
+.. _2-#125: https://github.com/Thriftpy/thriftpy2/pull/125
+
+
 Version 0.4.11
 -------------
 
