@@ -21,7 +21,7 @@ def recursive_vars(obj):
         return six.ensure_str(obj)
     if isinstance(obj, six.binary_type):
         return six.ensure_binary(obj)
-    if isinstance(obj, (int, float, str, bool)):
+    if isinstance(obj, (int, float, bool)):
         return obj
     if isinstance(obj, dict):
         return {k: recursive_vars(v) for k, v in obj.items()}
