@@ -7,6 +7,7 @@ from __future__ import absolute_import
 import json
 import base64
 
+from six import string_types
 from thriftpy2.protocol import TProtocolBase
 from thriftpy2.thrift import TType
 
@@ -198,7 +199,7 @@ class TApacheJSONProtocol(TProtocolBase):
         :return:
         """
         # if the result is a python type, return it:
-        if isinstance(data, (str, int, float, bool, bytes)) or data is None:
+        if isinstance(data, (str, int, float, bool, bytes, string_types)) or data is None:
             if base_type in (TType.I08, TType.I16, TType.I32, TType.I64):
                 return int(data)
             if base_type == TType.BOOL:
