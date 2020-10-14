@@ -231,14 +231,11 @@ class TApacheJSONProtocol(TProtocolBase):
             for ftype, value in val.items():
                 ttype = JTYPES[ftype]
                 if thrift_spec[0] == TType.BINARY:
-                    if not val.get('str'):
-                        result[field_name] = None
-                    else:
-                        bin_data = val['str']
-                        m = len(bin_data) % 4
-                        if m != 0:
-                            bin_data += '=' * (4-m)
-                        result[field_name] = base64.b64decode(bin_data)
+                    bin_data = val.get('str', '')
+                    m = len(bin_data) % 4
+                    if m != 0:
+                        bin_data += '=' * (4-m)
+                    result[field_name] = base64.b64decode(bin_data)
                 elif ttype == TType.STRUCT:
                     result[field_name] = self._dict_to_thrift(value, thrift_spec[2])
                 elif ttype == TType.LIST:
