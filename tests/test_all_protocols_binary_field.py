@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import time
-import traceback
 from multiprocessing import Process
 
 import pytest
@@ -139,5 +138,4 @@ def test_protocols(proto_factory, binary, tlist, server_func):
     finally:
         proc.terminate()
     if err:
-        traceback.format_exc()
         raise err
