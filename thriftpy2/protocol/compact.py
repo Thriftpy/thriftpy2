@@ -108,7 +108,8 @@ CTYPES = {
     TType.STRUCT: CompactType.STRUCT,
     TType.LIST: CompactType.LIST,
     TType.SET: CompactType.SET,
-    TType.MAP: CompactType.MAP
+    TType.MAP: CompactType.MAP,
+    TType.BINARY: CompactType.BINARY
 }
 TTYPES = dict((v, k) for k, v in CTYPES.items())
 TTYPES[CompactType.FALSE] = TType.BOOL
@@ -227,6 +228,10 @@ class TCompactProtocol(TProtocolBase):
         val, = unpack('<d', buff)
         return val
 
+    def _read_binary(self):
+        length = self._read_size()
+        return self.trans.read(length)
+
     def _read_string(self):
         len = self._read_size()
         byte_payload = self.trans.read(len)
@@ -284,6 +289,9 @@ class TCompactProtocol(TProtocolBase):
 
         elif ttype == TType.DOUBLE:
             return self._read_double()
+
+        elif ttype == TType.BINARY:
+            return self._read_binary()
 
         elif ttype == TType.STRING:
             return self._read_string()
@@ -419,6 +427,10 @@ class TCompactProtocol(TProtocolBase):
     def _write_double(self, dub):
         self.trans.write(pack('<d', dub))
 
+    def _write_binary(self, b):
+        self._write_size(len(b))
+        self.trans.write(b)
+
     def _write_string(self, s):
         if not isinstance(s, bytes):
             s = s.encode('utf-8')
@@ -466,6 +478,9 @@ class TCompactProtocol(TProtocolBase):
 
         elif ttype == TType.DOUBLE:
             self._write_double(val)
+
+        elif ttype == TType.BINARY:
+            self._write_binary(val)
 
         elif ttype == TType.STRING:
             self._write_string(val)
@@ -519,6 +534,9 @@ class TCompactProtocol(TProtocolBase):
 
         elif ttype == TType.DOUBLE:
             self._read_double()
+
+        elif ttype == TType.BINARY:
+            self._read_binary()
 
         elif ttype == TType.STRING:
             self._read_string()
