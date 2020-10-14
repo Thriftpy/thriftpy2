@@ -16,6 +16,10 @@ from .base import TProtocolBase
 VERSION = 1
 
 
+def encode_binary(data):
+    return base64.b64encode(data).decode('ascii')
+
+
 def json_value(ttype, val, spec=None):
     TTYPE_TO_JSONFUNC_MAP = {
         TType.BYTE: (int, (val, )),
@@ -29,7 +33,7 @@ def json_value(ttype, val, spec=None):
         TType.SET: (list_to_json, (val, spec)),
         TType.LIST: (list_to_json, (val, spec)),
         TType.MAP: (map_to_json, (val, spec)),
-        TType.BINARY: (base64.b64encode, (val, )),
+        TType.BINARY: (encode_binary, (val, )),
     }
     func, args = TTYPE_TO_JSONFUNC_MAP.get(ttype)
     if func:
