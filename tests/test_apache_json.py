@@ -4,12 +4,14 @@ import json
 import time
 from multiprocessing import Process
 
+import pytest
 import six
+
 import thriftpy2
-from thriftpy2.http import make_server as make_http_server,\
+from thriftpy2.http import make_server as make_http_server, \
     make_client as make_http_client
 from thriftpy2.protocol import TApacheJSONProtocolFactory
-from thriftpy2.rpc import make_server as make_rpc_server,\
+from thriftpy2.rpc import make_server as make_rpc_server, \
     make_client as make_rpc_client
 from thriftpy2.thrift import TProcessor
 from thriftpy2.transport import TMemoryBuffer
@@ -119,7 +121,9 @@ def test_thrift_transport():
            json.loads(final_data.decode('utf8'))[4]['0']
 
 
-def test_http_client():
+@pytest.mark.parametrize('server_func', [(make_rpc_server, make_rpc_client),
+                                         (make_http_server, make_http_client)])
+def test_client(server_func):
     test_thrift = thriftpy2.load(
         "apache_json_test.thrift",
         module_name="test_thrift"
@@ -149,11 +153,15 @@ def test_http_client():
         test_object = test_thrift.Test(
             tdouble=12.3456,
             tint=567,
-            tstr='A test \'{["string'
+            tstr='A test \'{["string',
+            tmap_of_bool2str={True: "true string", False: "false string"},
+            tmap_of_bool2int={True: 0, False: 1}
         )
 
         client = make_http_client(
             test_thrift.TestService,
+            host='localhost',
+            port=9090,
             proto_factory=TApacheJSONProtocolFactory(),
             trans_factory=TBufferedTransportFactory()
         )
@@ -161,60 +169,3 @@ def test_http_client():
         assert recursive_vars(res) == recursive_vars(test_object)
     finally:
         proc.terminate()
-
-
-def test_rpc_client():
-    test_thrift = thriftpy2.load(
-        "apache_json_test.thrift",
-        module_name="test_thrift"
-    )
-
-    class Handler:
-        @staticmethod
-        def test(t):
-            return t
-
-    proto_factory = TApacheJSONProtocolFactory
-    trans_factory = TBufferedTransportFactory
-
-    def run_server():
-        server = make_rpc_server(
-            test_thrift.TestService,
-            handler=Handler(),
-            host='localhost',
-            port=9090,
-            proto_factory=proto_factory(),
-            trans_factory=trans_factory(),
-            client_timeout=3000
-        )
-        server.serve()
-
-    proc = Process(target=run_server)
-    proc.start()
-    time.sleep(1)
-    err = None
-    try:
-        test_object = test_thrift.Test(
-            tdouble=12.3456,
-            tint=567,
-            tstr='A test \'{["string',
-            tmap_of_bool2str={True: "true string", False: "false string"},
-            tmap_of_bool2int={True: 0, False: 1}
-        )
-
-        client = make_rpc_client(
-            test_thrift.TestService,
-            host='localhost',
-            port=9090,
-            proto_factory=proto_factory(),
-            trans_factory=trans_factory(),
-            timeout=3000
-        )
-        res = client.test(test_object)
-        assert recursive_vars(res) == recursive_vars(test_object)
-    except Exception as e:
-        err = e
-    finally:
-        proc.terminate()
-    if err:
-        raise err
