@@ -109,7 +109,7 @@ def write_val(outbuf, ttype, val, spec=None):
     elif ttype == TType.DOUBLE:
         outbuf.write(pack_double(val))
 
-    elif ttype == TType.STRING:
+    elif ttype in (TType.STRING, TType.BINARY):
         if not isinstance(val, bytes):
             val = val.encode('utf-8')
         outbuf.write(pack_string(val))
@@ -225,6 +225,10 @@ def read_val(inbuf, ttype, spec=None, decode_response=True):
     elif ttype == TType.DOUBLE:
         return unpack_double(inbuf.read(8))
 
+    elif ttype == TType.BINARY:
+        sz = unpack_i32(inbuf.read(4))
+        return inbuf.read(sz)
+
     elif ttype == TType.STRING:
         sz = unpack_i32(inbuf.read(4))
         byte_payload = inbuf.read(sz)
@@ -332,7 +336,7 @@ def skip(inbuf, ftype):
     elif ftype == TType.DOUBLE:
         inbuf.read(8)
 
-    elif ftype == TType.STRING:
+    elif ftype in (TType.STRING, TType.BINARY):
         inbuf.read(unpack_i32(inbuf.read(4)))
 
     elif ftype == TType.SET or ftype == TType.LIST:
