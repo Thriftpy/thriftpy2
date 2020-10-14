@@ -5,9 +5,9 @@ import traceback
 from multiprocessing import Process
 
 import pytest
+import six
 
 import thriftpy2
-from tests.test_apache_json import recursive_vars
 from thriftpy2._compat import PYPY
 from thriftpy2.http import make_server as make_http_server, \
     make_client as make_http_client
@@ -31,6 +31,21 @@ protocols = [TApacheJSONProtocolFactory,
 
 if not PYPY:
     protocols.append(TCyBinaryProtocolFactory)
+
+
+def recursive_vars(obj):
+    if isinstance(obj, six.string_types):
+        return six.ensure_str(obj)
+    if isinstance(obj, six.binary_type):
+        return six.ensure_binary(obj)
+    if isinstance(obj, (int, float, bool)):
+        return obj
+    if isinstance(obj, dict):
+        return {k: recursive_vars(v) for k, v in obj.items()}
+    if isinstance(obj, (list, set)):
+        return [recursive_vars(v) for v in obj]
+    if hasattr(obj, '__dict__'):
+        return recursive_vars(vars(obj))
 
 
 @pytest.mark.parametrize('server_func',
