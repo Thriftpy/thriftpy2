@@ -37,7 +37,8 @@ ctypedef enum TType:
     T_SET = 14,
     T_LIST = 15,
     T_UTF8 = 16,
-    T_UTF16 = 17
+    T_UTF16 = 17,
+    T_BINARY = 18
 
 class ProtocolError(Exception):
     pass
@@ -265,6 +266,10 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
         n = read_i64(buf)
         return (<double*>(&n))[0]
 
+    elif ttype == T_BINARY:
+        size = read_i32(buf)
+        return c_read_binary(buf, size)
+
     elif ttype == T_STRING:
         size = read_i32(buf)
         if decode_response:
@@ -344,6 +349,9 @@ cdef c_write_val(CyTransportBase buf, TType ttype, val, spec=None):
     elif ttype == T_DOUBLE:
         write_double(buf, val)
 
+    elif ttype == T_BINARY:
+        write_string(buf, val)
+
     elif ttype == T_STRING:
         if not isinstance(val, bytes):
             try:
@@ -374,7 +382,7 @@ cpdef skip(CyTransportBase buf, TType ttype):
         read_i32(buf)
     elif ttype == T_I64 or ttype == T_DOUBLE:
         read_i64(buf)
-    elif ttype == T_STRING:
+    elif ttype == T_STRING or ttype == T_BINARY:
         size = read_i32(buf)
         c_read_binary(buf, size)
     elif ttype == T_SET or ttype == T_LIST:
