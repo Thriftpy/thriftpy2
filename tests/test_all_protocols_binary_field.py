@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import logging
 import time
 from multiprocessing import Process
 
@@ -13,22 +14,22 @@ from thriftpy2.http import make_server as make_http_server, \
 from thriftpy2.protocol import (
     TApacheJSONProtocolFactory,
     TJSONProtocolFactory,
-    TCompactProtocolFactory,
-    TMultiplexedProtocolFactory
+    TCompactProtocolFactory
 )
 from thriftpy2.protocol.binary import TBinaryProtocolFactory
 from thriftpy2.protocol.cybin import TCyBinaryProtocolFactory
 from thriftpy2.rpc import make_server as make_rpc_server, \
     make_client as make_rpc_client
-from thriftpy2.transport.buffered import TBufferedTransportFactory
+from thriftpy2.transport import TBufferedTransportFactory
 
 protocols = [TApacheJSONProtocolFactory,
              TJSONProtocolFactory,
              TBinaryProtocolFactory,
-             # TMultiplexedProtocolFactory,
              TCompactProtocolFactory]
 
 if not PYPY:
+    from thriftpy2.transport import TCyBufferedTransportFactory
+    TBufferedTransportFactory = TCyBufferedTransportFactory
     protocols.append(TCyBinaryProtocolFactory)
 
 
