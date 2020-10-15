@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
+
 """
 Transport for json protocol that apache thrift files will understand
 unfortunately, thriftpy2's TJSONProtocol is not compatible with apache's
 """
+
 from __future__ import absolute_import
 import json
 import base64
 
 from six import string_types
+
 from thriftpy2.protocol import TProtocolBase
 from thriftpy2.thrift import TType
 
@@ -53,7 +56,7 @@ def flatten(suitable_for_isinstance):
     return tuple(types)
 
 
-class TApacheJSONProtocolFactory:
+class TApacheJSONProtocolFactory(object):
     @staticmethod
     def get_protocol(trans):
         return TApacheJSONProtocol(trans)
@@ -115,6 +118,7 @@ class TApacheJSONProtocol(TProtocolBase):
     def write_struct(self, obj):
         """
         Write json to self.trans following apache style jsonification of `obj`
+
         :param obj: A thriftpy2 object
         :return:
         """
@@ -194,6 +198,7 @@ class TApacheJSONProtocol(TProtocolBase):
     def _dict_to_thrift(self, data, base_type):
         """
         Convert an apache thrift dict (where key is the type, value is the data)
+
         :param data:
         :param spec:
         :return:
@@ -274,6 +279,7 @@ class TApacheJSONProtocol(TProtocolBase):
 
         Will turn the contents of self.req[4] into the args of obj,
         ie. self.req[4]["1"] must be rendered into obj.thrift_spec
+
         :param obj:
         :return:
         """
