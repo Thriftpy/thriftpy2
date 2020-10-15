@@ -15,7 +15,7 @@ with open(join(dirname(__file__), 'thriftpy2', '__init__.py'), 'r') as f:
 
 install_requires = [
     "ply>=3.4,<4.0",
-    "six>=1.15.0"
+    "six~=1.15.0",
 ]
 
 tornado_requires = [
