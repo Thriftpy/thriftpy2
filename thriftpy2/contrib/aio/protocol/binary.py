@@ -94,6 +94,10 @@ def read_val(inbuf, ttype, spec=None, decode_response=True):
     elif ttype == TType.DOUBLE:
         return unpack_double((yield from inbuf.read(8)))
 
+    elif ttype == TType.BINARY:
+        sz = unpack_i32((yield from inbuf.read(4)))
+        return inbuf.read(sz)
+
     elif ttype == TType.STRING:
         sz = unpack_i32((yield from inbuf.read(4)))
         byte_payload = yield from inbuf.read(sz)
@@ -208,7 +212,7 @@ def skip(inbuf, ftype):
     elif ftype == TType.DOUBLE:
         yield from inbuf.read(8)
 
-    elif ftype == TType.STRING:
+    elif ftype in (TType.BINARY, TType.STRING):
         _size = yield from inbuf.read(4)
         yield from inbuf.read(unpack_i32(_size))
 
