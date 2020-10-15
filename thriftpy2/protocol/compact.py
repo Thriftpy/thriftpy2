@@ -22,6 +22,8 @@ CONTAINER_READ = 6
 VALUE_READ = 7
 BOOL_READ = 8
 
+BIN_TYPES = (TType.STRING, TType.BINARY)
+
 
 def check_integer_limits(i, bits):
     if bits == 8 and (i < -128 or i > 127):
@@ -267,10 +269,13 @@ class TCompactProtocol(TProtocolBase):
                 self.skip(ftype)
                 raise
             else:
-                if field is not None and ftype == field[0]:
+                if field is not None and\
+                        (ftype == field[0]
+                         or (ftype in BIN_TYPES
+                             and field[0] in BIN_TYPES)):
                     fname = field[1]
                     fspec = field[2]
-                    val = self._read_val(ftype, fspec)
+                    val = self._read_val(field[0], fspec)
                     setattr(obj, fname, val)
                 else:
                     self.skip(ftype)
@@ -325,6 +330,10 @@ class TCompactProtocol(TProtocolBase):
 
             result = {}
             sk_type, sv_type, sz = self._read_map_begin()
+            if sk_type in BIN_TYPES:
+                sk_type = k_type
+            if sv_type in BIN_TYPES:
+                sv_type = v_type
             if sk_type != k_type or sv_type != v_type:
                 for _ in range(sz):
                     self.skip(sk_type)
