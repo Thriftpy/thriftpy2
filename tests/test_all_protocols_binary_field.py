@@ -73,7 +73,7 @@ def test_protocols(proto_factory, binary, tlist, server_func):
 
     proc = Process(target=run_server)
     proc.start()
-    time.sleep(0.1)
+    time.sleep(0.5)
     err = None
     try:
         test_object = test_thrift.Test(
