@@ -111,7 +111,7 @@ CTYPES = {
     TType.LIST: CompactType.LIST,
     TType.SET: CompactType.SET,
     TType.MAP: CompactType.MAP,
-    TType.BINARY: CompactType.BINARY
+    TType.BINARY: CompactType.BINARY,
 }
 TTYPES = dict((v, k) for k, v in CTYPES.items())
 TTYPES[CompactType.FALSE] = TType.BOOL
