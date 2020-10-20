@@ -157,10 +157,12 @@ class TApacheJSONProtocol(TProtocolBase):
                             key_type = flat_key_val[0]
                             val_type = flat_key_val[1]
                         return [CTYPES[key_type], CTYPES[val_type], len(thrift_obj), {
-                            k: self._thrift_to_dict(v, to_type[1]) for k, v in thrift_obj.items()
+                            self._thrift_to_dict(k, key_type): self._thrift_to_dict(v, to_type[1]) for k, v in thrift_obj.items()
                         }]
             if isinstance(thrift_obj, bool):
                 return int(thrift_obj)
+            if isinstance(thrift_obj, bytes):
+                return base64.b64encode(thrift_obj).decode('ascii')
             return thrift_obj
         result = {}
         for field_idx, thrift_spec in thrift_obj.thrift_spec.items():
@@ -212,6 +214,8 @@ class TApacheJSONProtocol(TProtocolBase):
         if isinstance(data, (str, int, float, bool, bytes, string_types)) or data is None:
             if base_type in (TType.I08, TType.I16, TType.I32, TType.I64):
                 return int(data)
+            if base_type == TType.BINARY:
+                return base64.b64decode(data)
             if base_type == TType.BOOL:
                 return {
                     'true': True,
@@ -252,10 +256,8 @@ class TApacheJSONProtocol(TProtocolBase):
                     result[field_name] = base64.b64decode(bin_data)
                 elif ttype == TType.STRUCT:
                     result[field_name] = self._dict_to_thrift(value, thrift_spec[2])
-                elif ttype == TType.LIST:
+                elif ttype in (TType.LIST, TType.SET):
                     result[field_name] = [self._dict_to_thrift(v, thrift_spec[2]) for v in value[2:]]
-                elif ttype == TType.SET:
-                    result[field_name] = {self._dict_to_thrift(v, thrift_spec[2]) for v in value[2:]}
                 elif ttype == TType.MAP:
                     key_spec = thrift_spec[2][0]
                     val_spec = thrift_spec[2][1]
