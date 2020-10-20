@@ -25,7 +25,11 @@ struct Test {
     18: map<i32, Foo> tmap_of_int2foo,
     19: binary tbinary,
     20: optional map<bool, string> tmap_of_bool2str
-    21: optional map<bool, i16> tmap_of_bool2int
+    21: optional map<bool, i16> tmap_of_bool2int,
+    22: list<binary> tlist_of_binary,
+    23: set<binary> tset_of_binary,
+    24: map<binary,binary> tbin2bin,
+
 }
 
 service TestService {
