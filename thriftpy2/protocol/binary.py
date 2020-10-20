@@ -346,7 +346,7 @@ def skip(inbuf, ftype):
     elif ftype == TType.DOUBLE:
         inbuf.read(8)
 
-    elif ftype in (TType.STRING, TType.BINARY):
+    elif ftype in BIN_TYPES:
         inbuf.read(unpack_i32(inbuf.read(4)))
 
     elif ftype == TType.SET or ftype == TType.LIST:
