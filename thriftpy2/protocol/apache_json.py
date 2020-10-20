@@ -123,7 +123,7 @@ class TApacheJSONProtocol(TProtocolBase):
         :return:
         """
         doc = [VERSION, self.api, self.ttype, self.seqid, self._thrift_to_dict(obj)]
-        json_str = json.dumps(doc)
+        json_str = json.dumps(doc, separators=(',', ':'))
         self.trans.write(json_str.encode("utf8"))
 
     def _thrift_to_dict(self, thrift_obj, item_type=None):
@@ -159,7 +159,8 @@ class TApacheJSONProtocol(TProtocolBase):
                         return [CTYPES[key_type], CTYPES[val_type], len(thrift_obj), {
                             k: self._thrift_to_dict(v, to_type[1]) for k, v in thrift_obj.items()
                         }]
-
+            if isinstance(thrift_obj, bool):
+                return int(thrift_obj)
             return thrift_obj
         result = {}
         for field_idx, thrift_spec in thrift_obj.thrift_spec.items():
@@ -189,6 +190,10 @@ class TApacheJSONProtocol(TProtocolBase):
                     result[field_idx] = {
                         CTYPES[ttype]: base64.b64encode(val).decode('ascii')
                     }
+                elif ttype == TType.BOOL:
+                    result[field_idx] = {
+                        CTYPES[ttype]: int(val)
+                    }
                 else:
                     result[field_idx] = {
                         CTYPES[ttype]: val
@@ -210,8 +215,12 @@ class TApacheJSONProtocol(TProtocolBase):
             if base_type == TType.BOOL:
                 return {
                     'true': True,
-                    'false': False
+                    'false': False,
+                    '1': True,
+                    '0': False
                 }[data.lower()]
+            if isinstance(data, bool):
+                return int(data)
             return data
 
         if isinstance(base_type, tuple):
