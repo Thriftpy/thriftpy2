@@ -14,6 +14,7 @@ VERSION_MASK = -65536
 # VERSION_1 = 0x80010000
 VERSION_1 = -2147418112
 TYPE_MASK = 0x000000ff
+BIN_TYPES = (TType.STRING, TType.BINARY)
 
 
 def pack_i8(byte):
@@ -72,6 +73,8 @@ def write_message_begin(outbuf, name, ttype, seqid, strict=True):
 
 
 def write_field_begin(outbuf, ttype, fid):
+    if ttype == TType.BINARY:
+        ttype = TType.STRING
     outbuf.write(pack_i8(ttype) + pack_i16(fid))
 
 
@@ -109,7 +112,7 @@ def write_val(outbuf, ttype, val, spec=None):
     elif ttype == TType.DOUBLE:
         outbuf.write(pack_double(val))
 
-    elif ttype in (TType.STRING, TType.BINARY):
+    elif ttype in BIN_TYPES:
         if not isinstance(val, bytes):
             val = val.encode('utf-8')
         outbuf.write(pack_string(val))
@@ -275,6 +278,10 @@ def read_val(inbuf, ttype, spec=None, decode_response=True):
 
         result = {}
         sk_type, sv_type, sz = read_map_begin(inbuf)
+        if sk_type in BIN_TYPES:
+            sk_type = k_type
+        if sv_type in BIN_TYPES:
+            sv_type = v_type
         if sk_type != k_type or sv_type != v_type:
             for _ in range(sz):
                 skip(inbuf, sk_type)
@@ -313,8 +320,11 @@ def read_struct(inbuf, obj, decode_response=True):
         # it really should equal here. but since we already wasted
         # space storing the duplicate info, let's check it.
         if f_type != sf_type:
-            skip(inbuf, f_type)
-            continue
+            if f_type in BIN_TYPES:
+                f_type = sf_type
+            else:
+                skip(inbuf, f_type)
+                continue
 
         setattr(obj, f_name,
                 read_val(inbuf, f_type, f_container_spec, decode_response))
