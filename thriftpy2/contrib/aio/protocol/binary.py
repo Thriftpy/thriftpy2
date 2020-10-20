@@ -22,6 +22,7 @@ from thriftpy2.protocol.binary import (
 
 from .base import TAsyncProtocolBase
 
+BIN_TYPES = (TType.STRING, TType.BINARY)
 
 @asyncio.coroutine
 def read_message_begin(inbuf, strict=True):
@@ -148,6 +149,10 @@ def read_val(inbuf, ttype, spec=None, decode_response=True):
 
         result = {}
         sk_type, sv_type, sz = yield from read_map_begin(inbuf)
+        if sk_type in BIN_TYPES:
+            sk_type = k_type
+        if sv_type in BIN_TYPES:
+            sv_type = v_type
         if sk_type != k_type or sv_type != v_type:
             for _ in range(sz):
                 yield from skip(inbuf, sk_type)
@@ -187,8 +192,11 @@ def read_struct(inbuf, obj, decode_response=True):
         # it really should equal here. but since we already wasted
         # space storing the duplicate info, let's check it.
         if f_type != sf_type:
-            yield from skip(inbuf, f_type)
-            continue
+            if f_type in BIN_TYPES:
+                f_type = sf_type
+            else:
+                yield from skip(inbuf, f_type)
+                continue
 
         _buf = yield from read_val(
             inbuf, f_type, f_container_spec, decode_response)
@@ -212,7 +220,7 @@ def skip(inbuf, ftype):
     elif ftype == TType.DOUBLE:
         yield from inbuf.read(8)
 
-    elif ftype in (TType.BINARY, TType.STRING):
+    elif ftype in BIN_TYPES:
         _size = yield from inbuf.read(4)
         yield from inbuf.read(unpack_i32(_size))
 
