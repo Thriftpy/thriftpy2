@@ -115,6 +115,9 @@ def test_protocols(proto_factory, binary, tlist, server_func):
                 2: Foo("Two"),
                 5: Foo("Five")
             },
+            tbin2bin={b'Binary': b'data'},
+            tset_of_binary={b'bin one', b'bin two'},
+            tlist_of_binary=[b'foo roo', b'baz boo'],
         )
 
         client = server_func[1](
@@ -132,3 +135,4 @@ def test_protocols(proto_factory, binary, tlist, server_func):
         proc.terminate()
     if err:
         raise err
+    time.sleep(0.1)
