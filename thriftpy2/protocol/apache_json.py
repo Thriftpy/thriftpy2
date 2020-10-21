@@ -136,8 +136,8 @@ class TApacheJSONProtocol(TProtocolBase):
         >>>  ["rec",2,{"1":{"i32":12345.0},"2":{"i32":2.0},"3":{"str":"Testing notifications"},"4":{"tf":1}},
               {"1":{"i32":567809.0},"2":{"i32":2.0},"3":{"str":"Other test"},"4":{"tf":0}}]}}}}}}
 
-        :param data:
-        :param base_type:
+        :param thrift_obj: the thing we want to make into a dict
+        :param item_type: the type of the item we are to convert
         :return:
         """
         if not hasattr(thrift_obj, 'thrift_spec'):
@@ -157,11 +157,14 @@ class TApacheJSONProtocol(TProtocolBase):
                             key_type = flat_key_val[0]
                             val_type = flat_key_val[1]
                         return [CTYPES[key_type], CTYPES[val_type], len(thrift_obj), {
-                            self._thrift_to_dict(k, key_type): self._thrift_to_dict(v, to_type[1]) for k, v in thrift_obj.items()
+                            self._thrift_to_dict(k, key_type):
+                                self._thrift_to_dict(v, to_type[1]) for k, v in thrift_obj.items()
                         }]
+                    if to_type == TType.BINARY or item_type[0] == TType.BINARY:
+                        return base64.b64encode(thrift_obj).decode('ascii')
             if isinstance(thrift_obj, bool):
                 return int(thrift_obj)
-            if isinstance(thrift_obj, bytes):
+            if item_type == TType.BINARY or (isinstance(item_type, tuple) and item_type[0] == TType.BINARY):
                 return base64.b64encode(thrift_obj).decode('ascii')
             return thrift_obj
         result = {}
@@ -186,7 +189,8 @@ class TApacheJSONProtocol(TProtocolBase):
                     # format is [key_type, value_type, length, dict]
                     result[field_idx] = {
                         CTYPES[ttype]: [key_type, val_type, len(val),
-                                        {self._thrift_to_dict(k, key_type): self._thrift_to_dict(v, spec) for k, v in val.items()}]
+                                        {self._thrift_to_dict(k, spec[0]):
+                                         self._thrift_to_dict(v, spec) for k, v in val.items()}]
                     }
                 elif ttype == TType.BINARY:
                     result[field_idx] = {
@@ -206,8 +210,8 @@ class TApacheJSONProtocol(TProtocolBase):
         """
         Convert an apache thrift dict (where key is the type, value is the data)
 
-        :param data:
-        :param spec:
+        :param data: the dict data
+        :param base_type: the type we are going to convert data to
         :return:
         """
         # if the result is a python type, return it:
@@ -236,10 +240,9 @@ class TApacheJSONProtocol(TProtocolBase):
                 return [self._dict_to_thrift(v, item_type) for v in data[2:]]
             elif container_type == TType.MAP:
                 return {
-                    self._dict_to_thrift(k, item_type[0]): self._dict_to_thrift(v, item_type[1]) for k, v in data[3].items()
+                    self._dict_to_thrift(k, item_type[0]):
+                        self._dict_to_thrift(v, item_type[1]) for k, v in data[3].items()
                 }
-            elif container_type == TType.SET:
-                return {self._dict_to_thrift(v, item_type) for v in data[2:]}
         result = {}
         base_spec = base_type.thrift_spec
         for field_idx, val in data.items():
