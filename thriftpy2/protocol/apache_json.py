@@ -79,7 +79,12 @@ class TApacheJSONProtocol(TProtocolBase):
             # read(sz) will wait until it has read exactly sz bytes,
             # so we must read until we get a balanced json list in absence of knowing
             # how long the json string will be
-
+            if hasattr(self.trans, 'getvalue'):
+                try:
+                    data = self.trans.getvalue()
+                    break
+                except:
+                    pass
             new_data = self.trans.read(1)
             data += new_data
             if new_data == b'"' and not data.endswith(b'\\"'):
