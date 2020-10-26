@@ -178,3 +178,4 @@ def test_exceptions(server_func, proto_factory):
     assert e.value.message == msg
 
     proc.terminate()
+    time.sleep(1)
