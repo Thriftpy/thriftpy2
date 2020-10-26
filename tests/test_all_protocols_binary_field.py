@@ -53,7 +53,7 @@ def test_protocols(proto_factory, binary, tlist, server_func):
     )
     Foo = test_thrift.Foo
 
-    class Handler:
+    class Handler(object):
         @staticmethod
         def test(t):
             return t
@@ -136,3 +136,45 @@ def test_protocols(proto_factory, binary, tlist, server_func):
     if err:
         raise err
     time.sleep(0.1)
+
+
+@pytest.mark.parametrize('server_func',
+                         [(make_rpc_server, make_rpc_client),
+                          (make_http_server, make_http_client)])
+@pytest.mark.parametrize('proto_factory', protocols)
+def test_exceptions(server_func, proto_factory):
+    test_thrift = thriftpy2.load(
+        "apache_json_test.thrift",
+        module_name="test_thrift"
+    )
+    TestException = test_thrift.TestException
+
+    class Handler(object):
+        def do_error(self, arg):
+            raise TestException(message=arg)
+
+    def do_server():
+        server = server_func[0](
+            service=test_thrift.TestService,
+            handler=Handler(),
+            host='localhost',
+            port=9090,
+            proto_factory=proto_factory()
+        )
+        server.serve()
+
+    proc = Process(target=do_server)
+    proc.start()
+    time.sleep(0.25)
+    msg = "exception raised!"
+    with pytest.raises(TestException)as e:
+        client = server_func[1](
+            test_thrift.TestService,
+            host='localhost',
+            port=9090,
+            proto_factory=proto_factory()
+        )
+        client.do_error(msg)
+    assert e.value.message == msg
+
+    proc.terminate()
