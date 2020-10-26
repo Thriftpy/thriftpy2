@@ -22,6 +22,8 @@ CONTAINER_READ = 6
 VALUE_READ = 7
 BOOL_READ = 8
 
+BIN_TYPES = (TType.STRING, TType.BINARY)
+
 
 def check_integer_limits(i, bits):
     if bits == 8 and (i < -128 or i > 127):
@@ -108,7 +110,8 @@ CTYPES = {
     TType.STRUCT: CompactType.STRUCT,
     TType.LIST: CompactType.LIST,
     TType.SET: CompactType.SET,
-    TType.MAP: CompactType.MAP
+    TType.MAP: CompactType.MAP,
+    TType.BINARY: CompactType.BINARY,
 }
 TTYPES = dict((v, k) for k, v in CTYPES.items())
 TTYPES[CompactType.FALSE] = TType.BOOL
@@ -227,6 +230,10 @@ class TCompactProtocol(TProtocolBase):
         val, = unpack('<d', buff)
         return val
 
+    def _read_binary(self):
+        length = self._read_size()
+        return self.trans.read(length)
+
     def _read_string(self):
         len = self._read_size()
         byte_payload = self.trans.read(len)
@@ -262,10 +269,13 @@ class TCompactProtocol(TProtocolBase):
                 self.skip(ftype)
                 raise
             else:
-                if field is not None and ftype == field[0]:
+                if field is not None and\
+                        (ftype == field[0]
+                         or (ftype in BIN_TYPES
+                             and field[0] in BIN_TYPES)):
                     fname = field[1]
                     fspec = field[2]
-                    val = self._read_val(ftype, fspec)
+                    val = self._read_val(field[0], fspec)
                     setattr(obj, fname, val)
                 else:
                     self.skip(ftype)
@@ -284,6 +294,9 @@ class TCompactProtocol(TProtocolBase):
 
         elif ttype == TType.DOUBLE:
             return self._read_double()
+
+        elif ttype == TType.BINARY:
+            return self._read_binary()
 
         elif ttype == TType.STRING:
             return self._read_string()
@@ -317,6 +330,10 @@ class TCompactProtocol(TProtocolBase):
 
             result = {}
             sk_type, sv_type, sz = self._read_map_begin()
+            if sk_type in BIN_TYPES:
+                sk_type = k_type
+            if sv_type in BIN_TYPES:
+                sv_type = v_type
             if sk_type != k_type or sv_type != v_type:
                 for _ in range(sz):
                     self.skip(sk_type)
@@ -419,6 +436,10 @@ class TCompactProtocol(TProtocolBase):
     def _write_double(self, dub):
         self.trans.write(pack('<d', dub))
 
+    def _write_binary(self, b):
+        self._write_size(len(b))
+        self.trans.write(b)
+
     def _write_string(self, s):
         if not isinstance(s, bytes):
             s = s.encode('utf-8')
@@ -466,6 +487,9 @@ class TCompactProtocol(TProtocolBase):
 
         elif ttype == TType.DOUBLE:
             self._write_double(val)
+
+        elif ttype == TType.BINARY:
+            self._write_binary(val)
 
         elif ttype == TType.STRING:
             self._write_string(val)
@@ -519,6 +543,9 @@ class TCompactProtocol(TProtocolBase):
 
         elif ttype == TType.DOUBLE:
             self._read_double()
+
+        elif ttype == TType.BINARY:
+            self._read_binary()
 
         elif ttype == TType.STRING:
             self._read_string()
