@@ -15,6 +15,10 @@ matrix:
       script: tox -e coverage
     - python: 3.7
       script: tox -e py37
+    - python: 3.8
+      script: tox -e py38
+    - python: 3.9
+      script: tox -e py39
 
 before_install:
   - sudo apt-get install -y python-dev gcc
