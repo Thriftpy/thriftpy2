@@ -116,6 +116,11 @@ def client_with_url(timeout=3000):
                        url="http://127.0.0.1:6080", timeout=timeout)
 
 
+def client_without_url(timeout=3000):
+    return make_client(addressbook.AddressBookService, host="127.0.0.1",
+                       port=6080, path="foo", timeout=timeout)
+
+
 def test_client_context(server):
     with client() as c1, client_context_with_url() as c2:
         assert c1.hello("world") == c2.hello("world")
@@ -126,6 +131,11 @@ def test_clients(server):
         c2 = client_with_url()
         assert c1.hello("world") == c2.hello("world")
         c2.close()
+
+
+def test_clients_without_url(server):
+    c = client_without_url()
+    assert c.hello("world") == "hello world"
 
 
 def test_void_api(server):
