@@ -60,7 +60,7 @@ from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.transport import TBufferedTransportFactory
 
 
-HTTP_URI = '{scheme}://{host}:{port}{path}'
+HTTP_URI = '{scheme}://{host}:{port}/{path}'
 DEFAULT_HTTP_CLIENT_TIMEOUT_MS = 30000  # 30 seconds
 
 
