@@ -8,7 +8,7 @@ build_ext: clean
 	python setup.py build_ext
 
 build: build_ext
-	python setup.py sdist
+	python setup.py sdist bdist_wheel
 
 pre_release: build
 	twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
