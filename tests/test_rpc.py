@@ -74,6 +74,9 @@ class Dispatcher(object):
     def close(self, ms):
         return
 
+    def raises(self, msg):
+        raise TApplicationException(message=msg)
+
 
 @pytest.fixture(scope="module")
 def server(request):
@@ -273,3 +276,14 @@ def test_ssl_client_timeout():
 def test_close_method():
     with client() as c:
         c.tclose(1)
+
+
+def test_raises_method():
+    with client() as c:
+        try:
+            c.raises("foobarbaz")
+        except TApplicationException as e:
+            assert e.type == 0
+            assert e.message == "foobarbaz"
+        else:
+            raise ValueError("TApplicationException not raised")
