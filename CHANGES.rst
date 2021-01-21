@@ -3,6 +3,15 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.14
+-------------
+
+Released on Jan 21, 2021.
+
+- revert support Apache JSON protocol and binary type, via `2-#157`_.
+
+.. _2-#157: https://github.com/Thriftpy/thriftpy2/pull/157
+
 Version 0.4.13
 -------------
 
