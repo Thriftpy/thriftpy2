@@ -37,10 +37,7 @@ ctypedef enum TType:
     T_SET = 14,
     T_LIST = 15,
     T_UTF8 = 16,
-    T_UTF16 = 17,
-    T_BINARY = 18
-
-BIN_TYPES = (T_BINARY, T_STRING)
+    T_UTF16 = 17
 
 class ProtocolError(Exception):
     pass
@@ -175,7 +172,7 @@ cdef inline read_struct(CyTransportBase buf, obj, decode_response=True):
 
         field_spec = field_specs[fid]
         ttype = field_spec[0]
-        if field_type != ttype and not (ttype in BIN_TYPES and field_type in BIN_TYPES):
+        if field_type != ttype:
             skip(buf, field_type)
             continue
 
@@ -208,10 +205,8 @@ cdef inline write_struct(CyTransportBase buf, obj):
         v = getattr(obj, f_name, None)
         if v is None:
             continue
-        if f_type == T_BINARY:
-            write_i08(buf, T_STRING)
-        else:
-            write_i08(buf, f_type)
+
+        write_i08(buf, f_type)
         write_i16(buf, fid)
         try:
             c_write_val(buf, f_type, v, container_spec)
@@ -270,10 +265,6 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
         n = read_i64(buf)
         return (<double*>(&n))[0]
 
-    elif ttype == T_BINARY:
-        size = read_i32(buf)
-        return c_read_binary(buf, size)
-
     elif ttype == T_STRING:
         size = read_i32(buf)
         if decode_response:
@@ -292,7 +283,7 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
         orig_type = <TType>read_i08(buf)
         size = read_i32(buf)
 
-        if orig_type != v_type and not (orig_type in BIN_TYPES and v_type in BIN_TYPES):
+        if orig_type != v_type:
             for _ in range(size):
                 skip(buf, orig_type)
             return []
@@ -320,10 +311,7 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
         orig_key_type = <TType>read_i08(buf)
         orig_type = <TType>read_i08(buf)
         size = read_i32(buf)
-        if orig_key_type in BIN_TYPES:
-            orig_key_type = k_type
-        if orig_type in BIN_TYPES:
-            orig_type = v_type
+
         if orig_key_type != k_type or orig_type != v_type:
             for _ in range(size):
                 skip(buf, orig_key_type)
@@ -356,9 +344,6 @@ cdef c_write_val(CyTransportBase buf, TType ttype, val, spec=None):
     elif ttype == T_DOUBLE:
         write_double(buf, val)
 
-    elif ttype == T_BINARY:
-        write_string(buf, val)
-
     elif ttype == T_STRING:
         if not isinstance(val, bytes):
             try:
@@ -389,7 +374,7 @@ cpdef skip(CyTransportBase buf, TType ttype):
         read_i32(buf)
     elif ttype == T_I64 or ttype == T_DOUBLE:
         read_i64(buf)
-    elif ttype == T_STRING or ttype == T_BINARY:
+    elif ttype == T_STRING:
         size = read_i32(buf)
         c_read_binary(buf, size)
     elif ttype == T_SET or ttype == T_LIST:

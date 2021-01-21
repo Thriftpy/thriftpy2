@@ -15,7 +15,6 @@ from thriftpy2.protocol.compact import (
 
 from .base import TAsyncProtocolBase
 
-BIN_TYPES = (TType.STRING, TType.BINARY)
 
 @asyncio.coroutine
 def read_varint(trans):
@@ -145,11 +144,6 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
         return val
 
     @asyncio.coroutine
-    def _read_binary(self):
-        length = yield from self._read_size()
-        return (yield from self.trans.read(length))
-
-    @asyncio.coroutine
     def _read_string(self):
         len = yield from self._read_size()
         byte_payload = yield from self.trans.read(len)
@@ -187,13 +181,10 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
                 yield from self.skip(ftype)
                 raise
             else:
-                if field is not None and \
-                        (ftype == field[0]
-                         or (ftype in BIN_TYPES
-                             and field[0] in BIN_TYPES)):
+                if field is not None and ftype == field[0]:
                     fname = field[1]
                     fspec = field[2]
-                    val = yield from self._read_val(field[0], fspec)
+                    val = yield from self._read_val(ftype, fspec)
                     setattr(obj, fname, val)
                 else:
                     yield from self.skip(ftype)
@@ -213,9 +204,6 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
 
         elif ttype == TType.DOUBLE:
             return (yield from self._read_double())
-
-        elif ttype == TType.BINARY:
-            return (yield from self._read_binary())
 
         elif ttype == TType.STRING:
             return (yield from self._read_string())
@@ -284,9 +272,6 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
 
         elif ttype == TType.DOUBLE:
             yield from self._read_double()
-
-        elif ttype == TType.BINARY:
-            yield from self._read_binary()
 
         elif ttype == TType.STRING:
             yield from self._read_string()

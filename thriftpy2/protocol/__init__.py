@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from .base import TProtocolBase
 from .binary import TBinaryProtocol, TBinaryProtocolFactory
 from .json import TJSONProtocol, TJSONProtocolFactory
-from .apache_json import TApacheJSONProtocol, TApacheJSONProtocolFactory
 from .compact import TCompactProtocol, TCompactProtocolFactory
 from .multiplex import TMultiplexedProtocol, TMultiplexedProtocolFactory
 
@@ -24,6 +23,5 @@ else:
 __all__ = ['TBinaryProtocol', 'TBinaryProtocolFactory',
            'TCyBinaryProtocol', 'TCyBinaryProtocolFactory',
            'TJSONProtocol', 'TJSONProtocolFactory',
-           'TApacheJSONProtocol', 'TApacheJSONProtocolFactory',
            'TMultiplexedProtocol', 'TMultiplexedProtocolFactory',
            'TCompactProtocol', 'TCompactProtocolFactory']
