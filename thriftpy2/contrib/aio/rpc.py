@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-import warnings
-import asyncio
 import warnings
 
 from thriftpy2._compat import PY3
@@ -18,8 +17,7 @@ from .socket import TAsyncSocket, TAsyncServerSocket
 from .server import TAsyncServer
 
 
-@asyncio.coroutine
-def make_client(service, host='localhost', port=9090, unix_socket=None,
+async def make_client(service, host='localhost', port=9090, unix_socket=None,
                 proto_factory=TAsyncBinaryProtocolFactory(),
                 trans_factory=TAsyncBufferedTransportFactory(),
                 timeout=3000, connect_timeout=None,
@@ -55,7 +53,7 @@ def make_client(service, host='localhost', port=9090, unix_socket=None,
 
     transport = trans_factory.get_transport(socket)
     protocol = proto_factory.get_protocol(transport)
-    yield from transport.open()
+    await transport.open()
     return TAsyncClient(service, protocol)
 
 

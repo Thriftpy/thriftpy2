@@ -13,7 +13,7 @@ import thriftpy2
 thriftpy2.install_import_hook()  # noqa
 
 from thriftpy2.http import make_server, make_client, client_context  # noqa
-from thriftpy2.thrift import TApplicationException
+from thriftpy2.thrift import TApplicationException  # noqa
 
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
