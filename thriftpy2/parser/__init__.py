@@ -18,7 +18,11 @@ from .exc import ThriftParserError
 from ..thrift import TPayloadMeta
 
 
-def load(path, module_name=None, include_dirs=None, include_dir=None, encoding='utf-8'):
+def load(path,
+         module_name=None,
+         include_dirs=None,
+         include_dir=None,
+         encoding='utf-8'):
     """Load thrift file as a module.
 
     The module loaded and objects inside may only be pickled if module_name

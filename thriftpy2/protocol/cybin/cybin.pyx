@@ -39,6 +39,7 @@ ctypedef enum TType:
     T_UTF8 = 16,
     T_UTF16 = 17
 
+
 class ProtocolError(Exception):
     pass
 
@@ -236,7 +237,7 @@ cdef inline c_read_string(CyTransportBase buf, int32_t size):
     py_data = c_read_binary(buf, size)
     try:
         return (<char *>py_data)[:size].decode("utf-8")
-    except:
+    except:  # noqa
         return py_data
 
 
@@ -318,8 +319,11 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
                 skip(buf, orig_type)
             return {}
 
-        return {c_read_val(buf, k_type, k_spec, decode_response): c_read_val(buf, v_type, v_spec, decode_response)
-                for _ in range(size)}
+        return {
+            c_read_val(buf, k_type, k_spec, decode_response):
+                c_read_val(buf, v_type, v_spec, decode_response)
+            for _ in range(size)
+        }
 
     elif ttype == T_STRUCT:
         return read_struct(buf, spec(), decode_response)

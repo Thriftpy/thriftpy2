@@ -17,6 +17,8 @@ from thriftpy2.transport._ssl import (
     DEFAULT_CIPHERS
 )
 
+MAC_OR_BSD = sys.platform == 'darwin' or sys.platform.startswith('freebsd')
+
 
 class TAsyncSocket(object):
     """Socket implementation for client side."""
@@ -169,9 +171,7 @@ class TAsyncSocket(object):
                 self.connect_timeout
             )
         except socket.error as e:
-            if (e.args[0] == errno.ECONNRESET and
-                    (sys.platform == 'darwin' or
-                     sys.platform.startswith('freebsd'))):
+            if e.args[0] == errno.ECONNRESET and MAC_OR_BSD:
                 # freebsd and Mach don't follow POSIX semantic of recv
                 # and fail with ECONNRESET if peer performed shutdown.
                 # See corresponding comment and code in TSocket::read()
@@ -320,9 +320,7 @@ class StreamHandler(object):
         try:
             buff = await self.reader.read(sz)
         except socket.error as e:
-            if (e.args[0] == errno.ECONNRESET and
-                    (sys.platform == 'darwin' or
-                     sys.platform.startswith('freebsd'))):
+            if e.args[0] == errno.ECONNRESET and MAC_OR_BSD:
                 # freebsd and Mach don't follow POSIX semantic of recv
                 # and fail with ECONNRESET if peer performed shutdown.
                 # See corresponding comment and code in TSocket::read()

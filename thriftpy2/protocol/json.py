@@ -17,14 +17,14 @@ VERSION = 1
 
 def json_value(ttype, val, spec=None):
     TTYPE_TO_JSONFUNC_MAP = {
-        TType.BYTE: (int, (val, )),
-        TType.I16: (int, (val, )),
-        TType.I32: (int, (val, )),
-        TType.I64: (int, (val, )),
-        TType.DOUBLE: (float, (val, )),
-        TType.STRING: (u, (val, )),
-        TType.BOOL: (bool, (val, )),
-        TType.STRUCT: (struct_to_json, (val, )),
+        TType.BYTE: (int, (val,)),
+        TType.I16: (int, (val,)),
+        TType.I32: (int, (val,)),
+        TType.I64: (int, (val,)),
+        TType.DOUBLE: (float, (val,)),
+        TType.STRING: (u, (val,)),
+        TType.BOOL: (bool, (val,)),
+        TType.STRUCT: (struct_to_json, (val,)),
         TType.SET: (list_to_json, (val, spec)),
         TType.LIST: (list_to_json, (val, spec)),
         TType.MAP: (map_to_json, (val, spec)),
@@ -43,13 +43,13 @@ def obj_value(ttype, val, spec=None):
         return struct_to_obj(val, spec())
     else:
         TTYPE_TO_OBJFUNC_MAP = {
-            TType.BYTE: (int, (val, )),
-            TType.I16: (int, (val, )),
-            TType.I32: (int, (val, )),
-            TType.I64: (int, (val, )),
-            TType.DOUBLE: (float, (val, )),
-            TType.STRING: (u, (val, )),
-            TType.BOOL: (bool, (val, )),
+            TType.BYTE: (int, (val,)),
+            TType.I16: (int, (val,)),
+            TType.I32: (int, (val,)),
+            TType.I64: (int, (val,)),
+            TType.DOUBLE: (float, (val,)),
+            TType.STRING: (u, (val,)),
+            TType.BOOL: (bool, (val,)),
             TType.SET: (list_to_obj, (val, spec)),
             TType.LIST: (list_to_obj, (val, spec)),
             TType.MAP: (map_to_obj, (val, spec)),
@@ -57,6 +57,7 @@ def obj_value(ttype, val, spec=None):
         func, args = TTYPE_TO_OBJFUNC_MAP.get(ttype)
         if func:
             return func(*args)
+
 
 def map_to_obj(val, spec):
     res = {}
@@ -162,6 +163,7 @@ class TJSONProtocol(TProtocolBase):
     the 4 bytes are the bytes representation of an integer and is encoded in
     big-endian.
     """
+
     def __init__(self, trans):
         TProtocolBase.__init__(self, trans)
         self._meta = {"version": VERSION}

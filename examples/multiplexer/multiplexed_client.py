@@ -5,7 +5,7 @@ from thriftpy2.rpc import client_context
 from thriftpy2.protocol import (
     TBinaryProtocolFactory,
     TMultiplexedProtocolFactory
-    )
+)
 
 dd_thrift = thriftpy2.load("dingdong.thrift", module_name="dd_thrift")
 pp_thrift = thriftpy2.load("pingpong.thrift", module_name="pp_thrift")

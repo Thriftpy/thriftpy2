@@ -236,8 +236,8 @@ class THttpClient(object):
         self.__http.putheader('Content-Type', 'application/x-thrift')
         self.__http.putheader('Content-Length', str(len(data)))
 
-        if (not self.__custom_headers or
-                'User-Agent' not in self.__custom_headers):
+        if (not self.__custom_headers
+                or 'User-Agent' not in self.__custom_headers):
             user_agent = 'Python/THttpClient'
             script = os.path.basename(sys.argv[0])
             if script:

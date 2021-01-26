@@ -5,7 +5,7 @@ import thriftpy2
 from thriftpy2.rpc import make_server
 
 tutorial_thrift = thriftpy2.load("tutorial.thrift",
-                                module_name="tutorial_thrift")
+                                 module_name="tutorial_thrift")
 
 
 class CalculatorHandler(object):
