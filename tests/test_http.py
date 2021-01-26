@@ -117,12 +117,23 @@ def client_context_with_url(timeout=3000):
                           url="http://127.0.0.1:6080", timeout=timeout)
 
 
+def client_context_with_malformed_path(timeout=3000):
+    return client_context(addressbook.AddressBookService, host="127.0.0.1",
+                          port=6080, path="foo", timeout=timeout)
+
+
 def client_with_url(timeout=3000):
     return make_client(addressbook.AddressBookService,
                        url="http://127.0.0.1:6080", timeout=timeout)
 
 
 def client_without_url(timeout=3000):
+    return make_client(addressbook.AddressBookService, host="127.0.0.1",
+                       port=6080, path="/foo", timeout=timeout)
+
+
+@pytest.fixture
+def client_with_malformed_path(timeout=3000):
     return make_client(addressbook.AddressBookService, host="127.0.0.1",
                        port=6080, path="foo", timeout=timeout)
 
@@ -157,8 +168,9 @@ def client_with_custom_header_factory(timeout=3000):
 
 
 def test_client_context(server):
-    with client() as c1, client_context_with_url() as c2:
-        assert c1.hello("world") == c2.hello("world")
+    with client() as c1, client_context_with_url() as c2,\
+         client_context_with_malformed_path() as c3:
+        assert c1.hello("world") == c2.hello("world") == c3.hello("world")
 
 
 def test_clients(server):
@@ -171,6 +183,10 @@ def test_clients(server):
 def test_clients_without_url(server):
     c = client_without_url()
     assert c.hello("world") == "hello world"
+
+
+def test_client_with_malformed_path(client_with_malformed_path):
+    assert client_with_malformed_path.hello("world") == "hello world"
 
 
 def test_client_context_with_header_factory(server):
