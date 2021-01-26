@@ -132,13 +132,16 @@ def person():
 
 def client(timeout=3000):
     return client_context(addressbook.AddressBookService,
-                          unix_socket=unix_sock, timeout=timeout)
+                          socket_timeout=timeout,
+                          connect_timeout=timeout,
+                          unix_socket=unix_sock)
 
 
 def ssl_client(timeout=3000):
     return client_context(addressbook.AddressBookService,
                           host='localhost', port=SSL_PORT,
-                          timeout=timeout,
+                          socket_timeout=timeout,
+                          connect_timeout=timeout,
                           cafile="ssl/CA.pem", certfile="ssl/client.crt",
                           keyfile="ssl/client.key")
 
@@ -147,8 +150,11 @@ def ssl_client_with_url(timeout=3000):
     return client_context(addressbook.AddressBookService,
                           url="thrift://localhost:{port}".format(
                               port=SSL_PORT),
-                          timeout=timeout, cafile="ssl/CA.pem",
-                          certfile="ssl/client.crt", keyfile="ssl/client.key")
+                          socket_timeout=timeout,
+                          connect_timeout=timeout,
+                          cafile="ssl/CA.pem",
+                          certfile="ssl/client.crt",
+                          keyfile="ssl/client.key")
 
 
 def test_clients(ssl_server):
@@ -241,8 +247,9 @@ def test_exception_iwth_ssl():
 
 def test_client_timeout():
     with pytest.raises(socket.timeout):
-        with client(timeout=500) as c:
-            c.sleep(1000)
+        with pytest.warns(UserWarning):  # Deprecated
+            with client(timeout=500) as c:
+                c.sleep(1000)
 
 
 def test_client_socket_timeout():
