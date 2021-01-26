@@ -14,7 +14,6 @@ import thriftpy2
 
 thriftpy2.install_import_hook()
 
-from thriftpy2._compat import PY3  # noqa
 from thriftpy2.rpc import make_server, client_context  # noqa
 from thriftpy2.transport import TTransportException  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
@@ -263,9 +262,16 @@ def test_client_connect_timeout():
 
 
 def test_ssl_client_timeout():
+    errors = (socket.timeout,)
     # SSL socket timeout raises socket.timeout since Python 3.2.
     # http://bugs.python.org/issue10272
-    with pytest.raises(socket.timeout if PY3 else ssl.SSLError):
+    # Newer versions of PyPy2 also implement this change, so
+    # always catch both errors
+    try:
+        errors += (getattr(ssl, 'SSLError'),)
+    except AttributeError:
+        pass
+    with pytest.raises(errors):
         with ssl_client(timeout=500) as c:
             c.sleep(1000)
 
