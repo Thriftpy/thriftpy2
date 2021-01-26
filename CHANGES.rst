@@ -3,6 +3,55 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.14
+-------------
+
+Released on Jan 21, 2021.
+
+- revert support Apache JSON protocol and binary type, via `2-#157`_.
+
+.. _2-#157: https://github.com/Thriftpy/thriftpy2/pull/157
+
+Version 0.4.13
+-------------
+
+Released on Jan 19, 2021.
+
+- Support Apache JSON protocol and binary type, via `2-#139`_.
+- Fix HTTP_URI typo in http.py, via `2-#148`_.
+- Support custom headers for HTTP, via `2-#149`_.
+- Support raising TApplicationException in user handlers, via `2-#154`_.
+
+.. _2-#139: https://github.com/Thriftpy/thriftpy2/pull/139
+.. _2-#148: https://github.com/Thriftpy/thriftpy2/pull/148
+.. _2-#149: https://github.com/Thriftpy/thriftpy2/pull/149
+.. _2-#154: https://github.com/Thriftpy/thriftpy2/pull/154
+
+
+Version 0.4.12
+-------------
+
+Released on Oct 13, 2020.
+
+- Support include files with dot in name, via `2-#125`_.
+
+.. _2-#125: https://github.com/Thriftpy/thriftpy2/pull/125
+
+
+Version 0.4.11
+-------------
+
+Released on Mar 17, 2020.
+
+- Support Cython in HTTP and fix TCyBufferedTransport early flush issue, via `2-#129`_.
+- Fix exception handling in TProcessor, via `2-#128`_.
+- Rename socket_timeout to timeout for compatibility, via `2-#115`_.
+
+.. _2-#115: https://github.com/Thriftpy/thriftpy2/pull/115
+.. _2-#128: https://github.com/Thriftpy/thriftpy2/pull/128
+.. _2-#129: https://github.com/Thriftpy/thriftpy2/pull/129
+
+
 Version 0.4.10
 -------------
 
@@ -10,7 +59,7 @@ Released on Jan 1, 2020.
 
 - Add TAsyncCompactProtocol and TAsyncFramedTransport, via `2-#103`_.
 - Add TAsyncProtocolBase and TAsyncTransportBase, via `2-#108`_.
-- Add __str__ on TProtocolException, , via `2-#109`_.
+- Add __str__ on TProtocolException, via `2-#109`_.
 - Support passing socket_family in make_client, via `2-#110`_.
 
 .. _2-#103: https://github.com/Thriftpy/thriftpy2/pull/103

@@ -298,3 +298,7 @@ def test_nest_incomplete_type():
         2: (15, 'field2', (15, (12, thrift.A)), False),
         3: (15, 'field3', (15, (15, (12, thrift.A))), False)
     }
+
+
+def test_issue_121():
+    load('parser-cases/issue_121.thrift')

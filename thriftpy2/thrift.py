@@ -319,6 +319,8 @@ class TProcessor(object):
 
         try:
             result.success = call()
+        except TApplicationException as e:
+            return self.send_exception(oprot, api, e, seqid)
         except Exception as e:
             # raise if api don't have throws
             if not self.handle_exception(e, result):
