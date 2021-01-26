@@ -104,7 +104,8 @@ class THttpHeaderFactory(object):
     """
     def __init__(self, headers=None):
         """Initialize a header factory
-        @param headers(dict) a dictionary of static headers the factory generates
+        @param headers(dict)
+            A dictionary of static headers the factory generates
         """
         if headers:
             self.__headers = headers
@@ -175,7 +176,8 @@ class THttpClient(object):
     """Http implementation of TTransport base.
     """
 
-    def __init__(self, uri, timeout=None, ssl_context_factory=None, http_header_factory=None):
+    def __init__(self, uri, timeout=None, ssl_context_factory=None,
+                 http_header_factory=None):
         """Initialize a HTTP Socket.
 
         @param uri(str)    The http_scheme:://host:port/path to connect to.
@@ -307,7 +309,8 @@ def make_client(service, host='localhost', port=9090, path='', scheme='http',
         scheme = parsed_url.scheme or scheme
         path = parsed_url.path or path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
-    http_socket = THttpClient(uri, timeout, ssl_context_factory, http_header_factory)
+    http_socket = THttpClient(uri, timeout, ssl_context_factory,
+                              http_header_factory)
     transport = trans_factory.get_transport(http_socket)
     iprot = proto_factory.get_protocol(transport)
     transport.open()
@@ -328,7 +331,8 @@ def client_context(service, host='localhost', port=9090, path='', scheme='http',
         scheme = parsed_url.scheme or scheme
         path = parsed_url.path or path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
-    http_socket = THttpClient(uri, timeout, ssl_context_factory, http_header_factory)
+    http_socket = THttpClient(uri, timeout, ssl_context_factory,
+                              http_header_factory)
     transport = trans_factory.get_transport(http_socket)
     try:
         iprot = proto_factory.get_protocol(transport)
