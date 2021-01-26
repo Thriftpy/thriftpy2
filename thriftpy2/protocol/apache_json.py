@@ -83,7 +83,7 @@ class TApacheJSONProtocol(TProtocolBase):
                 try:
                     data = self.trans.getvalue()
                     break
-                except:
+                except Exception:
                     pass
             new_data = self.trans.read(1)
             data += new_data
