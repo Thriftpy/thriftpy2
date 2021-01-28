@@ -23,7 +23,7 @@ class TSSLSocket(TSocket):
                  socket_timeout=3000, connect_timeout=None,
                  ssl_context=None, validate=True,
                  cafile=None, capath=None, certfile=None, keyfile=None,
-                 ciphers=DEFAULT_CIPHERS):
+                 ciphers=DEFAULT_CIPHERS, handle_timeout_error=False):
         """Initialize a TSSLSocket
 
         @param validate(bool)       Set to False to disable SSL certificate
@@ -47,7 +47,8 @@ class TSSLSocket(TSocket):
         """
         super(TSSLSocket, self).__init__(
             host=host, port=port, socket_family=socket_family,
-            connect_timeout=connect_timeout, socket_timeout=socket_timeout)
+            connect_timeout=connect_timeout, socket_timeout=socket_timeout,
+            handle_timeout_error=handle_timeout_error)
 
         if ssl_context:
             self.ssl_context = ssl_context
