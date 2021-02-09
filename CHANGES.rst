@@ -3,6 +3,31 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.14
+-------------
+
+Released on Jan 21, 2021.
+
+- revert support Apache JSON protocol and binary type, via `2-#157`_.
+
+.. _2-#157: https://github.com/Thriftpy/thriftpy2/pull/157
+
+Version 0.4.13
+-------------
+
+Released on Jan 19, 2021.
+
+- Support Apache JSON protocol and binary type, via `2-#139`_.
+- Fix HTTP_URI typo in http.py, via `2-#148`_.
+- Support custom headers for HTTP, via `2-#149`_.
+- Support raising TApplicationException in user handlers, via `2-#154`_.
+
+.. _2-#139: https://github.com/Thriftpy/thriftpy2/pull/139
+.. _2-#148: https://github.com/Thriftpy/thriftpy2/pull/148
+.. _2-#149: https://github.com/Thriftpy/thriftpy2/pull/149
+.. _2-#154: https://github.com/Thriftpy/thriftpy2/pull/154
+
+
 Version 0.4.12
 -------------
 

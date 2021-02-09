@@ -15,7 +15,6 @@ with open(join(dirname(__file__), 'thriftpy2', '__init__.py'), 'r') as f:
 
 install_requires = [
     "ply>=3.4,<4.0",
-    "six~=1.15",
 ]
 
 tornado_requires = [
@@ -36,7 +35,6 @@ dev_requires = [
     "pytest>=2.8",
     "sphinx-rtd-theme>=0.1.9",
     "sphinx>=1.3",
-    "pytest>=6.1.1",
 ] + tornado_requires
 
 

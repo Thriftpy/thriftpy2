@@ -99,6 +99,22 @@ class ResponseException(Exception):
         self.handler = handler
 
 
+class THttpHeaderFactory(object):
+    """Default header factory return no custom headers
+    """
+    def __init__(self, headers=None):
+        """Initialize a header factory
+        @param headers(dict) a dictionary of static headers the factory generates
+        """
+        if headers:
+            self.__headers = headers
+        else:
+            self.__headers = dict()
+
+    def get_headers(self):
+        return self.__headers
+
+
 class THttpServer(TServer):
     """A simple HTTP-based Thrift server
     This class is not very performant, but it is useful (for example) for
@@ -159,7 +175,7 @@ class THttpClient(object):
     """Http implementation of TTransport base.
     """
 
-    def __init__(self, uri, timeout=None, ssl_context_factory=None):
+    def __init__(self, uri, timeout=None, ssl_context_factory=None, http_header_factory=None):
         """Initialize a HTTP Socket.
 
         @param uri(str)    The http_scheme:://host:port/path to connect to.
@@ -178,7 +194,7 @@ class THttpClient(object):
             self.path += '?%s' % parsed.query
         self.__wbuf = BytesIO()
         self.__http = None
-        self.__custom_headers = None
+        self._http_header_factory = http_header_factory or THttpHeaderFactory()
         self.__timeout = None
         if timeout:
             self.setTimeout(timeout)
@@ -207,7 +223,7 @@ class THttpClient(object):
         self.__timeout = ms / 1000.0 if (ms and ms > 0) else None
 
     def setCustomHeaders(self, headers):
-        self.__custom_headers = headers
+        self._http_header_factory = THttpHeaderFactory(headers)
 
     def read(self, sz):
         content = self.response.read(sz)
@@ -235,9 +251,9 @@ class THttpClient(object):
         self.__http.putheader('Host', self.host)
         self.__http.putheader('Content-Type', 'application/x-thrift')
         self.__http.putheader('Content-Length', str(len(data)))
-
-        if (not self.__custom_headers or
-                'User-Agent' not in self.__custom_headers):
+        custom_headers = self._http_header_factory.get_headers()
+        if (not custom_headers or
+                'User-Agent' not in custom_headers):
             user_agent = 'Python/THttpClient'
             script = os.path.basename(sys.argv[0])
             if script:
@@ -245,8 +261,8 @@ class THttpClient(object):
                     user_agent, urllib.parse.quote(script))
                 self.__http.putheader('User-Agent', user_agent)
 
-        if self.__custom_headers:
-            for key, val in self.__custom_headers.items():
+        if custom_headers:
+            for key, val in self._http_header_factory.get_headers().items():
                 self.__http.putheader(key, val)
 
         self.__http.endheaders()
@@ -282,6 +298,7 @@ def make_client(service, host='localhost', port=9090, path='', scheme='http',
                 proto_factory=TBinaryProtocolFactory(),
                 trans_factory=TBufferedTransportFactory(),
                 ssl_context_factory=None,
+                http_header_factory=None,
                 timeout=DEFAULT_HTTP_CLIENT_TIMEOUT_MS, url=''):
     if url:
         parsed_url = urllib.parse.urlparse(url)
@@ -289,8 +306,11 @@ def make_client(service, host='localhost', port=9090, path='', scheme='http',
         port = parsed_url.port or port
         scheme = parsed_url.scheme or scheme
         path = parsed_url.path or path
+    if path and path[0] != "/":
+        # path should have `/` prefix, but we can make a compatible here.
+        path = "/" + path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
-    http_socket = THttpClient(uri, timeout, ssl_context_factory)
+    http_socket = THttpClient(uri, timeout, ssl_context_factory, http_header_factory)
     transport = trans_factory.get_transport(http_socket)
     iprot = proto_factory.get_protocol(transport)
     transport.open()
@@ -302,6 +322,7 @@ def client_context(service, host='localhost', port=9090, path='', scheme='http',
                    proto_factory=TBinaryProtocolFactory(),
                    trans_factory=TBufferedTransportFactory(),
                    ssl_context_factory=None,
+                   http_header_factory=None,
                    timeout=DEFAULT_HTTP_CLIENT_TIMEOUT_MS, url=''):
     if url:
         parsed_url = urllib.parse.urlparse(url)
@@ -309,8 +330,11 @@ def client_context(service, host='localhost', port=9090, path='', scheme='http',
         port = parsed_url.port or port
         scheme = parsed_url.scheme or scheme
         path = parsed_url.path or path
+    if path and path[0] != "/":
+        # path should have `/` prefix, but we can make a compatible here.
+        path = "/" + path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
-    http_socket = THttpClient(uri, timeout, ssl_context_factory)
+    http_socket = THttpClient(uri, timeout, ssl_context_factory, http_header_factory)
     transport = trans_factory.get_transport(http_socket)
     try:
         iprot = proto_factory.get_protocol(transport)

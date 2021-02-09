@@ -168,10 +168,6 @@ python lib):
 
   * json protocol
 
-  * Apache JSON protocol compatible with apache thrift distribution's JSON protocol.
-    Simply do ``from thriftpy2.protocol import TApacheJSONProtocolFactory`` and pass
-    this to the ``proto_factory`` argument where appropriate.
-
   * buffered transport (python & cython)
 
   * framed transport

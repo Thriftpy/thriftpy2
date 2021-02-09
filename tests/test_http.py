@@ -6,15 +6,16 @@ import os
 import multiprocessing
 import socket
 import time
+import uuid
 
 import pytest
 
 import thriftpy2
+
 thriftpy2.install_import_hook()  # noqa
 
-from thriftpy2.http import make_server, make_client, client_context  # noqa
+from thriftpy2.http import make_server, make_client, client_context, THttpHeaderFactory  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
-
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
@@ -66,6 +67,11 @@ class Dispatcher():
         return True
 
 
+class CustomHeaderFactory(THttpHeaderFactory):
+    def get_headers(self):
+        return {"X-REQUEST-ID": str(uuid.uuid4())}
+
+
 @pytest.fixture(scope="module")
 def server(request):
     server = make_server(addressbook.AddressBookService, Dispatcher(),
@@ -111,14 +117,60 @@ def client_context_with_url(timeout=3000):
                           url="http://127.0.0.1:6080", timeout=timeout)
 
 
+def client_context_with_malformed_path(timeout=3000):
+    return client_context(addressbook.AddressBookService, host="127.0.0.1",
+                          port=6080, path="foo", timeout=timeout)
+
+
 def client_with_url(timeout=3000):
     return make_client(addressbook.AddressBookService,
                        url="http://127.0.0.1:6080", timeout=timeout)
 
 
+def client_without_url(timeout=3000):
+    return make_client(addressbook.AddressBookService, host="127.0.0.1",
+                       port=6080, path="/foo", timeout=timeout)
+
+
+@pytest.fixture
+def client_with_malformed_path(timeout=3000):
+    return make_client(addressbook.AddressBookService, host="127.0.0.1",
+                       port=6080, path="foo", timeout=timeout)
+
+
+def client_context_with_header_factory(timeout=3000):
+    return client_context(addressbook.AddressBookService,
+                          url="http://127.0.0.1:6080",
+                          timeout=timeout,
+                          http_header_factory=THttpHeaderFactory())
+
+
+def client_context_with_custom_header_factory(timeout=3000):
+    return client_context(addressbook.AddressBookService,
+                          url="http://127.0.0.1:6080",
+                          timeout=timeout,
+                          http_header_factory=CustomHeaderFactory())
+
+
+def client_with_header_factory(timeout=3000):
+    return make_client(addressbook.AddressBookService,
+                       url="http://127.0.0.1:6080",
+                       timeout=timeout,
+                       http_header_factory=THttpHeaderFactory(
+                           {"X-REQUEST-ID": str(uuid.uuid4())}))
+
+
+def client_with_custom_header_factory(timeout=3000):
+    return make_client(addressbook.AddressBookService,
+                       url="http://127.0.0.1:6080",
+                       timeout=timeout,
+                       http_header_factory=CustomHeaderFactory())
+
+
 def test_client_context(server):
-    with client() as c1, client_context_with_url() as c2:
-        assert c1.hello("world") == c2.hello("world")
+    with client() as c1, client_context_with_url() as c2,\
+         client_context_with_malformed_path() as c3:
+        assert c1.hello("world") == c2.hello("world") == c3.hello("world")
 
 
 def test_clients(server):
@@ -126,6 +178,37 @@ def test_clients(server):
         c2 = client_with_url()
         assert c1.hello("world") == c2.hello("world")
         c2.close()
+
+
+def test_clients_without_url(server):
+    c = client_without_url()
+    assert c.hello("world") == "hello world"
+
+
+def test_client_with_malformed_path(client_with_malformed_path):
+    assert client_with_malformed_path.hello("world") == "hello world"
+
+
+def test_client_context_with_header_factory(server):
+    with client_context_with_header_factory() as c:
+        assert c.hello("world") == "hello world"
+
+
+def test_client_context_custom_with_header_factory(server):
+    with client_context_with_custom_header_factory() as c:
+        assert c.hello("world") == "hello world"
+
+
+def test_client_with_header_factory(server):
+    c = client_with_header_factory()
+    assert c.hello("world") == "hello world"
+    c.close()
+
+
+def test_client_with_custom_header_factory(server):
+    c = client_with_custom_header_factory()
+    assert c.hello("world") == "hello world"
+    c.close()
 
 
 def test_void_api(server):
