@@ -165,12 +165,15 @@ class TApacheJSONProtocol(TProtocolBase):
                             self._thrift_to_dict(k, key_type):
                                 self._thrift_to_dict(v, to_type[1]) for k, v in thrift_obj.items()
                         }]
-                    if to_type == TType.BINARY or item_type[0] == TType.BINARY:
+                    if (to_type == TType.BINARY or item_type[0] == TType.BINARY) and TType.BINARY != TType.STRING:
                         return base64.b64encode(thrift_obj).decode('ascii')
             if isinstance(thrift_obj, bool):
                 return int(thrift_obj)
-            if item_type == TType.BINARY or (isinstance(item_type, tuple) and item_type[0] == TType.BINARY):
-                return base64.b64encode(thrift_obj).decode('ascii')
+            if (
+                item_type == TType.BINARY
+                or (isinstance(item_type, tuple) and item_type[0] == TType.BINARY)
+            ) and TType.BINARY != TType.STRING:
+                return base64.b64encode(thrift_obj).decode("ascii")
             return thrift_obj
         result = {}
         for field_idx, thrift_spec in thrift_obj.thrift_spec.items():
@@ -197,7 +200,7 @@ class TApacheJSONProtocol(TProtocolBase):
                                         {self._thrift_to_dict(k, spec[0]):
                                          self._thrift_to_dict(v, spec) for k, v in val.items()}]
                     }
-                elif ttype == TType.BINARY:
+                elif ttype == TType.BINARY and TType.BINARY != TType.STRING:
                     result[field_idx] = {
                         CTYPES[ttype]: base64.b64encode(val).decode('ascii')
                     }
@@ -223,7 +226,7 @@ class TApacheJSONProtocol(TProtocolBase):
         if isinstance(data, (str, int, float, bool, bytes, string_types)) or data is None:
             if base_type in (TType.I08, TType.I16, TType.I32, TType.I64):
                 return int(data)
-            if base_type == TType.BINARY:
+            if base_type == TType.BINARY and TType.BINARY != TType.STRING:
                 return base64.b64decode(data)
             if base_type == TType.BOOL:
                 return {
@@ -256,12 +259,13 @@ class TApacheJSONProtocol(TProtocolBase):
             field_name = thrift_spec[1]
             for ftype, value in val.items():
                 ttype = JTYPES[ftype]
-                if thrift_spec[0] == TType.BINARY:
+                if thrift_spec[0] == TType.BINARY and TType.BINARY != TType.STRING:
                     bin_data = val.get('str', '')
                     m = len(bin_data) % 4
                     if m != 0:
                         bin_data += '=' * (4-m)
                     result[field_name] = base64.b64decode(bin_data)
+
                 elif ttype == TType.STRUCT:
                     result[field_name] = self._dict_to_thrift(value, thrift_spec[2])
                 elif ttype in (TType.LIST, TType.SET):
