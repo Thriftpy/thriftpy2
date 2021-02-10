@@ -20,7 +20,8 @@ from thriftpy2.protocol import (
     TCompactProtocolFactory,
 )
 from thriftpy2.protocol import TBinaryProtocolFactory
-from thriftpy2.rpc import make_server as make_rpc_server, make_client as make_rpc_client
+from thriftpy2.rpc import make_server as make_rpc_server, \
+    make_client as make_rpc_client
 from thriftpy2.transport import TBufferedTransportFactory, TCyMemoryBuffer
 
 protocols = [TApacheJSONProtocolFactory,
@@ -327,7 +328,8 @@ def check_types(spec, val):
             t, field_name, to_type = i[:3]
             value = getattr(val, field_name)
             assert isinstance(value, type_map.get(t)), \
-                "Field {} expected {} got {}".format(field_name, type_names.get(t), type(value))
+                "Field {} expected {} got {}".format(
+                    field_name, type_names.get(t), type(value))
             if to_type:
                 if t in (TType.SET, TType.LIST):
                     for _val in value:
