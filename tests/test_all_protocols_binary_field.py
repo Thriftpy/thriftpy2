@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import sys
 import time
 import traceback
 from multiprocessing import Process
@@ -8,10 +7,11 @@ from multiprocessing import Process
 import pytest
 import six
 
-PYPY = "__pypy__" not in sys.modules
 from thriftpy2.thrift import TType, TPayloadMeta
-if not PYPY:
+try:
     from thriftpy2.protocol import cybin
+except ImportError:
+    cybin = None
 import thriftpy2
 from thriftpy2.http import (
     make_server as make_http_server,
@@ -263,7 +263,7 @@ def test_complex_binary(proto_factory):
     time.sleep(0.2)
 
 
-@pytest.mark.skipif(PYPY, reason="Must be run in cpython")
+@pytest.mark.skipif(cybin is None, reason="Must be run in cpython")
 def test_complex_map():
     """
     Test from #156
