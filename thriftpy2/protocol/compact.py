@@ -3,7 +3,10 @@
 from __future__ import absolute_import
 
 import array
+import sys
 from struct import pack, unpack
+
+import six
 
 from .exc import TProtocolException
 from .base import TProtocolBase
@@ -438,6 +441,8 @@ class TCompactProtocol(TProtocolBase):
 
     def _write_binary(self, b):
         self._write_size(len(b))
+        if isinstance(b, six.string_types) and sys.version_info[0] > 2:
+            b = b.encode()
         self.trans.write(b)
 
     def _write_string(self, s):

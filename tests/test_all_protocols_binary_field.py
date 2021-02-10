@@ -1,23 +1,27 @@
 from __future__ import absolute_import
 
 import time
+import traceback
 from multiprocessing import Process
 
 import pytest
 import six
 
+from thriftpy2.thrift import TType, TPayloadMeta
+from thriftpy2.protocol import cybin
 import thriftpy2
-from thriftpy2.http import make_server as make_http_server, \
-    make_client as make_http_client
+from thriftpy2.http import (
+    make_server as make_http_server,
+    make_client as make_http_client,
+)
 from thriftpy2.protocol import (
     TApacheJSONProtocolFactory,
     TJSONProtocolFactory,
-    TCompactProtocolFactory
+    TCompactProtocolFactory,
 )
 from thriftpy2.protocol import TBinaryProtocolFactory
-from thriftpy2.rpc import make_server as make_rpc_server, \
-    make_client as make_rpc_client
-from thriftpy2.transport import TBufferedTransportFactory
+from thriftpy2.rpc import make_server as make_rpc_server, make_client as make_rpc_client
+from thriftpy2.transport import TBufferedTransportFactory, TCyMemoryBuffer
 
 protocols = [TApacheJSONProtocolFactory,
              TJSONProtocolFactory,
@@ -130,6 +134,7 @@ def test_protocols(proto_factory, binary, tlist, server_func):
         res = client.test(test_object)
         assert recursive_vars(res) == recursive_vars(test_object)
     except Exception as e:
+        traceback.print_exc()
         err = e
     finally:
         proc.terminate()
@@ -179,3 +184,157 @@ def test_exceptions(server_func, proto_factory):
 
     proc.terminate()
     time.sleep(1)
+
+
+@pytest.mark.parametrize('proto_factory', protocols)
+def test_complex_binary(proto_factory):
+
+    spec = thriftpy2.load("bin_test.thrift", module_name="bin_thrift")
+    bin_test_obj = spec.BinTest(
+        tbinary=b'\x01\x0f\xffa binary string\x0f\xee',
+        str2bin={
+            'key': 'value',
+            'foo': 'bar'
+        },
+        bin2bin={
+            b'bin_key': b'bin_val',
+            'str2bytes': b'bin bar'
+        },
+        bin2str={
+            b'bin key': 'str val',
+        },
+        binlist=[b'bin one', b'bin two', 'str should become bin'],
+        binset={b'val 1', b'foo', b'bar', b'baz'},
+        map_of_str2binlist={
+            'key1': [b'bin 1', b'pop 2']
+        },
+        map_of_bin2bin={
+            b'abc': {
+                b'def': b'val',
+                b'\x1a\x04': b'\x45'
+            }
+        },
+        list_of_bin2str=[
+            {
+                b'bin key': 'str val',
+                b'other key\x04': 'bob'
+            }
+        ]
+    )
+
+    class Handler(object):
+        @staticmethod
+        def test(t):
+            return t
+
+    trans_factory = TBufferedTransportFactory
+
+    def run_server():
+        server = make_rpc_server(
+            spec.BinService,
+            handler=Handler(),
+            host='localhost',
+            port=9090,
+            proto_factory=proto_factory(),
+            trans_factory=trans_factory(),
+        )
+        server.serve()
+
+    proc = Process(target=run_server)
+    proc.start()
+    time.sleep(0.2)
+
+    try:
+        client = make_rpc_client(
+            spec.BinService,
+            host='localhost',
+            port=9090,
+            proto_factory=proto_factory(),
+            trans_factory=trans_factory(),
+        )
+        res = client.test(bin_test_obj)
+        check_types(spec.BinTest.thrift_spec, res)
+    finally:
+        proc.terminate()
+    time.sleep(0.2)
+
+
+def test_complex_map():
+    """
+    Test from #156
+    """
+    proto = cybin
+    b1 = TCyMemoryBuffer()
+    proto.write_val(b1, TType.MAP, {"hello": "1"},
+                    spec=(TType.STRING, TType.STRING))
+    b1.flush()
+
+    b2 = TCyMemoryBuffer()
+    proto.write_val(b2, TType.MAP, {"hello": b"1"},
+                    spec=(TType.STRING, TType.BINARY))
+    b2.flush()
+
+    assert b1.getvalue() != b2.getvalue()
+
+
+type_map = {
+    TType.BYTE: (int,),
+    TType.I16: (int,),
+    TType.I32: (int,),
+    TType.I64: (int,),
+    TType.DOUBLE: (float,),
+    TType.STRING: six.string_types,
+    TType.BOOL: (bool,),
+    TType.STRUCT: TPayloadMeta,
+    TType.SET: (set, list),
+    TType.LIST: (list,),
+    TType.MAP: (dict,),
+    TType.BINARY: six.binary_type
+}
+
+type_names = {
+    TType.BYTE: "Byte",
+    TType.I16: "I16",
+    TType.I32: "I32",
+    TType.I64: "I64",
+    TType.DOUBLE: "Double",
+    TType.STRING: "String",
+    TType.BOOL: "Bool",
+    TType.STRUCT: "Struct",
+    TType.SET: "Set",
+    TType.LIST: "List",
+    TType.MAP: "Map",
+    TType.BINARY: "Binary"
+}
+
+
+def check_types(spec, val):
+    """
+    This function should check if a given thrift object matches
+    a thrift spec
+    Nb. This function isn't complete
+
+    """
+    if isinstance(spec, int):
+        assert isinstance(val, type_map.get(spec))
+    elif isinstance(spec, tuple):
+        if len(spec) >= 2:
+            if spec[0] in (TType.LIST, TType.SET):
+                for item in val:
+                    check_types(spec[1], item)
+    else:
+        for i in spec.values():
+            t, field_name, to_type = i[:3]
+            value = getattr(val, field_name)
+            assert isinstance(value, type_map.get(t)), \
+                "Field {} expected {} got {}".format(field_name, type_names.get(t), type(value))
+            if to_type:
+                if t in (TType.SET, TType.LIST):
+                    for _val in value:
+                        check_types(to_type, _val)
+                elif t == TType.MAP:
+                    for _key, _val in value.items():
+                        check_types(to_type[0], _key)
+                        check_types(to_type[1], _val)
+                elif t == TType.STRUCT:
+                    check_types(to_type, value)

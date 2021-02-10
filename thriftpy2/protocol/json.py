@@ -5,7 +5,10 @@ from __future__ import absolute_import
 import json
 import struct
 import base64
+import sys
 from warnings import warn
+
+import six
 
 from thriftpy2._compat import u
 from thriftpy2.thrift import TType
@@ -17,6 +20,8 @@ VERSION = 1
 
 
 def encode_binary(data):
+    if isinstance(data, six.string_types) and sys.version_info[0] > 2:
+        data = data.encode()
     return base64.b64encode(data).decode('ascii')
 
 
