@@ -263,7 +263,7 @@ def test_complex_binary(proto_factory):
     time.sleep(0.2)
 
 
-@pytest.mark.skipif(PYPY, "Must be run in cpython")
+@pytest.mark.skipif(PYPY, reason="Must be run in cpython")
 def test_complex_map():
     """
     Test from #156
