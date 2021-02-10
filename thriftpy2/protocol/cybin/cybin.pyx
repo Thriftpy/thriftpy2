@@ -1,3 +1,5 @@
+import sys
+
 from libc.stdlib cimport free, malloc
 from libc.stdint cimport int16_t, int32_t, int64_t
 from cpython cimport bool
@@ -359,7 +361,7 @@ cdef c_write_val(CyTransportBase buf, TType ttype, val, spec=None):
         write_double(buf, val)
 
     elif ttype == T_BINARY:
-        if isinstance(val, six.string_types):
+        if isinstance(val, six.string_types) and sys.version_info[0] > 2:
             val = val.encode()
         write_string(buf, val)
 
