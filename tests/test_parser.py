@@ -225,6 +225,24 @@ def test_e_duplicate_field_id_or_name():
     assert 'field identifier/name has already been used' in str(excinfo.value)
 
 
+def test_e_duplicate_struct_exception_service():
+    with pytest.raises(ThriftGrammerError) as excinfo:
+        load('parser-cases/e_duplicate_struct.thrift')
+    assert 'type is already defined in' in str(excinfo.value)
+    with pytest.raises(ThriftGrammerError) as excinfo:
+        load('parser-cases/e_duplicate_exception.thrift')
+    assert 'type is already defined in' in str(excinfo.value)
+    with pytest.raises(ThriftGrammerError) as excinfo:
+        load('parser-cases/e_duplicate_service.thrift')
+    assert 'type is already defined in' in str(excinfo.value)
+
+
+def test_e_duplicate_function():
+    with pytest.raises(ThriftGrammerError) as excinfo:
+        load('parser-cases/e_duplicate_function.thrift')
+    assert 'function is already defined in' in str(excinfo.value)
+
+
 def test_thrift_meta():
     thrift = load('parser-cases/tutorial.thrift')
     meta = thrift.__thrift_meta__
