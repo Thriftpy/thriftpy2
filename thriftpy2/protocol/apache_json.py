@@ -8,8 +8,9 @@ unfortunately, thriftpy2's TJSONProtocol is not compatible with apache's
 from __future__ import absolute_import
 import json
 import base64
+import sys
 
-from six import string_types
+import six
 
 from thriftpy2.protocol import TProtocolBase
 from thriftpy2.thrift import TType
@@ -54,6 +55,16 @@ def flatten(suitable_for_isinstance):
         else:
             types.append(thing)
     return tuple(types)
+
+
+def _ensure_b64_encode(val):
+    """
+    Ensure that the variable is something that we can encode with b64encode
+    python3 needs bytes, python2 needs string
+    """
+    if sys.version_info[0] > 2 and isinstance(val, str):
+        return val.encode()
+    return val
 
 
 class TApacheJSONProtocolFactory(object):
@@ -165,15 +176,15 @@ class TApacheJSONProtocol(TProtocolBase):
                             self._thrift_to_dict(k, key_type):
                                 self._thrift_to_dict(v, to_type[1]) for k, v in thrift_obj.items()
                         }]
-                    if (to_type == TType.BINARY or item_type[0] == TType.BINARY) and TType.BINARY != TType.STRING:
-                        return base64.b64encode(thrift_obj).decode('ascii')
+                    if (to_type == TType.BINARY or item_type[-1] == TType.BINARY) and TType.BINARY != TType.STRING:
+                        return base64.b64encode(_ensure_b64_encode(thrift_obj)).decode('ascii')
             if isinstance(thrift_obj, bool):
                 return int(thrift_obj)
             if (
                 item_type == TType.BINARY
                 or (isinstance(item_type, tuple) and item_type[0] == TType.BINARY)
             ) and TType.BINARY != TType.STRING:
-                return base64.b64encode(thrift_obj).decode("ascii")
+                return base64.b64encode(_ensure_b64_encode(thrift_obj)).decode("ascii")
             return thrift_obj
         result = {}
         for field_idx, thrift_spec in thrift_obj.thrift_spec.items():
@@ -202,7 +213,7 @@ class TApacheJSONProtocol(TProtocolBase):
                     }
                 elif ttype == TType.BINARY and TType.BINARY != TType.STRING:
                     result[field_idx] = {
-                        CTYPES[ttype]: base64.b64encode(val).decode('ascii')
+                        CTYPES[ttype]: base64.b64encode(_ensure_b64_encode(val)).decode('ascii')
                     }
                 elif ttype == TType.BOOL:
                     result[field_idx] = {
@@ -223,7 +234,7 @@ class TApacheJSONProtocol(TProtocolBase):
         :return:
         """
         # if the result is a python type, return it:
-        if isinstance(data, (str, int, float, bool, bytes, string_types)) or data is None:
+        if isinstance(data, (str, int, float, bool, six.string_types, six.binary_type)) or data is None:
             if base_type in (TType.I08, TType.I16, TType.I32, TType.I64):
                 return int(data)
             if base_type == TType.BINARY and TType.BINARY != TType.STRING:
