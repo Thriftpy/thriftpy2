@@ -17,6 +17,9 @@ from .exc import ThriftParserError, ThriftGrammerError
 from thriftpy2._compat import urlopen, urlparse, PY3
 from ..thrift import gen_init, TType, TPayload, TException
 
+if not PY3:
+    from io import open
+
 
 def p_error(p):
     if p is None:
@@ -573,7 +576,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
         with open(urlparse(path).netloc + urlparse(path).path) as fh:
             data = fh.read()
     elif len(url_scheme) <= 1:
-        with open(path) as fh:
+        with open(path, encoding=encoding) as fh:
             data = fh.read()
     elif url_scheme in ('http', 'https'):
         data = urlopen(path).read()
@@ -582,8 +585,11 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
                                 'with path in protocol \'{}\''.format(
                                     url_scheme))
 
-    if PY3 and isinstance(data, bytes):
-        data = data.decode(encoding)
+    if PY3:
+        if isinstance(data, bytes):
+            data = data.decode(encoding)
+    else:
+        data = data.encode(encoding)
 
     if module_name is not None and not module_name.endswith('_thrift'):
         raise ThriftParserError('thriftpy2 can only generate module with '
