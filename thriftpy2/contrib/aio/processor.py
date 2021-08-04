@@ -62,7 +62,7 @@ class TAsyncProcessor(object):
         api, seqid, result, call = yield from self.process_in(iprot)
 
         if isinstance(result, TApplicationException):
-            return self.send_exception(oprot, api, result, seqid)
+            return (yield from self.send_exception(oprot, api, result, seqid))
 
         try:
             result.success = yield from call()
