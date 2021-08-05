@@ -292,14 +292,24 @@ class TAsyncServerSocket(object):
 
     async def accept(self, callback):
         server = await self.sock_factory(
-            lambda reader, writer: asyncio.wait_for(
-                callback(StreamHandler(reader, writer)),
-                self.client_timeout
-            ),
+            self._create_client_connected_cb(callback),
             sock=self.raw_sock,
             ssl=self.ssl_context
         )
         return server
+
+    def _create_client_connected_cb(self, callback):
+
+        async def client_connected_cb(reader, writer):
+            try:
+                await asyncio.wait_for(
+                    callback(StreamHandler(reader, writer)),
+                    self.client_timeout
+                )
+            except asyncio.exceptions.TimeoutError:
+                writer.close()
+
+        return client_connected_cb
 
     def close(self):
         if not self.raw_sock:
