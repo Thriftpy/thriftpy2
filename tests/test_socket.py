@@ -49,7 +49,7 @@ class TestTSocket:
         mock_sock.close.assert_called_once()
         assert client_socket.sock is None
 
-    def test_disconnect__shutdown_OSError(self):
+    def test_close__shutdown_OSError(self):
         """An OSError on socket shutdown will still close the socket."""
         mock_sock = mock.Mock()
         client_socket = TSocket(sock=mock_sock)
@@ -59,7 +59,7 @@ class TestTSocket:
         mock_sock.close.assert_called_once()
         assert client_socket.sock is None
 
-    def test_disconnect__close_OSError(self):
+    def test_close__close_OSError(self):
         """An OSError on socket close will still clear out the socket."""
         mock_sock = mock.Mock()
         client_socket = TSocket(sock=mock_sock)
