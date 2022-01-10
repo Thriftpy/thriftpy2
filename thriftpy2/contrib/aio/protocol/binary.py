@@ -97,7 +97,7 @@ def read_val(inbuf, ttype, spec=None, decode_response=True):
 
     elif ttype == TType.BINARY:
         sz = unpack_i32((yield from inbuf.read(4)))
-        return inbuf.read(sz)
+        return (yield from inbuf.read(sz))
 
     elif ttype == TType.STRING:
         sz = unpack_i32((yield from inbuf.read(4)))
