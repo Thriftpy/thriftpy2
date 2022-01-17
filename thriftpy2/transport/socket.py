@@ -231,6 +231,11 @@ class TServerSocket(object):
 
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
-            self.sock.close()
-        except (socket.error, OSError):
+        except OSError:
             pass
+
+        try:
+            self.sock.close()
+        except OSError:
+            pass
+        self.sock = None
