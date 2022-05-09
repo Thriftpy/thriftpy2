@@ -31,13 +31,15 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
                 proto_factory=TBinaryProtocolFactory(),
                 trans_factory=TBufferedTransportFactory(),
                 timeout=3000, cafile=None, ssl_context=None, certfile=None,
-                keyfile=None, url="", socket_family=socket.AF_INET):
+                keyfile=None, url="", socket_family=socket.AF_INET,
+                handle_timeout_error=False):
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
         port = parsed_url.port or port
     if unix_socket:
-        socket = TSocket(unix_socket=unix_socket, socket_timeout=timeout)
+        socket = TSocket(unix_socket=unix_socket, socket_timeout=timeout,
+                         )
         if certfile:
             warnings.warn("SSL only works with host:port, not unix_socket.")
     elif host and port:
@@ -47,7 +49,9 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
                                 certfile=certfile, keyfile=keyfile,
                                 ssl_context=ssl_context)
         else:
-            socket = TSocket(host, port, socket_family=socket_family, socket_timeout=timeout)
+            socket = TSocket(host, port, socket_family=socket_family,
+                             socket_timeout=timeout,
+                             handle_timeout_error=handle_timeout_error)
     else:
         raise ValueError("Either host/port or unix_socket or url must be provided.")
 
@@ -91,7 +95,7 @@ def client_context(service, host="localhost", port=9090, unix_socket=None,
                    trans_factory=TBufferedTransportFactory(),
                    timeout=None, socket_timeout=3000, connect_timeout=3000,
                    cafile=None, ssl_context=None, certfile=None, keyfile=None,
-                   url=""):
+                   url="", handle_timeout_error=False):
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
@@ -119,7 +123,8 @@ def client_context(service, host="localhost", port=9090, unix_socket=None,
         else:
             socket = TSocket(host, port,
                              connect_timeout=connect_timeout,
-                             socket_timeout=socket_timeout)
+                             socket_timeout=socket_timeout,
+                             handle_timeout_error=handle_timeout_error)
     else:
         raise ValueError("Either host/port or unix_socket or url must be provided.")
 

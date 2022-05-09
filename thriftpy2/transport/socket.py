@@ -16,7 +16,8 @@ class TSocket(object):
 
     def __init__(self, host=None, port=None, unix_socket=None,
                  sock=None, socket_family=socket.AF_INET,
-                 socket_timeout=3000, connect_timeout=None):
+                 socket_timeout=3000, connect_timeout=None,
+                 handle_timeout_error=False):
         """Initialize a TSocket
 
         TSocket can be initialized in 3 ways:
@@ -35,6 +36,8 @@ class TSocket(object):
         @param socket_timeout   socket timeout in ms
         @param connect_timeout  connect timeout in ms, only used in
             connection, will be set to socket_timeout if not set.
+        @param handle_timeout_error(bool)    Whether translate socket.timeout
+            error to TTransportException. Default is False for compalibility.
         """
         if sock:
             self.sock = sock
@@ -53,6 +56,8 @@ class TSocket(object):
         self.socket_timeout = socket_timeout / 1000 if socket_timeout else None
         self.connect_timeout = connect_timeout / 1000 if connect_timeout \
             else self.socket_timeout
+
+        self.handle_timeout_error = handle_timeout_error
 
     def _init_sock(self):
         if self.unix_socket:
@@ -108,6 +113,13 @@ class TSocket(object):
         while True:
             try:
                 buff = self.sock.recv(sz)
+            except socket.timeout:
+                if not self.handle_timeout_error:
+                    raise
+                addr = self.sock.getsockname()
+                typ = TTransportException.TIMED_OUT
+                msg = "Timeouted when read from %s" % str(addr)
+                raise TTransportException(type=typ, message=msg)
             except socket.error as e:
                 if e.errno == errno.EINTR:
                     continue
@@ -133,7 +145,15 @@ class TSocket(object):
         return buff
 
     def write(self, buff):
-        self.sock.sendall(buff)
+        try:
+            self.sock.sendall(buff)
+        except socket.timeout:
+            if not self.handle_timeout_error:
+                raise
+            addr = self.sock.getsockname()
+            typ = TTransportException.TIMED_OUT
+            msg = "Timeouted when write to %s" % str(addr)
+            raise TTransportException(type=typ, message=msg)
 
     def flush(self):
         pass
