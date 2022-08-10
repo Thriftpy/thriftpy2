@@ -219,7 +219,9 @@ class TClient(object):
             return self._recv(_api)
 
     def _send(self, _api, **kwargs):
-        self._oprot.write_message_begin(_api, TMessageType.CALL, self._seqid)
+        oneway = getattr(getattr(self._service, _api + "_result"), "oneway")
+        msg_type = TMessageType.ONEWAY if oneway else TMessageType.CALL
+        self._oprot.write_message_begin(_api, msg_type, self._seqid)
         args = getattr(self._service, _api + "_args")()
         for k, v in kwargs.items():
             setattr(args, k, v)
