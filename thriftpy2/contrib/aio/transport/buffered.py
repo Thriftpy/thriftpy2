@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import asyncio
 from io import BytesIO
 
 from .base import TAsyncTransportBase
@@ -22,22 +21,20 @@ class TAsyncBufferedTransport(TAsyncTransportBase):
     def is_open(self):
         return self._trans.is_open()
 
-    @asyncio.coroutine
-    def open(self):
-        return (yield from self._trans.open())
+    async def open(self):
+        return await self._trans.open()
 
     def close(self):
         return self._trans.close()
 
-    @asyncio.coroutine
-    def _read(self, sz):
+    async def _read(self, sz):
         ret = self._rbuf.read(sz)
 
         rest_len = sz - len(ret)
         if rest_len == 0:
             return ret
 
-        buf = yield from self._trans.read(max(rest_len, self._buf_size))
+        buf = await self._trans.read(max(rest_len, self._buf_size))
 
         ret = ret + buf[:rest_len]
         buf = buf[rest_len:]
@@ -48,13 +45,12 @@ class TAsyncBufferedTransport(TAsyncTransportBase):
     def write(self, buf):
         self._wbuf.write(buf)
 
-    @asyncio.coroutine
-    def flush(self):
+    async def flush(self):
         out = self._wbuf.getvalue()
         # reset wbuf before write/flush to preserve state on underlying failure
         self._wbuf = BytesIO()
         self._trans.write(out)
-        yield from self._trans.flush()
+        await self._trans.flush()
 
     def getvalue(self):
         return self._trans.getvalue()

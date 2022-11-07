@@ -10,6 +10,8 @@ import sys
 
 from . import TTransportException
 
+MAC_OR_BSD = sys.platform == 'darwin' or sys.platform.startswith('freebsd')
+
 
 class TSocket(object):
     """Socket implementation for client side."""
@@ -111,9 +113,7 @@ class TSocket(object):
             except socket.error as e:
                 if e.errno == errno.EINTR:
                     continue
-                if (e.args[0] == errno.ECONNRESET and
-                        (sys.platform == 'darwin' or
-                         sys.platform.startswith('freebsd'))):
+                if e.args[0] == errno.ECONNRESET and MAC_OR_BSD:
                     # freebsd and Mach don't follow POSIX semantic of recv
                     # and fail with ECONNRESET if peer performed shutdown.
                     # See corresponding comment and code in TSocket::read()
@@ -146,7 +146,7 @@ class TSocket(object):
             self.sock.shutdown(socket.SHUT_RDWR)
         except OSError:
             pass
-            
+
         try:
             self.sock.close()
         except OSError:

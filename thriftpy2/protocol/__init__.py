@@ -21,7 +21,7 @@ else:
     TCyBinaryProtocol = TBinaryProtocol
     TCyBinaryProtocolFactory = TBinaryProtocolFactory
 
-__all__ = ['TBinaryProtocol', 'TBinaryProtocolFactory',
+__all__ = ['TProtocolBase', 'TBinaryProtocol', 'TBinaryProtocolFactory',
            'TCyBinaryProtocol', 'TCyBinaryProtocolFactory',
            'TJSONProtocol', 'TJSONProtocolFactory',
            'TApacheJSONProtocol', 'TApacheJSONProtocolFactory',

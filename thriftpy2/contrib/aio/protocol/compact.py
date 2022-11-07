@@ -2,7 +2,6 @@
 
 from __future__ import absolute_import
 
-import asyncio
 from struct import unpack
 
 from thriftpy2.protocol.exc import TProtocolException
@@ -17,13 +16,13 @@ from .base import TAsyncProtocolBase
 
 BIN_TYPES = (TType.STRING, TType.BINARY)
 
-@asyncio.coroutine
-def read_varint(trans):
+
+async def read_varint(trans):
     result = 0
     shift = 0
 
     while True:
-        x = yield from trans.read(1)
+        x = await trans.read(1)
         byte = ord(x)
         result |= (byte & 0x7f) << shift
         if byte >> 7 == 0:
@@ -41,45 +40,41 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
     TYPE_BITS = 0x07
     TYPE_SHIFT_AMOUNT = 5
 
-    @asyncio.coroutine
-    def _read_size(self):
-        result = yield from read_varint(self.trans)
+    async def _read_size(self):
+        result = await read_varint(self.trans)
         if result < 0:
             raise TException("Length < 0")
         return result
 
-    @asyncio.coroutine
-    def read_message_begin(self):
-        proto_id = yield from self._read_ubyte()
+    async def read_message_begin(self):
+        proto_id = await self._read_ubyte()
         if proto_id != self.PROTOCOL_ID:
             raise TProtocolException(TProtocolException.BAD_VERSION,
                                      'Bad protocol id in the message: %d'
                                      % proto_id)
 
-        ver_type = yield from self._read_ubyte()
+        ver_type = await self._read_ubyte()
         type = (ver_type >> self.TYPE_SHIFT_AMOUNT) & self.TYPE_BITS
         version = ver_type & self.VERSION_MASK
         if version != self.VERSION:
             raise TProtocolException(TProtocolException.BAD_VERSION,
                                      'Bad version: %d (expect %d)'
                                      % (version, self.VERSION))
-        seqid = yield from read_varint(self.trans)
-        name = yield from self._read_string()
+        seqid = await read_varint(self.trans)
+        name = await self._read_string()
         return name, type, seqid
 
-    @asyncio.coroutine
-    def read_message_end(self):  # TAsyncClient expects coroutine
+    async def read_message_end(self):  # TAsyncClient expects coroutine
         assert len(self._structs) == 0
 
-    @asyncio.coroutine
-    def _read_field_begin(self):
-        type = yield from self._read_ubyte()
+    async def _read_field_begin(self):
+        type = await self._read_ubyte()
         if type & 0x0f == TType.STOP:
             return None, 0, 0
 
         delta = type >> 4
         if delta == 0:
-            fid = from_zig_zag((yield from read_varint(self.trans)))
+            fid = from_zig_zag(await read_varint(self.trans))
         else:
             fid = self._last_fid + delta
         self._last_fid = fid
@@ -102,57 +97,49 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
     def _read_struct_end(self):
         self._last_fid = self._structs.pop()
 
-    @asyncio.coroutine
-    def _read_map_begin(self):
-        size = yield from self._read_size()
+    async def _read_map_begin(self):
+        size = await self._read_size()
         types = 0
         if size > 0:
-            types = yield from self._read_ubyte()
+            types = await self._read_ubyte()
         vtype = self._get_ttype(types)
         ktype = self._get_ttype(types >> 4)
         return ktype, vtype, size
 
-    @asyncio.coroutine
-    def _read_collection_begin(self):
-        size_type = yield from self._read_ubyte()
+    async def _read_collection_begin(self):
+        size_type = await self._read_ubyte()
         size = size_type >> 4
         type = self._get_ttype(size_type)
         if size == 15:
-            size = yield from self._read_size()
+            size = await self._read_size()
         return type, size
 
     def _read_collection_end(self):
         pass
 
-    @asyncio.coroutine
-    def _read_byte(self):
-        result, = unpack('!b', (yield from self.trans.read(1)))
+    async def _read_byte(self):
+        result, = unpack('!b', await self.trans.read(1))
         return result
 
-    @asyncio.coroutine
-    def _read_ubyte(self):
-        result, = unpack('!B', (yield from self.trans.read(1)))
+    async def _read_ubyte(self):
+        result, = unpack('!B', await self.trans.read(1))
         return result
 
-    @asyncio.coroutine
-    def _read_int(self):
-        return from_zig_zag((yield from read_varint(self.trans)))
+    async def _read_int(self):
+        return from_zig_zag(await read_varint(self.trans))
 
-    @asyncio.coroutine
-    def _read_double(self):
-        buff = yield from self.trans.read(8)
+    async def _read_double(self):
+        buff = await self.trans.read(8)
         val, = unpack('<d', buff)
         return val
 
-    @asyncio.coroutine
-    def _read_binary(self):
-        length = yield from self._read_size()
-        return (yield from self.trans.read(length))
+    async def _read_binary(self):
+        length = await self._read_size()
+        return await self.trans.read(length)
 
-    @asyncio.coroutine
-    def _read_string(self):
-        len = yield from self._read_size()
-        byte_payload = yield from self.trans.read(len)
+    async def _read_string(self):
+        length = await self._read_size()
+        byte_payload = await self.trans.read(length)
 
         if self.decode_response:
             try:
@@ -161,30 +148,28 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
                 pass
         return byte_payload
 
-    @asyncio.coroutine
-    def _read_bool(self):
+    async def _read_bool(self):
         if self._bool_value is not None:
             result = self._bool_value
             self._bool_value = None
             return result
-        return (yield from self._read_byte()) == CompactType.TRUE
+        return (await self._read_byte()) == CompactType.TRUE
 
-    @asyncio.coroutine
-    def read_struct(self, obj):
+    async def read_struct(self, obj):
         self._read_struct_begin()
         while True:
-            fname, ftype, fid = yield from self._read_field_begin()
+            fname, ftype, fid = await self._read_field_begin()
             if ftype == TType.STOP:
                 break
 
             if fid not in obj.thrift_spec:
-                yield from self.skip(ftype)
+                await self.skip(ftype)
                 continue
 
             try:
                 field = obj.thrift_spec[fid]
             except IndexError:
-                yield from self.skip(ftype)
+                await self.skip(ftype)
                 raise
             else:
                 if field is not None and \
@@ -193,32 +178,31 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
                              and field[0] in BIN_TYPES)):
                     fname = field[1]
                     fspec = field[2]
-                    val = yield from self._read_val(field[0], fspec)
+                    val = await self._read_val(field[0], fspec)
                     setattr(obj, fname, val)
                 else:
-                    yield from self.skip(ftype)
+                    await self.skip(ftype)
             self._read_field_end()
         self._read_struct_end()
 
-    @asyncio.coroutine
-    def _read_val(self, ttype, spec=None):
+    async def _read_val(self, ttype, spec=None):
         if ttype == TType.BOOL:
-            return (yield from self._read_bool())
+            return await self._read_bool()
 
         elif ttype == TType.BYTE:
-            return (yield from self._read_byte())
+            return await self._read_byte()
 
         elif ttype in (TType.I16, TType.I32, TType.I64):
-            return (yield from self._read_int())
+            return await self._read_int()
 
         elif ttype == TType.DOUBLE:
-            return (yield from self._read_double())
+            return await self._read_double()
 
         elif ttype == TType.BINARY:
-            return (yield from self._read_binary())
+            return await self._read_binary()
 
         elif ttype == TType.STRING:
-            return (yield from self._read_string())
+            return await self._read_string()
 
         elif ttype in (TType.LIST, TType.SET):
             if isinstance(spec, tuple):
@@ -226,10 +210,10 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
             else:
                 v_type, v_spec = spec, None
             result = []
-            r_type, sz = yield from self._read_collection_begin()
+            r_type, sz = await self._read_collection_begin()
 
             for i in range(sz):
-                result.append((yield from self._read_val(v_type, v_spec)))
+                result.append(await self._read_val(v_type, v_spec))
 
             self._read_collection_end()
             return result
@@ -248,76 +232,75 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
                 v_type, v_spec = spec[1]
 
             result = {}
-            sk_type, sv_type, sz = yield from self._read_map_begin()
+            sk_type, sv_type, sz = await self._read_map_begin()
             if sk_type != k_type or sv_type != v_type:
                 for _ in range(sz):
-                    yield from self.skip(sk_type)
-                    yield from self.skip(sv_type)
+                    await self.skip(sk_type)
+                    await self.skip(sv_type)
                 self._read_collection_end()
                 return {}
 
             for i in range(sz):
-                k_val = yield from self._read_val(k_type, k_spec)
-                v_val = yield from self._read_val(v_type, v_spec)
+                k_val = await self._read_val(k_type, k_spec)
+                v_val = await self._read_val(v_type, v_spec)
                 result[k_val] = v_val
             self._read_collection_end()
             return result
 
         elif ttype == TType.STRUCT:
             obj = spec()
-            yield from self.read_struct(obj)
+            await self.read_struct(obj)
             return obj
 
-    @asyncio.coroutine
-    def skip(self, ttype):
+    async def skip(self, ttype):
         if ttype == TType.STOP:
             return
 
         elif ttype == TType.BOOL:
-            yield from self._read_bool()
+            await self._read_bool()
 
         elif ttype == TType.BYTE:
-            yield from self._read_byte()
+            await self._read_byte()
 
         elif ttype in (TType.I16, TType.I32, TType.I64):
-            from_zig_zag((yield from read_varint(self.trans)))
+            from_zig_zag(await read_varint(self.trans))
 
         elif ttype == TType.DOUBLE:
-            yield from self._read_double()
+            await self._read_double()
 
         elif ttype == TType.BINARY:
-            yield from self._read_binary()
+            await self._read_binary()
 
         elif ttype == TType.STRING:
-            yield from self._read_string()
+            await self._read_string()
 
         elif ttype == TType.STRUCT:
             self._read_struct_begin()
             while True:
-                name, ttype, id = yield from self._read_field_begin()
+                name, ttype, id = await self._read_field_begin()
                 if ttype == TType.STOP:
                     break
-                yield from self.skip(ttype)
+                await self.skip(ttype)
                 self._read_field_end()
             self._read_struct_end()
 
         elif ttype == TType.MAP:
-            ktype, vtype, size = yield from self._read_map_begin()
+            ktype, vtype, size = await self._read_map_begin()
             for i in range(size):
-                yield from self.skip(ktype)
-                yield from self.skip(vtype)
+                await self.skip(ktype)
+                await self.skip(vtype)
             self._read_collection_end()
 
         elif ttype == TType.SET:
-            etype, size = yield from self._read_collection_begin()
+            etype, size = await self._read_collection_begin()
             for i in range(size):
-                yield from self.skip(etype)
+                await self.skip(etype)
             self._read_collection_end()
 
         elif ttype == TType.LIST:
-            etype, size = yield from self._read_collection_begin()
+            etype, size = await self._read_collection_begin()
             for i in range(size):
-                yield from self.skip(etype)
+                await self.skip(etype)
             self._read_collection_end()
 
 

@@ -17,6 +17,8 @@ from thriftpy2.transport._ssl import (
     DEFAULT_CIPHERS
 )
 
+MAC_OR_BSD = sys.platform == 'darwin' or sys.platform.startswith('freebsd')
+
 
 class TAsyncSocket(object):
     """Socket implementation for client side."""
@@ -134,8 +136,7 @@ class TAsyncSocket(object):
     def is_open(self):
         return bool(self.raw_sock)
 
-    @asyncio.coroutine
-    def open(self):
+    async def open(self):
         self._init_sock()
 
         addr = self.unix_socket or (self.host, self.port)
@@ -153,7 +154,7 @@ class TAsyncSocket(object):
             if self.server_hostname:
                 kwargs['server_hostname'] = self.server_hostname
 
-            self.reader, self.writer = yield from asyncio.wait_for(
+            self.reader, self.writer = await asyncio.wait_for(
                 self.sock_factory(**kwargs),
                 self.socket_timeout
             )
@@ -163,17 +164,14 @@ class TAsyncSocket(object):
                 type=TTransportException.NOT_OPEN,
                 message="Could not connect to %s" % str(addr))
 
-    @asyncio.coroutine
-    def read(self, sz):
+    async def read(self, sz):
         try:
-            buff = yield from asyncio.wait_for(
+            buff = await asyncio.wait_for(
                 self.reader.read(sz),
                 self.connect_timeout
             )
         except socket.error as e:
-            if (e.args[0] == errno.ECONNRESET and
-                    (sys.platform == 'darwin' or
-                     sys.platform.startswith('freebsd'))):
+            if e.args[0] == errno.ECONNRESET and MAC_OR_BSD:
                 # freebsd and Mach don't follow POSIX semantic of recv
                 # and fail with ECONNRESET if peer performed shutdown.
                 # See corresponding comment and code in TSocket::read()
@@ -192,9 +190,8 @@ class TAsyncSocket(object):
     def write(self, buff):
         self.writer.write(buff)
 
-    @asyncio.coroutine
-    def flush(self):
-        yield from asyncio.wait_for(self.writer.drain(), self.connect_timeout)
+    async def flush(self):
+        await asyncio.wait_for(self.writer.drain(), self.connect_timeout)
 
     def close(self):
         if not self.raw_sock:
@@ -293,9 +290,8 @@ class TAsyncServerSocket(object):
         self.raw_sock.bind(addr)
         self.raw_sock.listen(self.backlog)
 
-    @asyncio.coroutine
-    def accept(self, callback):
-        server = yield from self.sock_factory(
+    async def accept(self, callback):
+        server = await self.sock_factory(
             lambda reader, writer: asyncio.wait_for(
                 callback(StreamHandler(reader, writer)),
                 self.client_timeout
@@ -320,14 +316,11 @@ class StreamHandler(object):
     def __init__(self, reader, writer):
         self.reader, self.writer = reader, writer
 
-    @asyncio.coroutine
-    def read(self, sz):
+    async def read(self, sz):
         try:
-            buff = yield from self.reader.read(sz)
+            buff = await self.reader.read(sz)
         except socket.error as e:
-            if (e.args[0] == errno.ECONNRESET and
-                    (sys.platform == 'darwin' or
-                     sys.platform.startswith('freebsd'))):
+            if e.args[0] == errno.ECONNRESET and MAC_OR_BSD:
                 # freebsd and Mach don't follow POSIX semantic of recv
                 # and fail with ECONNRESET if peer performed shutdown.
                 # See corresponding comment and code in TSocket::read()
@@ -346,9 +339,8 @@ class StreamHandler(object):
     def write(self, buff):
         self.writer.write(buff)
 
-    @asyncio.coroutine
-    def flush(self):
-        yield from self.writer.drain()
+    async def flush(self):
+        await self.writer.drain()
 
     def close(self):
         try:
@@ -356,6 +348,5 @@ class StreamHandler(object):
         except (socket.error, OSError):
             pass
 
-    @asyncio.coroutine
-    def open(self):
+    async def open(self):
         pass

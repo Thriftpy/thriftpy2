@@ -396,7 +396,7 @@ def p_ref_type(p):
                     '__spec__', '__thrift_file__', '__thrift_meta__'}:
             continue
         if p[1].startswith(attr + '.'):
-            name = p[1][len(attr)+1:]
+            name = p[1][len(attr) + 1:]
             included_ref_type = getattr(ref_type, attr)
             resolved_ref_type = getattr(included_ref_type, name, None)
             if resolved_ref_type is not None:

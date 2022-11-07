@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import struct
-import asyncio
 from io import BytesIO
 
 from .base import TAsyncTransportBase, readall
@@ -20,15 +19,13 @@ class TAsyncFramedTransport(TAsyncTransportBase):
     def is_open(self):
         return self._trans.is_open()
 
-    @asyncio.coroutine
-    def open(self):
-        return (yield from self._trans.open())
+    async def open(self):
+        return await self._trans.open()
 
     def close(self):
         return self._trans.close()
 
-    @asyncio.coroutine
-    def read(self, sz):
+    async def read(self, sz):
         # Important: don't attempt to read the next frame if the caller
         # doesn't actually need any data.
         if sz == 0:
@@ -38,21 +35,19 @@ class TAsyncFramedTransport(TAsyncTransportBase):
         if len(ret) != 0:
             return ret
 
-        yield from self.read_frame()
+        await self.read_frame()
         return self._rbuf.read(sz)
 
-    @asyncio.coroutine
-    def read_frame(self):
-        buff = yield from readall(self._trans.read, 4)
+    async def read_frame(self):
+        buff = await readall(self._trans.read, 4)
         sz, = struct.unpack('!i', buff)
-        frame = yield from readall(self._trans.read, sz)
+        frame = await readall(self._trans.read, sz)
         self._rbuf = BytesIO(frame)
 
     def write(self, buf):
         self._wbuf.write(buf)
 
-    @asyncio.coroutine
-    def flush(self):
+    async def flush(self):
         # reset wbuf before write/flush to preserve state on underlying failure
         out = self._wbuf.getvalue()
         self._wbuf = BytesIO()
@@ -63,7 +58,7 @@ class TAsyncFramedTransport(TAsyncTransportBase):
         # good job of managing string buffer operations without excessive
         # copies
         self._trans.write(struct.pack("!i", len(out)) + out)
-        yield from self._trans.flush()
+        await self._trans.flush()
 
     def getvalue(self):
         return self._trans.getvalue()

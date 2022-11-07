@@ -14,7 +14,6 @@ import thriftpy2
 
 thriftpy2.install_import_hook()
 
-from thriftpy2._compat import PY3  # noqa
 from thriftpy2.rpc import make_server, client_context  # noqa
 from thriftpy2.transport import TTransportException  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
@@ -136,13 +135,16 @@ def person():
 
 def client(timeout=3000):
     return client_context(addressbook.AddressBookService,
-                          unix_socket=unix_sock, timeout=timeout)
+                          socket_timeout=timeout,
+                          connect_timeout=timeout,
+                          unix_socket=unix_sock)
 
 
 def ssl_client(timeout=3000):
     return client_context(addressbook.AddressBookService,
                           host='localhost', port=SSL_PORT,
-                          timeout=timeout,
+                          socket_timeout=timeout,
+                          connect_timeout=timeout,
                           cafile="ssl/CA.pem", certfile="ssl/client.crt",
                           keyfile="ssl/client.key")
 
@@ -151,8 +153,11 @@ def ssl_client_with_url(timeout=3000):
     return client_context(addressbook.AddressBookService,
                           url="thrift://localhost:{port}".format(
                               port=SSL_PORT),
-                          timeout=timeout, cafile="ssl/CA.pem",
-                          certfile="ssl/client.crt", keyfile="ssl/client.key")
+                          socket_timeout=timeout,
+                          connect_timeout=timeout,
+                          cafile="ssl/CA.pem",
+                          certfile="ssl/client.crt",
+                          keyfile="ssl/client.key")
 
 
 def test_clients(ssl_server):
@@ -245,8 +250,9 @@ def test_exception_iwth_ssl():
 
 def test_client_timeout():
     with pytest.raises(socket.timeout):
-        with client(timeout=500) as c:
-            c.sleep(1000)
+        with pytest.warns(UserWarning):  # Deprecated
+            with client(timeout=500) as c:
+                c.sleep(1000)
 
 
 def test_client_socket_timeout():
@@ -266,9 +272,16 @@ def test_client_connect_timeout():
 
 
 def test_ssl_client_timeout():
+    errors = (socket.timeout,)
     # SSL socket timeout raises socket.timeout since Python 3.2.
     # http://bugs.python.org/issue10272
-    with pytest.raises(socket.timeout if PY3 else ssl.SSLError):
+    # Newer versions of PyPy2 also implement this change, so
+    # always catch both errors
+    try:
+        errors += (getattr(ssl, 'SSLError'),)
+    except AttributeError:
+        pass
+    with pytest.raises(errors):
         with ssl_client(timeout=500) as c:
             c.sleep(1000)
 

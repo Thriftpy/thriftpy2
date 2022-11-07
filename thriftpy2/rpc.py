@@ -47,9 +47,11 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
                                 certfile=certfile, keyfile=keyfile,
                                 ssl_context=ssl_context)
         else:
-            socket = TSocket(host, port, socket_family=socket_family, socket_timeout=timeout)
+            socket = TSocket(host, port, socket_family=socket_family,
+                             socket_timeout=timeout)
     else:
-        raise ValueError("Either host/port or unix_socket or url must be provided.")
+        raise ValueError("Either host/port or unix_socket"
+                         " or url must be provided.")
 
     transport = trans_factory.get_transport(socket)
     protocol = proto_factory.get_protocol(transport)
@@ -121,7 +123,8 @@ def client_context(service, host="localhost", port=9090, unix_socket=None,
                              connect_timeout=connect_timeout,
                              socket_timeout=socket_timeout)
     else:
-        raise ValueError("Either host/port or unix_socket or url must be provided.")
+        raise ValueError("Either host/port or unix_socket"
+                         " or url must be provided.")
 
     try:
         transport = trans_factory.get_transport(socket)
@@ -134,7 +137,7 @@ def client_context(service, host="localhost", port=9090, unix_socket=None,
 
 
 if PY35:
-    from thriftpy2.contrib.aio.rpc import (
+    from thriftpy2.contrib.aio.rpc import (  # noqa
         make_server as make_aio_server,
         make_client as make_aio_client
     )

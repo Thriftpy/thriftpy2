@@ -22,6 +22,8 @@ def make_addressbook():
     ab = addressbook.AddressBook()
     ab.people = {person.name: person}
     return ab
+
+
 ab_encoded = serialize(make_addressbook())
 
 
