@@ -115,7 +115,8 @@ async def read_val(inbuf, ttype, spec=None, decode_response=True):
         result = []
         r_type, sz = await read_list_begin(inbuf)
         # the v_type is useless here since we already get it from spec
-        if r_type != v_type and not (r_type in BIN_TYPES and v_type in BIN_TYPES):
+        if (r_type != v_type
+                and not (r_type in BIN_TYPES and v_type in BIN_TYPES)):
             for _ in range(sz):
                 await skip(inbuf, r_type)
             return []

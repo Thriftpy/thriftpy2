@@ -146,7 +146,7 @@ class TSocket(object):
             self.sock.shutdown(socket.SHUT_RDWR)
         except OSError:
             pass
-            
+
         try:
             self.sock.close()
         except OSError:
