@@ -660,6 +660,10 @@ def _add_thrift_meta(key, val):
     else:
         meta = getattr(thrift, '__thrift_meta__')
 
+    if key != 'consts' and val.__name__ in [x.__name__ for x in meta[key]]:
+        raise ThriftGrammerError(('\'%s\' type is already defined in '
+                                  '\'%s\'') % (val.__name__, key))
+
     meta[key].append(val)
 
 
@@ -890,6 +894,10 @@ def _make_service(name, funcs, extends):
 
     for func in funcs:
         func_name = func[2]
+        if func_name in thrift_services:
+            raise ThriftGrammerError(('\'%s\' function is already defined in '
+                                      'service \'%s\'') % (func_name,
+                                                           name))
         # args payload cls
         args_name = '%s_args' % func_name
         args_fields = func[3]

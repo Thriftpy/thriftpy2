@@ -5,6 +5,7 @@ from __future__ import absolute_import, division
 import os
 import socket
 import sys
+from unittest import mock
 
 import pytest
 
@@ -37,6 +38,69 @@ def test_inet_socket():
     client_socket = TSocket(host="127.0.0.1", port=12345)
 
     _test_socket(server_socket, client_socket)
+
+
+class TestTSocket:
+    def test_close(self):
+        mock_sock = mock.Mock()
+        client_socket = TSocket(sock=mock_sock)
+        client_socket.close()
+        mock_sock.shutdown.assert_called_once()
+        mock_sock.close.assert_called_once()
+        assert client_socket.sock is None
+
+    def test_close__shutdown_OSError(self):
+        """An OSError on socket shutdown will still close the socket."""
+        mock_sock = mock.Mock()
+        client_socket = TSocket(sock=mock_sock)
+        mock_sock.shutdown.side_effect = OSError
+        client_socket.close()
+        mock_sock.shutdown.assert_called_once()
+        mock_sock.close.assert_called_once()
+        assert client_socket.sock is None
+
+    def test_close__close_OSError(self):
+        """An OSError on socket close will still clear out the socket."""
+        mock_sock = mock.Mock()
+        client_socket = TSocket(sock=mock_sock)
+        mock_sock.close.side_effect = OSError
+        client_socket.close()
+        mock_sock.shutdown.assert_called_once()
+        mock_sock.close.assert_called_once()
+        assert client_socket.sock is None
+
+
+class TestTServerSocket:
+    def test_close(self):
+        mock_sock = mock.Mock()
+        server_socket = TServerSocket()
+        server_socket.sock = mock_sock
+        server_socket.close()
+        mock_sock.shutdown.assert_called_once()
+        mock_sock.close.assert_called_once()
+        assert server_socket.sock is None
+
+    def test_close__shutdown_OSError(self):
+        """An OSError on socket shutdown will still close the socket."""
+        mock_sock = mock.Mock()
+        server_socket = TServerSocket()
+        server_socket.sock = mock_sock
+        mock_sock.shutdown.side_effect = OSError
+        server_socket.close()
+        mock_sock.shutdown.assert_called_once()
+        mock_sock.close.assert_called_once()
+        assert server_socket.sock is None
+
+    def test_close__close_OSError(self):
+        """An OSError on socket close will still clear out the socket."""
+        mock_sock = mock.Mock()
+        server_socket = TServerSocket()
+        server_socket.sock = mock_sock
+        mock_sock.close.side_effect = OSError
+        server_socket.close()
+        mock_sock.shutdown.assert_called_once()
+        mock_sock.close.assert_called_once()
+        assert server_socket.sock is None
 
 
 @pytest.mark.skipif(os.getenv('TRAVIS', '') == 'true',

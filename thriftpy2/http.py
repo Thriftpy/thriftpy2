@@ -60,7 +60,7 @@ from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.transport import TBufferedTransportFactory
 
 
-HTTP_URI = '{scheme}://{host}:{port}/{path}'
+HTTP_URI = '{scheme}://{host}:{port}{path}'
 DEFAULT_HTTP_CLIENT_TIMEOUT_MS = 30000  # 30 seconds
 
 
@@ -308,6 +308,9 @@ def make_client(service, host='localhost', port=9090, path='', scheme='http',
         port = parsed_url.port or port
         scheme = parsed_url.scheme or scheme
         path = parsed_url.path or path
+    if path and path[0] != "/":
+        # path should have `/` prefix, but we can make a compatible here.
+        path = "/" + path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
     http_socket = THttpClient(uri, timeout, ssl_context_factory,
                               http_header_factory)
@@ -330,6 +333,9 @@ def client_context(service, host='localhost', port=9090, path='', scheme='http',
         port = parsed_url.port or port
         scheme = parsed_url.scheme or scheme
         path = parsed_url.path or path
+    if path and path[0] != "/":
+        # path should have `/` prefix, but we can make a compatible here.
+        path = "/" + path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
     http_socket = THttpClient(uri, timeout, ssl_context_factory,
                               http_header_factory)

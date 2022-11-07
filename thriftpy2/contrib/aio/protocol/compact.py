@@ -14,6 +14,8 @@ from thriftpy2.protocol.compact import (
 
 from .base import TAsyncProtocolBase
 
+BIN_TYPES = (TType.STRING, TType.BINARY)
+
 
 async def read_varint(trans):
     result = 0
@@ -131,9 +133,13 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
         val, = unpack('<d', buff)
         return val
 
+    async def _read_binary(self):
+        length = await self._read_size()
+        return await self.trans.read(length)
+
     async def _read_string(self):
-        len = await self._read_size()
-        byte_payload = await self.trans.read(len)
+        length = await self._read_size()
+        byte_payload = await self.trans.read(length)
 
         if self.decode_response:
             try:
@@ -166,10 +172,13 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
                 await self.skip(ftype)
                 raise
             else:
-                if field is not None and ftype == field[0]:
+                if field is not None and \
+                        (ftype == field[0]
+                         or (ftype in BIN_TYPES
+                             and field[0] in BIN_TYPES)):
                     fname = field[1]
                     fspec = field[2]
-                    val = await self._read_val(ftype, fspec)
+                    val = await self._read_val(field[0], fspec)
                     setattr(obj, fname, val)
                 else:
                     await self.skip(ftype)
@@ -188,6 +197,9 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
 
         elif ttype == TType.DOUBLE:
             return await self._read_double()
+
+        elif ttype == TType.BINARY:
+            return await self._read_binary()
 
         elif ttype == TType.STRING:
             return await self._read_string()
@@ -255,6 +267,9 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
 
         elif ttype == TType.DOUBLE:
             await self._read_double()
+
+        elif ttype == TType.BINARY:
+            await self._read_binary()
 
         elif ttype == TType.STRING:
             await self._read_string()

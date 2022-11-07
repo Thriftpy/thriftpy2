@@ -15,6 +15,7 @@ with open(join(dirname(__file__), 'thriftpy2', '__init__.py'), 'r') as f:
 
 install_requires = [
     "ply>=3.4,<4.0",
+    "six~=1.15",
 ]
 
 tornado_requires = [
@@ -35,6 +36,7 @@ dev_requires = [
     "pytest>=2.8",
     "sphinx-rtd-theme>=0.1.9",
     "sphinx>=1.3",
+    "pytest>=6.1.1",
 ] + tornado_requires
 
 
@@ -80,6 +82,9 @@ setup(name="thriftpy2",
       packages=find_packages(exclude=['benchmark', 'docs', 'tests']),
       entry_points={},
       url="https://thriftpy2.readthedocs.io/",
+      project_urls={
+          "Source": "https://github.com/Thriftpy/thriftpy2",
+      },
       license="MIT",
       zip_safe=False,
       long_description=open("README.rst").read(),

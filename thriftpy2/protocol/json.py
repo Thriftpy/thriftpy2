@@ -4,7 +4,11 @@ from __future__ import absolute_import
 
 import json
 import struct
+import base64
+import sys
 from warnings import warn
+
+import six
 
 from thriftpy2._compat import u
 from thriftpy2.thrift import TType
@@ -13,6 +17,12 @@ from .exc import TProtocolException
 from .base import TProtocolBase
 
 VERSION = 1
+
+
+def encode_binary(data):
+    if isinstance(data, six.string_types) and sys.version_info[0] > 2:
+        data = data.encode()
+    return base64.b64encode(data).decode('ascii')
 
 
 def json_value(ttype, val, spec=None):
@@ -28,6 +38,7 @@ def json_value(ttype, val, spec=None):
         TType.SET: (list_to_json, (val, spec)),
         TType.LIST: (list_to_json, (val, spec)),
         TType.MAP: (map_to_json, (val, spec)),
+        TType.BINARY: (encode_binary, (val, )),
     }
     func, args = TTYPE_TO_JSONFUNC_MAP.get(ttype)
     if func:
@@ -53,6 +64,7 @@ def obj_value(ttype, val, spec=None):
             TType.SET: (list_to_obj, (val, spec)),
             TType.LIST: (list_to_obj, (val, spec)),
             TType.MAP: (map_to_obj, (val, spec)),
+            TType.BINARY: (base64.b64decode, (val, )),
         }
         func, args = TTYPE_TO_OBJFUNC_MAP.get(ttype)
         if func:

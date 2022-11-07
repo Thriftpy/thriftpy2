@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-import warnings
+# -*- coding: utf-8 -*-
 import warnings
 
 from thriftpy2._compat import PY3

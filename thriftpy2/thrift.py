@@ -97,13 +97,13 @@ class TType(object):
     I64 = 10
     STRING = 11
     UTF7 = 11
-    BINARY = 11  # This here just for parsing. For all purposes, it's a string
     STRUCT = 12
     MAP = 13
     SET = 14
     LIST = 15
     UTF8 = 16
     UTF16 = 17
+    BINARY = 18
 
     _VALUES_TO_NAMES = {
         STOP: 'STOP',
@@ -117,13 +117,13 @@ class TType(object):
         I64: 'I64',
         STRING: 'STRING',
         UTF7: 'STRING',
-        BINARY: 'STRING',
         STRUCT: 'STRUCT',
         MAP: 'MAP',
         SET: 'SET',
         LIST: 'LIST',
         UTF8: 'UTF8',
-        UTF16: 'UTF16'
+        UTF16: 'UTF16',
+        BINARY: 'BINARY'
     }
 
 
