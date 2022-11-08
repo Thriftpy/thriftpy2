@@ -171,7 +171,7 @@ class TAsyncSocket(object):
                 self.connect_timeout
             )
         except socket.error as e:
-            if e.args[0] == errno.ECONNRESET and MAC_OR_BSD:
+            if e.errno == errno.ECONNRESET and MAC_OR_BSD:
                 # freebsd and Mach don't follow POSIX semantic of recv
                 # and fail with ECONNRESET if peer performed shutdown.
                 # See corresponding comment and code in TSocket::read()
@@ -266,7 +266,7 @@ class TAsyncServerSocket(object):
             try:
                 _sock.connect(self.unix_socket)
             except (socket.error, OSError) as err:
-                if err.args[0] == errno.ECONNREFUSED:
+                if err.errno == errno.ECONNREFUSED:
                     os.unlink(self.unix_socket)
         else:
             _sock = socket.socket(self.socket_family, socket.SOCK_STREAM)
@@ -320,7 +320,7 @@ class StreamHandler(object):
         try:
             buff = await self.reader.read(sz)
         except socket.error as e:
-            if e.args[0] == errno.ECONNRESET and MAC_OR_BSD:
+            if e.errno == errno.ECONNRESET and MAC_OR_BSD:
                 # freebsd and Mach don't follow POSIX semantic of recv
                 # and fail with ECONNRESET if peer performed shutdown.
                 # See corresponding comment and code in TSocket::read()
