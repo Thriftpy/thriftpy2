@@ -3,6 +3,15 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.15
+-------------
+
+Released on Jan 21, 2021.
+
+- Support Apache JSON protocol and binary type
+- Replace "yield from" syntax to "await"
+- Fix some socket leaking cases in aio support
+
 Version 0.4.14
 -------------
 
