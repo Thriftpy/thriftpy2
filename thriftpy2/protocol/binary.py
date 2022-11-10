@@ -83,10 +83,16 @@ def write_field_stop(outbuf):
 
 
 def write_list_begin(outbuf, etype, size):
+    if etype == TType.BINARY:
+        etype = TType.STRING
     outbuf.write(pack_i8(etype) + pack_i32(size))
 
 
 def write_map_begin(outbuf, ktype, vtype, size):
+    if ktype == TType.BINARY:
+        ktype = TType.STRING
+    if vtype == TType.BINARY:
+        vtype = TType.STRING
     outbuf.write(pack_i8(ktype) + pack_i8(vtype) + pack_i32(size))
 
 

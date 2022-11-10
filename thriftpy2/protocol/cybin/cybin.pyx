@@ -115,6 +115,9 @@ cdef inline write_list(CyTransportBase buf, object val, spec):
         e_type = spec[0]
         e_spec = spec[1]
 
+    if e_type == T_BINARY:
+        e_type = T_STRING
+
     val_len = len(val)
     write_i08(buf, e_type)
     write_i32(buf, val_len)
@@ -142,6 +145,9 @@ cdef inline write_dict(CyTransportBase buf, object val, spec):
         k_type = key[0]
         k_spec = key[1]
 
+    if k_type == T_BINARY:
+        k_type = T_STRING
+
     value = spec[1]
     if isinstance(value, int):
         v_type = value
@@ -149,6 +155,9 @@ cdef inline write_dict(CyTransportBase buf, object val, spec):
     else:
         v_type = value[0]
         v_spec = value[1]
+
+    if v_type == T_BINARY:
+        v_type = T_STRING
 
     val_len = len(val)
 

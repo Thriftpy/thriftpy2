@@ -279,7 +279,7 @@ def test_complex_map():
                     spec=(TType.STRING, TType.BINARY))
     b2.flush()
 
-    assert b1.getvalue() != b2.getvalue()
+    assert b1.getvalue() == b2.getvalue()
 
 
 type_map = {
