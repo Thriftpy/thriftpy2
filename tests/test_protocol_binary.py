@@ -6,6 +6,8 @@ from thriftpy2._compat import u
 from thriftpy2.thrift import TType, TPayload
 from thriftpy2.utils import hexlify
 from thriftpy2.protocol import binary as proto
+from thriftpy2 import load
+from thriftpy2.utils import serialize
 
 
 class TItem(TPayload):
@@ -160,3 +162,63 @@ def test_write_huge_struct():
     b = BytesIO()
     item = TItem(id=12345, phones=["1234567890"] * 100000)
     proto.TBinaryProtocol(b).write_struct(item)
+
+
+def test_string_binary_equivalency():
+    from thriftpy2.protocol.binary import TBinaryProtocolFactory
+    from thriftpy2.protocol.cybin import TCyBinaryProtocolFactory
+    string_binary_equivalency(TBinaryProtocolFactory)
+    string_binary_equivalency(TCyBinaryProtocolFactory)
+
+
+def string_binary_equivalency(proto_factory):
+    container = load("./container.thrift")
+    l_item = container.ListItem()
+    l_item.list_string = ['foo', 'bar']
+    l_item.list_list_string = [['foo', 'bar']]
+
+    bl_item = container.BinListItem()
+    bl_item.list_binary = ['foo', 'bar']
+    bl_item.list_list_binary = [['foo', 'bar']]
+
+    assert serialize(l_item, proto_factory=proto_factory()) == serialize(
+        l_item, proto_factory=proto_factory())
+
+    m_item = container.MapItem()
+    m_item.map_string = {'foo': 'bar'}
+    m_item.map_map_string = {'foo': {'hello': 'world'}}
+
+    bm_item = container.BinMapItem()
+    bm_item.map_binary = {'foo': 'bar'}
+    bm_item.map_map_binary = {'foo': {'hello': 'world'}}
+
+    assert serialize(m_item, proto_factory=proto_factory()) == serialize(
+        bm_item, proto_factory=proto_factory())
+
+    x_item = container.MixItem()
+    x_item.list_map = [{'foo': 'bar'}]
+    x_item.map_list = {'foo': ['hello', 'world']}
+
+    bx_item = container.BinMixItem()
+    bx_item.list_map = [{'foo': 'bar'}]
+    bx_item.map_list = {'foo': ['hello', 'world']}
+
+    assert serialize(x_item, proto_factory=proto_factory()) == serialize(
+        bx_item, proto_factory=proto_factory())
+
+    l_item = container.ListItem()
+    l_item.list_string = ['foo', 'bar'] * 100
+    l_item.list_list_string = [['foo', 'bar']] * 100
+
+    l_struct = container.ListStruct()
+    l_struct.list_items = [l_item] * 100
+
+    bl_item = container.BinListItem()
+    bl_item.list_binary = ['foo', 'bar'] * 100
+    bl_item.list_list_binary = [['foo', 'bar']] * 100
+
+    bl_struct = container.BinListStruct()
+    bl_struct.list_items = [l_item] * 100
+
+    assert serialize(l_struct, proto_factory=proto_factory()) == serialize(
+        bl_struct, proto_factory=proto_factory())
