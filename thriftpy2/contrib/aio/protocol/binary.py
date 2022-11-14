@@ -84,7 +84,7 @@ async def read_val(inbuf, ttype, spec=None, decode_response=True):
         return unpack_i32(await inbuf.read(4))
 
     elif ttype == TType.I64:
-        return unpack_i64(await inbuf.read())
+        return unpack_i64(await inbuf.read(8))
 
     elif ttype == TType.DOUBLE:
         return unpack_double(await inbuf.read(8))
