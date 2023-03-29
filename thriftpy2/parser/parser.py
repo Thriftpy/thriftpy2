@@ -104,8 +104,8 @@ def p_definition_unit(p):
 
 
 def p_const(p):
-    '''const : CONST field_type IDENTIFIER '=' const_value
-             | CONST field_type IDENTIFIER '=' const_value sep'''
+    '''const : CONST field_type IDENTIFIER '=' const_value type_annotations
+             | CONST field_type IDENTIFIER '=' const_value type_annotations sep'''
 
     try:
         val = _cast(p[2], p.lineno(3))(p[5])
