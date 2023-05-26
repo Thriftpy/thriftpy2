@@ -1,3 +1,5 @@
+# cython: language_level=2
+
 import sys
 
 from libc.stdlib cimport free, malloc
