@@ -37,6 +37,7 @@ jobs:
         flake8 thriftpy2 --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore C901
     - name: Test with pytest
       run: |
+        ls -la thriftpy2/transport
         cython thriftpy2/protocol/cybin/*.pyx
         cython thriftpy2/transport/*.pyx
         pip install -e ".[dev]"
