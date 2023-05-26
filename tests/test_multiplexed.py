@@ -65,7 +65,7 @@ def client_one(timeout=3000):
     multiplexing_factory = TMultiplexedProtocolFactory(binary_factory,
                                                        "ThingOneService")
     return client_context(mux.ThingOneService, unix_socket=sock_path,
-                          timeout=timeout,
+                          socket_timeout=timeout, connect_timeout=timeout,
                           proto_factory=multiplexing_factory)
 
 
@@ -74,7 +74,7 @@ def client_two(timeout=3000):
     multiplexing_factory = TMultiplexedProtocolFactory(binary_factory,
                                                        "ThingTwoService")
     return client_context(mux.ThingTwoService, unix_socket=sock_path,
-                          timeout=timeout,
+                          socket_timeout=timeout, connect_timeout=timeout,
                           proto_factory=multiplexing_factory)
 
 

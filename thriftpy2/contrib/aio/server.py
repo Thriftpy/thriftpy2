@@ -29,15 +29,14 @@ class TAsyncServer(TServer):
             self.trans.accept(self.handle)
         )
 
-    @asyncio.coroutine
-    def handle(self, client):
+    async def handle(self, client):
         itrans = self.itrans_factory.get_transport(client)
         otrans = self.otrans_factory.get_transport(client)
         iprot = self.iprot_factory.get_protocol(itrans)
         oprot = self.oprot_factory.get_protocol(otrans)
         try:
             while not client.reader.at_eof():
-                yield from self.processor.process(iprot, oprot)
+                await self.processor.process(iprot, oprot)
         except TTransportException:
             pass
         except Exception as x:
@@ -45,11 +44,10 @@ class TAsyncServer(TServer):
 
         itrans.close()
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         if self.closed:
             return
         self.server.close()
-        yield from self.server.wait_closed()
+        await self.server.wait_closed()
         self.closed = True
         self.server = None

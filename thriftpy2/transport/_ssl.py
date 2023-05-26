@@ -65,8 +65,6 @@ class InsecurePlatformWarning(Warning):
 try:
     from ssl import SSLContext
 except ImportError:
-    import sys
-
     class SSLContext(object):
 
         def __init__(self, protocol_version):

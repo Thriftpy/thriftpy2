@@ -104,7 +104,8 @@ class THttpHeaderFactory(object):
     """
     def __init__(self, headers=None):
         """Initialize a header factory
-        @param headers(dict) a dictionary of static headers the factory generates
+        @param headers(dict)
+            A dictionary of static headers the factory generates
         """
         if headers:
             self.__headers = headers
@@ -175,7 +176,8 @@ class THttpClient(object):
     """Http implementation of TTransport base.
     """
 
-    def __init__(self, uri, timeout=None, ssl_context_factory=None, http_header_factory=None):
+    def __init__(self, uri, timeout=None, ssl_context_factory=None,
+                 http_header_factory=None):
         """Initialize a HTTP Socket.
 
         @param uri(str)    The http_scheme:://host:port/path to connect to.
@@ -252,8 +254,8 @@ class THttpClient(object):
         self.__http.putheader('Content-Type', 'application/x-thrift')
         self.__http.putheader('Content-Length', str(len(data)))
         custom_headers = self._http_header_factory.get_headers()
-        if (not custom_headers or
-                'User-Agent' not in custom_headers):
+        if (not custom_headers
+                or 'User-Agent' not in custom_headers):
             user_agent = 'Python/THttpClient'
             script = os.path.basename(sys.argv[0])
             if script:
@@ -310,7 +312,8 @@ def make_client(service, host='localhost', port=9090, path='', scheme='http',
         # path should have `/` prefix, but we can make a compatible here.
         path = "/" + path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
-    http_socket = THttpClient(uri, timeout, ssl_context_factory, http_header_factory)
+    http_socket = THttpClient(uri, timeout, ssl_context_factory,
+                              http_header_factory)
     transport = trans_factory.get_transport(http_socket)
     iprot = proto_factory.get_protocol(transport)
     transport.open()
@@ -334,7 +337,8 @@ def client_context(service, host='localhost', port=9090, path='', scheme='http',
         # path should have `/` prefix, but we can make a compatible here.
         path = "/" + path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
-    http_socket = THttpClient(uri, timeout, ssl_context_factory, http_header_factory)
+    http_socket = THttpClient(uri, timeout, ssl_context_factory,
+                              http_header_factory)
     transport = trans_factory.get_transport(http_socket)
     try:
         iprot = proto_factory.get_protocol(transport)

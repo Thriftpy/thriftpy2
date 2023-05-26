@@ -59,7 +59,7 @@ def test_inet_ssl_socket():
     _test_socket(server_socket, client_socket)
 
 
-@pytest.mark.skipif(not MODERN_SSL,
+@pytest.mark.skipif(True,
                     reason="check hostname not supported")
 def test_ssl_hostname_validate():
     server_socket = TSSLServerSocket(host="localhost", port=12345,

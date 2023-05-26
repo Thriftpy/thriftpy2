@@ -3,6 +3,22 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.16
+-------------
+
+Released on Nov 15, 2022.
+
+- Fix unexpected binary type id in TBinaryTransport serialization
+
+Version 0.4.15
+-------------
+
+Released on Nov 8, 2021.
+
+- Support Apache JSON protocol and binary type
+- Replace "yield from" syntax to "await"
+- Fix some socket leaking cases in aio support
+
 Version 0.4.14
 -------------
 

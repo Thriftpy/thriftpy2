@@ -35,21 +35,17 @@ class Dispatcher:
         self.ab = addressbook.AddressBook()
         self.ab.people = {}
 
-    @asyncio.coroutine
-    def ping(self):
+    async def ping(self):
         return True
 
-    @asyncio.coroutine
-    def hello(self, name):
+    async def hello(self, name):
         return "hello " + name
 
-    @asyncio.coroutine
-    def add(self, person):
+    async def add(self, person):
         self.ab.people[person.name] = person
         return True
 
-    @asyncio.coroutine
-    def remove(self, name):
+    async def remove(self, name):
         if not name:
             # undeclared exception
             raise ValueError('name cannot be empty')
@@ -60,31 +56,26 @@ class Dispatcher:
             raise addressbook.PersonNotExistsError(
                 "{0} not exists".format(name))
 
-    @asyncio.coroutine
-    def get(self, name):
+    async def get(self, name):
         try:
             return self.ab.people[name]
         except KeyError:
             raise addressbook.PersonNotExistsError(
                 "{0} not exists".format(name))
 
-    @asyncio.coroutine
-    def book(self):
+    async def book(self):
         return self.ab
 
-    @asyncio.coroutine
-    def get_phonenumbers(self, name, count):
+    async def get_phonenumbers(self, name, count):
         p = [self.ab.people[name].phones[0]] if name in self.ab.people else []
         return p * count
 
-    @asyncio.coroutine
-    def get_phones(self, name):
+    async def get_phones(self, name):
         phone_numbers = self.ab.people[name].phones
         return dict((p.type, p.number) for p in phone_numbers)
 
-    @asyncio.coroutine
-    def sleep(self, ms):
-        yield from asyncio.sleep(ms / 1000.0)
+    async def sleep(self, ms):
+        await asyncio.sleep(ms / 1000.0)
         return True
 
 

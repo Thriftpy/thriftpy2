@@ -83,10 +83,16 @@ def write_field_stop(outbuf):
 
 
 def write_list_begin(outbuf, etype, size):
+    if etype == TType.BINARY:
+        etype = TType.STRING
     outbuf.write(pack_i8(etype) + pack_i32(size))
 
 
 def write_map_begin(outbuf, ktype, vtype, size):
+    if ktype == TType.BINARY:
+        ktype = TType.STRING
+    if vtype == TType.BINARY:
+        vtype = TType.STRING
     outbuf.write(pack_i8(ktype) + pack_i8(vtype) + pack_i32(size))
 
 
@@ -254,7 +260,8 @@ def read_val(inbuf, ttype, spec=None, decode_response=True):
         result = []
         r_type, sz = read_list_begin(inbuf)
         # the v_type is useless here since we already get it from spec
-        if r_type != v_type and not (r_type in BIN_TYPES and v_type in BIN_TYPES):
+        if (r_type != v_type
+                and not (r_type in BIN_TYPES and v_type in BIN_TYPES)):
             for _ in range(sz):
                 skip(inbuf, r_type)
             return []

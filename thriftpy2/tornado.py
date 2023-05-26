@@ -30,11 +30,13 @@ from .thrift import TApplicationException, TProcessor, TClient
 # TODO need TCyTornadoStreamTransport to work with cython binary protocol
 from .protocol.binary import TBinaryProtocolFactory
 from ._compat import PY3
+
 if PY3:
     import urllib
 else:
     import urllib2 as urllib
     import urlparse
+
     urllib.parse = urlparse
     urllib.parse.quote = urllib.quote
 
@@ -50,7 +52,6 @@ except ImportError:
     except ImportError:
         raise RuntimeError('With tornado {}, you need to install '
                            '"toro"'.format(tornado_version))
-
 
 logger = logging.getLogger(__name__)
 
@@ -168,9 +169,10 @@ class TTornadoStreamTransport(TTransportBase):
 
 
 class TTornadoServer(tcpserver.TCPServer):
-    def __init__(self, processor, iprot_factory, oprot_factory=None,
-                 transport_read_timeout=TTornadoStreamTransport.DEFAULT_READ_TIMEOUT,  # noqa
-                 *args, **kwargs):
+    def __init__(
+            self, processor, iprot_factory, oprot_factory=None,
+            transport_read_timeout=TTornadoStreamTransport.DEFAULT_READ_TIMEOUT,
+            *args, **kwargs):
         super(TTornadoServer, self).__init__(*args, **kwargs)
 
         self._processor = processor
@@ -251,12 +253,14 @@ def make_server(
 
 
 @gen.coroutine
-def make_client(
-        service, host='localhost', port=9090, proto_factory=TBinaryProtocolFactory(),
-        io_loop=None, ssl_options=None,
-        connect_timeout=TTornadoStreamTransport.DEFAULT_CONNECT_TIMEOUT,
-        read_timeout=TTornadoStreamTransport.DEFAULT_READ_TIMEOUT,
-        url=''):
+def make_client(service,
+                host='localhost',
+                port=9090,
+                proto_factory=TBinaryProtocolFactory(), io_loop=None,
+                ssl_options=None,
+                connect_timeout=TTornadoStreamTransport.DEFAULT_CONNECT_TIMEOUT,
+                read_timeout=TTornadoStreamTransport.DEFAULT_READ_TIMEOUT,
+                url=''):
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host

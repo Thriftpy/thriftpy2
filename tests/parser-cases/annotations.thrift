@@ -19,6 +19,8 @@
 
 typedef list<i32> ( cpp.template = "std::list" ) int_linked_list
 
+const string id = "id" (name="LANG_ID");
+
 struct foo {
   1: i32 bar ( presence = "required" );
   2: i32 baz ( presence = "manual", cpp.use_pointer = "", );

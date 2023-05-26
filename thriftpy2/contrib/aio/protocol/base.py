@@ -1,23 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import asyncio
-
 from thriftpy2.protocol import TProtocolBase
 
 
 class TAsyncProtocolBase(TProtocolBase):
     """Base class for Thrift async protocol layer."""
 
-    @asyncio.coroutine
-    def skip(self, ttype):
+    async def skip(self, ttype):
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def read_message_begin(self):
+    async def read_message_begin(self):
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def read_message_end(self):
+    async def read_message_end(self):
         raise NotImplementedError
 
     def write_message_begin(self, name, ttype, seqid):
@@ -26,8 +21,7 @@ class TAsyncProtocolBase(TProtocolBase):
     def write_message_end(self):
         raise NotImplementedError
 
-    @asyncio.coroutine
-    def read_struct(self, obj):
+    async def read_struct(self, obj):
         raise NotImplementedError
 
     def write_struct(self, obj):

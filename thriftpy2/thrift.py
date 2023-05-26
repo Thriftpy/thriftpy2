@@ -203,13 +203,13 @@ class TClient(object):
 
     def _req(self, _api, *args, **kwargs):
         try:
-            kwargs = args_to_kwargs(getattr(self._service, _api + "_args").thrift_spec,
-                          *args, **kwargs)
+            service_args = getattr(self._service, _api + "_args")
+            kwargs = args_to_kwargs(service_args.thrift_spec, *args, **kwargs)
         except ValueError as e:
             raise TApplicationException(
-                    TApplicationException.UNKNOWN_METHOD,
-                    '{arg} is required argument for {service}.{api}'.format(
-                        arg=e.args[0], service=self._service.__name__, api=_api))
+                TApplicationException.UNKNOWN_METHOD,
+                '{arg} is required argument for {service}.{api}'.format(
+                    arg=e.args[0], service=self._service.__name__, api=_api))
 
         result_cls = getattr(self._service, _api + "_result")
 

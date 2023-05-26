@@ -107,8 +107,8 @@ def p_definition_unit(p):
 
 
 def p_const(p):
-    '''const : CONST field_type IDENTIFIER '=' const_value
-             | CONST field_type IDENTIFIER '=' const_value sep'''
+    '''const : CONST field_type IDENTIFIER '=' const_value type_annotations
+             | CONST field_type IDENTIFIER '=' const_value type_annotations sep'''
 
     try:
         val = _cast(p[2], p.lineno(3))(p[5])
@@ -399,7 +399,7 @@ def p_ref_type(p):
                     '__spec__', '__thrift_file__', '__thrift_meta__'}:
             continue
         if p[1].startswith(attr + '.'):
-            name = p[1][len(attr)+1:]
+            name = p[1][len(attr) + 1:]
             included_ref_type = getattr(ref_type, attr)
             resolved_ref_type = getattr(included_ref_type, name, None)
             if resolved_ref_type is not None:
