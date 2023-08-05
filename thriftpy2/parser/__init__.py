@@ -34,7 +34,7 @@ def load(path,
     """
     real_module = bool(module_name)
     thrift = parse(path, module_name, include_dirs=include_dirs,
-                   include_dir=include_dir)
+                   include_dir=include_dir, encoding=encoding)
     if incomplete_type:
         fill_incomplete_ttype(thrift, thrift)
     if real_module:
