@@ -31,7 +31,6 @@ except ImportError:
     pass
 
 dev_requires = [
-    "cython>=0.28.4",
     "flake8>=2.5",
     "pytest>=2.8",
     "sphinx-rtd-theme>=0.1.9",
@@ -39,13 +38,6 @@ dev_requires = [
     "pytest>=6.1.1",
 ] + tornado_requires
 
-
-# cython detection
-try:
-    from Cython.Build import cythonize
-    CYTHON = True
-except ImportError:
-    CYTHON = False
 
 cmdclass = {}
 ext_modules = []
@@ -56,11 +48,10 @@ UNIX = platform.system() in ("Linux", "Darwin")
 
 # only build ext in CPython with UNIX platform
 if UNIX and not PYPY:
-    # rebuild .c files if cython available
-    if CYTHON:
-        cythonize("thriftpy2/transport/cybase.pyx")
-        cythonize("thriftpy2/transport/**/*.pyx")
-        cythonize("thriftpy2/protocol/cybin/cybin.pyx")
+    from Cython.Build import cythonize
+    cythonize("thriftpy2/transport/cybase.pyx")
+    cythonize("thriftpy2/transport/**/*.pyx")
+    cythonize("thriftpy2/protocol/cybin/cybin.pyx")
 
     ext_modules.append(Extension("thriftpy2.transport.cybase",
                                  ["thriftpy2/transport/cybase.c"]))
