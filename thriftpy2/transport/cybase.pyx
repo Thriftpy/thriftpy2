@@ -87,7 +87,7 @@ cdef class TCyBuffer(object):
         if min_size <= self.buf_size:
             return 0
 
-        cdef int multiples = min_size / self.buf_size
+        cdef int multiples = min_size // self.buf_size
         if min_size % self.buf_size != 0:
             multiples += 1
 
