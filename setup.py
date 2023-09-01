@@ -62,8 +62,7 @@ class CustomBuildExtCommand(build_ext):
     def finalize_options(self):
         # only build ext in CPython with UNIX platform
         if self.distribution.ext_modules:
-            if UNIX and not PYPY:
-                from Cython.Build import cythonize
+            from Cython.Build import cythonize
             self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules, force=self.force)
         super().finalize_options()
 
