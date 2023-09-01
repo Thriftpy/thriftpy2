@@ -11,11 +11,13 @@ from ._ssl import create_thriftpy_context
 from .buffered import TBufferedTransport, TBufferedTransportFactory
 from .framed import TFramedTransport, TFramedTransportFactory
 from .memory import TMemoryBuffer
+from .sasl import TSaslClientTransport
 
 if CYTHON:
     from .buffered import TCyBufferedTransport, TCyBufferedTransportFactory
     from .framed import TCyFramedTransport, TCyFramedTransportFactory
     from .memory import TCyMemoryBuffer
+    from .sasl import TCySaslClientTransport
 
     # enable cython binary by default for CPython.
     TMemoryBuffer = TCyMemoryBuffer  # noqa
@@ -23,6 +25,7 @@ if CYTHON:
     TBufferedTransportFactory = TCyBufferedTransportFactory  # noqa
     TFramedTransport = TCyFramedTransport  # noqa
     TFramedTransportFactory = TCyFramedTransportFactory  # noqa
+    TSaslClientTransport = TCySaslClientTransport  # noqa
 else:
     # disable cython binary protocol for PYPY since it's slower.
     TCyMemoryBuffer = TMemoryBuffer
@@ -30,6 +33,7 @@ else:
     TCyBufferedTransportFactory = TBufferedTransportFactory
     TCyFramedTransport = TFramedTransport
     TCyFramedTransportFactory = TFramedTransportFactory
+    TCySaslClientTransport = TSaslClientTransport
 
 __all__ = [
     "TSocket", "TServerSocket",
@@ -38,5 +42,6 @@ __all__ = [
     "TMemoryBuffer", "TFramedTransport", "TFramedTransportFactory",
     "TBufferedTransport", "TBufferedTransportFactory", "TCyMemoryBuffer",
     "TCyBufferedTransport", "TCyBufferedTransportFactory",
-    "TCyFramedTransport", "TCyFramedTransportFactory"
+    "TCyFramedTransport", "TCyFramedTransportFactory",
+    "TSaslClientTransport", "TCySaslClientTransport",
 ]

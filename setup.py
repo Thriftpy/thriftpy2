@@ -51,6 +51,7 @@ if UNIX and not PYPY:
         Extension("thriftpy2.transport.buffered.cybuffered", sources=["thriftpy2/transport/buffered/cybuffered.pyx"]),
         Extension("thriftpy2.transport.framed.cyframed", sources=["thriftpy2/transport/framed/cyframed.pyx"]),
         Extension("thriftpy2.transport.memory.cymemory", sources=["thriftpy2/transport/memory/cymemory.pyx"]),
+        Extension("thriftpy2.transport.sasl.cysasl", sources=["thriftpy2/transport/sasl/cysasl.pyx"]),
         Extension("thriftpy2.protocol.cybin", sources=["thriftpy2/protocol/cybin/cybin.pyx"]),
     ]
 
