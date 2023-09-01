@@ -48,7 +48,6 @@ class TSaslClientTransport(TTransportBase):
         self.mechanism = mechanism
         self.__wbuf = BytesIO()
         self.__rbuf = BytesIO(b'')
-        self.opened = False
         self.encode = None
 
     def is_open(self):

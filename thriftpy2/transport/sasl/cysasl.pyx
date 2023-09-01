@@ -39,19 +39,11 @@ cdef class TCySaslClientTransport(CyTransportBase):
         self.mechanism = mechanism
         self.__wbuf = TCyBuffer(DEFAULT_BUFFER)
         self.__rbuf = TCyBuffer(DEFAULT_BUFFER)
-        self.opened = False
         self.encode_decided = False
         self.encode = False
 
-    def isOpen(self):
-        try:
-            is_open = self.trans.is_open()
-        except AttributeError:
-            is_open = self.trans.isOpen()
-        return is_open
-
     def is_open(self):
-        return self.isOpen()
+        return self.trans.is_open()
 
     def open(self):
         if not self.is_open():
