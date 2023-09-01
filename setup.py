@@ -8,6 +8,7 @@ import platform
 from os.path import join, dirname
 
 from setuptools import setup, find_packages
+from setuptools.command.build_ext import build_ext
 from setuptools.extension import Extension
 
 with open(join(dirname(__file__), 'thriftpy2', '__init__.py'), 'r') as f:
@@ -39,30 +40,32 @@ dev_requires = [
 ] + tornado_requires
 
 
-cmdclass = {}
-ext_modules = []
-
 # pypy detection
 PYPY = "__pypy__" in sys.modules
 UNIX = platform.system() in ("Linux", "Darwin")
 
-# only build ext in CPython with UNIX platform
+ext_modules = []
 if UNIX and not PYPY:
-    from Cython.Build import cythonize
-    cythonize("thriftpy2/transport/cybase.pyx")
-    cythonize("thriftpy2/transport/**/*.pyx")
-    cythonize("thriftpy2/protocol/cybin/cybin.pyx")
+    ext_modules = [
+        Extension("thriftpy2.transport.cybase", sources=["thriftpy2/transport/cybase.pyx"]),
+        Extension("thriftpy2.transport.buffered.cybuffered", sources=["thriftpy2/transport/buffered/cybuffered.pyx"]),
+        Extension("thriftpy2.transport.framed.cyframed", sources=["thriftpy2/transport/framed/cyframed.pyx"]),
+        Extension("thriftpy2.transport.memory.cymemory", sources=["thriftpy2/transport/memory/cymemory.pyx"]),
+        Extension("thriftpy2.protocol.cybin", sources=["thriftpy2/protocol/cybin/cybin.pyx"]),
+    ]
 
-    ext_modules.append(Extension("thriftpy2.transport.cybase",
-                                 ["thriftpy2/transport/cybase.c"]))
-    ext_modules.append(Extension("thriftpy2.transport.buffered.cybuffered",
-                                 ["thriftpy2/transport/buffered/cybuffered.c"]))
-    ext_modules.append(Extension("thriftpy2.transport.memory.cymemory",
-                                 ["thriftpy2/transport/memory/cymemory.c"]))
-    ext_modules.append(Extension("thriftpy2.transport.framed.cyframed",
-                                 ["thriftpy2/transport/framed/cyframed.c"]))
-    ext_modules.append(Extension("thriftpy2.protocol.cybin",
-                                 ["thriftpy2/protocol/cybin/cybin.c"]))
+
+class CustomBuildExtCommand(build_ext):
+    """build_ext command for use when Cythonizing."""
+
+    def finalize_options(self):
+        # only build ext in CPython with UNIX platform
+        if self.distribution.ext_modules:
+            if UNIX and not PYPY:
+                from Cython.Build import cythonize
+            self.distribution.ext_modules[:] = cythonize(self.distribution.ext_modules, force=self.force)
+        super().finalize_options()
+
 
 setup(name="thriftpy2",
       version=version,
@@ -86,7 +89,8 @@ setup(name="thriftpy2",
           "dev": dev_requires,
           "tornado": tornado_requires
       },
-      cmdclass=cmdclass,
+      setup_requires=["Cython"],
+      cmdclass={'build_ext': CustomBuildExtCommand},
       ext_modules=ext_modules,
       include_package_data=True,
       classifiers=[
