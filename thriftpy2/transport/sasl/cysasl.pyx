@@ -178,7 +178,7 @@ cdef class TCySaslClientTransport(CyTransportBase):
             sz -= self.__rbuf.data_size
             self._read_frame()
 
-        ret += self.__rbuf.buf[self.__rbuf.cur:sz]
+        ret += self.__rbuf.buf[self.__rbuf.cur:self.__rbuf.cur + sz]
         self.__rbuf.cur += sz
         self.__rbuf.data_size -= sz
 
