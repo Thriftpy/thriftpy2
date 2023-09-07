@@ -17,7 +17,8 @@
 #
 """ SASL transports for Thrift. """
 
-# Initially copied from the Impala repo
+# Initially copied from
+# https://github.com/cloudera/thrift_sasl/blob/master/thrift_sasl/__init__.py
 
 from __future__ import absolute_import
 
