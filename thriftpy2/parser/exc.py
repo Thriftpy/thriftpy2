@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+import sys
 from warnings import warn
 
 
@@ -17,9 +18,12 @@ class ThriftGrammarError(ThriftParserError):
     pass
 
 
-def __getattr__(name):
-    if name == "ThriftGrammerError":
-        warn("'ThriftGrammerError' is a typo of 'ThriftGrammarError'", DeprecationWarning)
-        return ThriftGrammarError
+if sys.version_info >= (3, 7):
+    def __getattr__(name):
+        if name == "ThriftGrammerError":
+            warn("'ThriftGrammerError' is a typo of 'ThriftGrammarError'", DeprecationWarning)
+            return ThriftGrammarError
 
-    raise AttributeError("module %r has no attribute %r" % (__name__, name))
+        raise AttributeError("module %r has no attribute %r" % (__name__, name))
+else:
+    ThriftGrammerError = ThriftGrammarError
