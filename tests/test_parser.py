@@ -207,7 +207,7 @@ def test_e_dead_include():
 def test_e_grammer_error_at_eof():
     with pytest.raises(ThriftGrammerError) as excinfo:
         load('parser-cases/e_grammer_error_at_eof.thrift')
-    assert str(excinfo.value) == 'Grammer error at EOF'
+    assert str(excinfo.value) == 'Grammar error at EOF'
 
 
 def test_e_use_thrift_reserved_keywords():
