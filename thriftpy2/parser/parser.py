@@ -13,7 +13,7 @@ import sys
 import types
 from ply import lex, yacc
 from .lexer import *  # noqa
-from .exc import ThriftParserError, ThriftGrammerError
+from .exc import ThriftParserError, ThriftGrammarError
 from thriftpy2._compat import urlopen, urlparse, PY3
 from ..thrift import gen_init, TType, TPayload, TException
 
@@ -23,8 +23,8 @@ if not PY3:
 
 def p_error(p):
     if p is None:
-        raise ThriftGrammerError('Grammer error at EOF')
-    raise ThriftGrammerError('Grammer error %r at line %d' %
+        raise ThriftGrammarError('Grammar error at EOF')
+    raise ThriftGrammarError('Grammar error %r at line %d' %
                              (p.value, p.lineno))
 
 
@@ -667,7 +667,7 @@ def _add_thrift_meta(key, val):
         meta = getattr(thrift, '__thrift_meta__')
 
     if key != 'consts' and val.__name__ in [x.__name__ for x in meta[key]]:
-        raise ThriftGrammerError(('\'%s\' type is already defined in '
+        raise ThriftGrammarError(('\'%s\' type is already defined in '
                                   '\'%s\'') % (val.__name__, key))
 
     meta[key].append(val)
@@ -869,7 +869,7 @@ def _fill_in_struct(cls, fields, _gen_init=True):
 
     for field in fields:
         if field[0] in thrift_spec or field[3] in _tspec:
-            raise ThriftGrammerError(('\'%d:%s\' field identifier/name has '
+            raise ThriftGrammarError(('\'%d:%s\' field identifier/name has '
                                       'already been used') % (field[0],
                                                               field[3]))
         ttype = field[2]
@@ -901,7 +901,7 @@ def _make_service(name, funcs, extends):
     for func in funcs:
         func_name = func[2]
         if func_name in thrift_services:
-            raise ThriftGrammerError(('\'%s\' function is already defined in '
+            raise ThriftGrammarError(('\'%s\' function is already defined in '
                                       'service \'%s\'') % (func_name,
                                                            name))
         # args payload cls
