@@ -3,6 +3,13 @@ Changelog
 
 0.4.x
 ~~~~~
+Version 0.4.17
+--------------
+
+Released on Nov 15, 2022.
+
+- Fix Cython build error in latest Python3 version
+
 Version 0.4.16
 -------------
 
