@@ -11,14 +11,14 @@ class Dispatcher(object):
         assert req == "Hello!"
 
 
-oneway_thrift = thriftpy2.load("oneway.thrift", module_name="oneway_thrift")
-multiprocessing.set_start_method("fork")
-
-
 class TestOneway(object):
+
+    oneway_thrift = thriftpy2.load("oneway.thrift")
+
     def setup_class(self):
-        server = make_server(oneway_thrift.echo, Dispatcher(), '127.0.0.1', 6000)
-        self.p = multiprocessing.Process(target=server.serve)
+        ctx = multiprocessing.get_context("fork")
+        server = make_server(self.oneway_thrift.echo, Dispatcher(), '127.0.0.1', 6000)
+        self.p = ctx.Process(target=server.serve)
         self.p.start()
         time.sleep(1)  # Wait a second for server to start.
 
@@ -27,6 +27,6 @@ class TestOneway(object):
 
     def test_echo(self):
         req = "Hello!"
-        client = make_client(oneway_thrift.echo, '127.0.0.1', 6000)
+        client = make_client(self.oneway_thrift.echo, '127.0.0.1', 6000)
 
         assert client.Test(req) == None
