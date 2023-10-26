@@ -199,7 +199,7 @@ cdef class TCySaslClientTransport(CyTransportBase):
         else:
             # If the frames are not encoded, just pass it through
             decoded = readall(self.trans.read, length)
-        self.__rbuf = TCyBuffer(DEFAULT_BUFFER)
+        self.__rbuf = TCyBuffer(len(decoded)+1)  # just to be sure make room for an extra byte
         memcpy(self.__rbuf.buf, <char*>decoded, len(decoded))
         self.__rbuf.data_size = len(decoded)
         self.__rbuf.cur = 0
