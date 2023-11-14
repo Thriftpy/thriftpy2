@@ -70,7 +70,8 @@ async def read_map_begin(inbuf):
     return k_type, v_type, sz
 
 
-async def read_val(inbuf, ttype, spec=None, decode_response=True):
+async def read_val(inbuf, ttype, spec=None, decode_response=True,
+                   strict_decode=False):
     if ttype == TType.BOOL:
         return bool(unpack_i8(await inbuf.read(1)))
 
@@ -103,7 +104,8 @@ async def read_val(inbuf, ttype, spec=None, decode_response=True):
             try:
                 return byte_payload.decode('utf-8')
             except UnicodeDecodeError:
-                pass
+                if strict_decode:
+                    raise
         return byte_payload
 
     elif ttype == TType.SET or ttype == TType.LIST:
@@ -123,7 +125,8 @@ async def read_val(inbuf, ttype, spec=None, decode_response=True):
 
         for i in range(sz):
             result.append(
-                await read_val(inbuf, v_type, v_spec, decode_response)
+                await read_val(inbuf, v_type, v_spec, decode_response,
+                               strict_decode)
             )
         return result
 
@@ -153,19 +156,21 @@ async def read_val(inbuf, ttype, spec=None, decode_response=True):
             return {}
 
         for i in range(sz):
-            k_val = await read_val(inbuf, k_type, k_spec, decode_response)
-            v_val = await read_val(inbuf, v_type, v_spec, decode_response)
+            k_val = await read_val(inbuf, k_type, k_spec, decode_response,
+                                   strict_decode)
+            v_val = await read_val(inbuf, v_type, v_spec, decode_response,
+                                   strict_decode)
             result[k_val] = v_val
 
         return result
 
     elif ttype == TType.STRUCT:
         obj = spec()
-        await read_struct(inbuf, obj, decode_response)
+        await read_struct(inbuf, obj, decode_response, strict_decode)
         return obj
 
 
-async def read_struct(inbuf, obj, decode_response=True):
+async def read_struct(inbuf, obj, decode_response=True, strict_decode=False):
     while True:
         f_type, fid = await read_field_begin(inbuf)
         if f_type == TType.STOP:
@@ -191,7 +196,7 @@ async def read_struct(inbuf, obj, decode_response=True):
                 continue
 
         _buf = await read_val(
-            inbuf, f_type, f_container_spec, decode_response)
+            inbuf, f_type, f_container_spec, decode_response, strict_decode)
         setattr(obj, f_name, _buf)
 
 
@@ -239,11 +244,12 @@ class TAsyncBinaryProtocol(TAsyncProtocolBase):
 
     def __init__(self, trans,
                  strict_read=True, strict_write=True,
-                 decode_response=True):
+                 decode_response=True, strict_decode=False):
         TAsyncProtocolBase.__init__(self, trans)
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
+        self.strict_decode = strict_decode
 
     async def skip(self, ttype):
         await skip(self.trans, ttype)
@@ -266,7 +272,8 @@ class TAsyncBinaryProtocol(TAsyncProtocolBase):
         pass
 
     async def read_struct(self, obj):
-        return await read_struct(self.trans, obj, self.decode_response)
+        return await read_struct(self.trans, obj, self.decode_response,
+                                 self.strict_decode)
 
     def write_struct(self, obj):
         write_val(self.trans, TType.STRUCT, obj)
@@ -274,15 +281,17 @@ class TAsyncBinaryProtocol(TAsyncProtocolBase):
 
 class TAsyncBinaryProtocolFactory(object):
     def __init__(self, strict_read=True, strict_write=True,
-                 decode_response=True):
+                 decode_response=True, strict_decode=False):
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
+        self.strict_decode = strict_decode
 
     def get_protocol(self, trans):
         return TAsyncBinaryProtocol(
             trans,
             self.strict_read,
             self.strict_write,
-            self.decode_response
+            self.decode_response,
+            self.strict_decode,
         )

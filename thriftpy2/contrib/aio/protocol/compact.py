@@ -145,7 +145,8 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
             try:
                 byte_payload = byte_payload.decode('utf-8')
             except UnicodeDecodeError:
-                pass
+                if self.strict_decode:
+                    raise
         return byte_payload
 
     async def _read_bool(self):
@@ -305,11 +306,13 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
 
 
 class TAsyncCompactProtocolFactory(object):
-    def __init__(self, decode_response=True):
+    def __init__(self, decode_response=True, strict_decode=False):
         self.decode_response = decode_response
+        self.strict_decode = strict_decode
 
     def get_protocol(self, trans):
         return TAsyncCompactProtocol(
             trans,
             decode_response=self.decode_response,
+            strict_decode=self.strict_decode,
         )
