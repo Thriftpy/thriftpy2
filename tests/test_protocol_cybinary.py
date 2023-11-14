@@ -147,6 +147,14 @@ def test_read_binary():
         b, TType.STRING, decode_response=False)
 
 
+def test_strict_decode():
+    bs = TCyMemoryBuffer(b"\x00\x00\x00\x0c\x00"  # there is a redundant '\x00'
+                         b"\xe4\xbd\xa0\xe5\xa5\xbd\xe4\xb8\x96\xe7\x95\x8c")
+    with pytest.raises(UnicodeDecodeError):
+        proto.read_val(bs, TType.STRING, decode_response=True,
+                       strict_decode=True)
+
+
 def test_write_message_begin():
     trans = TCyMemoryBuffer()
     b = proto.TCyBinaryProtocol(trans)
