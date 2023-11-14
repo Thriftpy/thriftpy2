@@ -2,6 +2,8 @@
 
 from io import BytesIO
 
+import pytest
+
 from thriftpy2._compat import u
 from thriftpy2.thrift import TType, TPayload
 from thriftpy2.utils import hexlify
@@ -96,6 +98,14 @@ def test_unpack_binary():
                  b"\xe4\xbd\xa0\xe5\xa5\xbd\xe4\xb8\x96\xe7\x95\x8c")
     assert u("你好世界").encode("utf-8") == proto.read_val(
         bs, TType.STRING, decode_response=False)
+
+
+def test_strict_decode():
+    bs = BytesIO(b"\x00\x00\x00\x0c\x00"  # there is a redundant '\x00'
+                 b"\xe4\xbd\xa0\xe5\xa5\xbd\xe4\xb8\x96\xe7\x95\x8c")
+    with pytest.raises(UnicodeDecodeError):
+        proto.read_val(bs, TType.STRING, decode_response=True,
+                       strict_decode=True)
 
 
 def test_write_message_begin():
