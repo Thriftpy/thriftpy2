@@ -49,3 +49,5 @@ env/
 
 pyvenv.cfg
 share/*
+
+venv
