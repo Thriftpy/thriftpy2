@@ -19,7 +19,8 @@ install_requires = [
 ]
 
 tornado_requires = [
-    "tornado>=4.0,<6.0",
+    "tornado>=4.0,<7.0; python_version>='3.12'",
+    "tornado>=4.0,<6.0; python_version<'3.12'",
 ]
 
 try:
