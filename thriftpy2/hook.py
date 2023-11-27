@@ -34,7 +34,7 @@ if sys.version_info >= (3, 4):
             return load_module(self.fullname)
 
         def exec_module(self, module):
-            ...
+            pass
 else:
     class ThriftImporter(object):
         def __init__(self, extension="_thrift"):
