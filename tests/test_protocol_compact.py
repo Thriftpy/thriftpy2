@@ -2,6 +2,8 @@
 
 from io import BytesIO
 
+import pytest
+
 from thriftpy2._compat import u
 from thriftpy2.thrift import TType, TPayload
 from thriftpy2.utils import hexlify
@@ -113,6 +115,15 @@ def test_unpack_binary():
     proto.decode_response = False
 
     assert u('你好世界').encode("utf-8") == proto._read_val(TType.STRING)
+
+
+def test_strict_decode():
+    b, proto = gen_proto(b'\x0c\xe4\xbd\xa0\xe5\xa5\x00'
+                         b'\xbd\xe4\xb8\x96\xe7\x95\x8c')
+    proto.strict_decode = True
+
+    with pytest.raises(UnicodeDecodeError):
+        proto._read_val(TType.STRING)
 
 
 def test_pack_bool():
