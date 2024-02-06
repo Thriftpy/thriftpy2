@@ -229,7 +229,7 @@ def p_seen_struct(p):
 
 
 def p_union(p):
-    '''union : seen_union '{' field_seq '}' '''
+    '''union : seen_union '{' field_seq '}' type_annotations'''
     val = _fill_in_struct(p[1], p[3])
     _add_thrift_meta('unions', val)
 

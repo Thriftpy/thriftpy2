@@ -55,3 +55,7 @@ service foo_service {
   void foo() ( foo = "bar" )
 } (a.b="c")
 
+union foo_union {
+   1: optional bool abc
+   2: optional i32 xyz
+}  (a.b="c")
