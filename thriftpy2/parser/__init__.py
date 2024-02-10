@@ -37,6 +37,10 @@ def load(path,
                    include_dir=include_dir, encoding=encoding)
     if incomplete_type:
         fill_incomplete_ttype(thrift, thrift)
+    if incomplete_type:
+        missing_type = list(incomplete_type.values())[0][0]
+        msg = 'No type found: %r when parse file %r' % (missing_type, path)
+        raise ThriftParserError(msg)
     if real_module:
         sys.modules[module_name] = thrift
     return thrift

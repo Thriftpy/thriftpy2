@@ -320,3 +320,9 @@ def test_nest_incomplete_type():
 
 def test_issue_121():
     load('parser-cases/issue_121.thrift')
+
+
+def test_issue_177():
+    with pytest.raises(ThriftParserError) as excinfo:
+        load('parser-cases/issue_177.thrift')
+        assert "type found: 'issue_177_include.invalidType'" in str(excinfo.value)
