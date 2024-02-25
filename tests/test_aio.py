@@ -316,14 +316,14 @@ class TestDeprecatedTimeoutKwarg:
 
     This class should be removed when the socket_timeout argument is removed.
     """
-    def setup(self):
+    def setup_method(self):
         # Create and apply a fresh patch for each test.
         self.async_sock = patch(
             'thriftpy2.contrib.aio.rpc.TAsyncSocket',
             side_effect=RuntimeError,
         ).__enter__()
 
-    def teardown_(self):
+    def teardown_method(self):
         self.async_sock.__exit__()  # Clean up patch
 
     @pytest.mark.asyncio
