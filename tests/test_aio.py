@@ -348,9 +348,13 @@ class TestDeprecatedTimeoutKwarg:
         is emitted (if any) and that the patch is properly applied by
         consuming the RuntimeError.
         """
-        with pytest.warns(warning),\
-                pytest.raises(RuntimeError):  # Consume error
-            await make_aio_client(addressbook.AddressBookService, **kwargs)
+        if warning:
+            with pytest.warns(warning),\
+                    pytest.raises(RuntimeError):  # Consume error
+                await make_aio_client(addressbook.AddressBookService, **kwargs)
+        else:
+            with pytest.raises(RuntimeError):  # Consume error
+                await make_aio_client(addressbook.AddressBookService, **kwargs)
 
     def _given_timeout(self):
         """Get the timeout provided to TAsyncSocket."""
