@@ -7,10 +7,10 @@ Changelog
 Version 0.4.18
 --------------
 
-- Make the import hook compatible with python3.12.
-- Added a ``strict_decode`` option to all protocols to force all strings in response are decoded to ``str``.
-- Allow annotations ``Union`` type.
-- Fixed the `message_type` in oneway request.
+- Make the import hook compatible with Python3.12.
+- Added a ``strict_decode`` option to all protocols to force all strings in the response to be decoded to ``str``.
+- Allow annotations in the ``Union`` type.
+- Fixed the ``message_type`` in oneway request.
 
 Version 0.4.17
 --------------
