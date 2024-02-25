@@ -250,9 +250,8 @@ def test_exception_iwth_ssl():
 
 def test_client_timeout():
     with pytest.raises(socket.timeout):
-        with pytest.warns(UserWarning):  # Deprecated
-            with client(timeout=500) as c:
-                c.sleep(1000)
+        with client(timeout=500) as c:
+            c.sleep(1000)
 
 
 def test_client_socket_timeout():
