@@ -3,22 +3,23 @@ Changelog
 
 0.4.x
 ~~~~~
+
 Version 0.4.17
 --------------
 
-Released on Nov 15, 2022.
+Released on Sep 27, 2023.
 
 - Fix Cython build error in latest Python3 version
 
 Version 0.4.16
--------------
+--------------
 
 Released on Nov 15, 2022.
 
 - Fix unexpected binary type id in TBinaryTransport serialization
 
 Version 0.4.15
--------------
+--------------
 
 Released on Nov 8, 2021.
 
@@ -27,7 +28,7 @@ Released on Nov 8, 2021.
 - Fix some socket leaking cases in aio support
 
 Version 0.4.14
--------------
+--------------
 
 Released on Jan 21, 2021.
 
@@ -36,7 +37,7 @@ Released on Jan 21, 2021.
 .. _2-#157: https://github.com/Thriftpy/thriftpy2/pull/157
 
 Version 0.4.13
--------------
+--------------
 
 Released on Jan 19, 2021.
 
