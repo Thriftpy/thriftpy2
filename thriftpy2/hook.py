@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import sys
-import importlib.abc
 import importlib.util
 import types
 
@@ -15,6 +14,8 @@ from .parser import load_module
 # specified thrift file does not exists, it raises FileNotFoundError, and skiped
 # the other meta finders in the sys.meta_path.
 if sys.version_info >= (3, 4):
+    import importlib.abc
+
     class ThriftImporter(importlib.abc.MetaPathFinder):
         def __init__(self, extension="_thrift"):
             self.extension = extension
