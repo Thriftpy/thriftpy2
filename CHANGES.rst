@@ -4,6 +4,11 @@ Changelog
 0.4.x
 ~~~~~
 
+Version 0.4.20
+--------------
+
+- Fix another compatibility issue with legacy Python.
+
 Version 0.4.19
 --------------
 
