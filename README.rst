@@ -2,9 +2,6 @@
 ThriftPy2
 ============
 
-.. image:: https://travis-ci.com/Thriftpy/thriftpy2.svg?branch=develop
-    :target: https://travis-ci.com/Thriftpy/thriftpy2
-
 .. image:: https://img.shields.io/codecov/c/github/Thriftpy/thriftpy2.svg
     :target: https://codecov.io/gh/Thriftpy/thriftpy2
 
@@ -204,7 +201,7 @@ Contribute
 
 2. Write a test which shows a bug was fixed or the feature works as expected.
 
-3. Make sure ``travis-ci`` or ``tox`` tests succeed.
+3. Make sure ``tox`` tests succeed.
 
 4. Send pull request.
 
