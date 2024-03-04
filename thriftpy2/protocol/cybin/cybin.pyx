@@ -2,6 +2,7 @@ import sys
 
 from libc.stdlib cimport free, malloc
 from libc.stdint cimport int16_t, int32_t, int64_t
+from libc.string cimport memcpy
 from cpython cimport bool
 
 import six
@@ -99,7 +100,9 @@ cdef inline int write_i64(CyTransportBase buf, int64_t val) except -1:
 
 
 cdef inline int write_double(CyTransportBase buf, double val) except -1:
-    cdef int64_t v = htobe64((<int64_t*>(&val))[0])
+    cdef int64_t v
+    memcpy(&v, &val, 8)
+    v = htobe64(v)
     buf.c_write(<char*>(&v), 8)
     return 0
 
@@ -269,6 +272,7 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
     cdef int size
     cdef int64_t n
     cdef TType v_type, k_type, orig_type, orig_key_type
+    cdef double double_value
 
     if ttype == T_BOOL:
         return <bint>read_i08(buf)
@@ -287,7 +291,8 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
 
     elif ttype == T_DOUBLE:
         n = read_i64(buf)
-        return (<double*>(&n))[0]
+        memcpy(&double_value, &n, 8)
+        return double_value
 
     elif ttype == T_BINARY:
         size = read_i32(buf)
