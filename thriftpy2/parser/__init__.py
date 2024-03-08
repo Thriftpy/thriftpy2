@@ -39,6 +39,9 @@ def load(path,
         fill_incomplete_ttype(thrift, thrift)
     if real_module:
         sys.modules[module_name] = thrift
+        for module in thrift.__thrift_meta__["includes"]:
+            if module not in sys.modules:
+                sys.modules[module.__name__] = module
     return thrift
 
 
