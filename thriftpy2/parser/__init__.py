@@ -37,8 +37,16 @@ def load(path,
                    include_dir=include_dir, encoding=encoding)
     if incomplete_type:
         fill_incomplete_ttype(thrift, thrift)
+
+    # add sub modules to sys.modules recursively
     if real_module:
         sys.modules[module_name] = thrift
+        sub_modules = thrift.__thrift_meta__["includes"][:]
+        while sub_modules:
+            module = sub_modules.pop()
+            if module not in sys.modules:
+                sys.modules[module.__name__] = module
+                sub_modules.extend(module.__thrift_meta__["includes"])
     return thrift
 
 

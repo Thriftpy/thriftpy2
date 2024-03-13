@@ -45,6 +45,9 @@ def test_load():
     person = ab_2.Person(name='Bob')
     assert person == pickle.loads(pickle.dumps(person))
 
+    list_item = ab_2.container.ListItem()
+    assert list_item == pickle.loads(pickle.dumps(list_item))
+
 
 def test_load_module():
     ab = thriftpy2.load_module("addressbook_thrift")
