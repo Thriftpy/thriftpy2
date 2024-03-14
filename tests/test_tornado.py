@@ -10,7 +10,6 @@ else:
     import logging
     import socket
 
-    import pytest
     from tornado import gen, testing
 
     import thriftpy2
@@ -104,7 +103,6 @@ else:
             super(TornadoRPCTestCase, self).tearDown()
 
         @testing.gen_test
-        @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
         def test_make_client(self):
             linus = addressbook.Person(name='Linus Torvalds')
             success = yield self.client_with_url.add(linus)
@@ -113,7 +111,6 @@ else:
             assert not success
 
         @testing.gen_test
-        @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
         def test_synchronous_result(self):
             dennis = addressbook.Person(name='Dennis Ritchie')
             success = yield self.client.add(dennis)
@@ -124,7 +121,6 @@ else:
             assert person.name == dennis.name
 
         @testing.gen_test
-        @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
         def test_synchronous_exception(self):
             exc = None
             try:
@@ -135,7 +131,6 @@ else:
             assert isinstance(exc, addressbook.PersonNotExistsError)
 
         @testing.gen_test
-        @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
         def test_synchronous_undeclared_exception(self):
             exc = None
             try:
@@ -146,7 +141,6 @@ else:
             assert isinstance(exc, TTransportException)
 
         @testing.gen_test
-        @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
         def test_asynchronous_result(self):
             dennis = addressbook.Person(name='Dennis Ritchie')
             yield self.client.add(dennis)
@@ -154,7 +148,6 @@ else:
             assert success
 
         @testing.gen_test
-        @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
         def test_asynchronous_exception(self):
             exc = None
             try:
@@ -164,7 +157,6 @@ else:
             assert isinstance(exc, addressbook.PersonNotExistsError)
 
         @testing.gen_test
-        @pytest.mark.skipif(sys.version_info[:2] == (2, 6), reason="not support")
         def test_asynchronous_undeclared_exception(self):
             exc = None
             try:
