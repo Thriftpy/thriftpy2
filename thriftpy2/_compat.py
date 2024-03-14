@@ -19,9 +19,6 @@ PYPY = "__pypy__" in sys.modules
 UNIX = platform.system() in ("Linux", "Darwin")
 CYTHON = UNIX and not PYPY  # Cython always disabled in pypy and windows
 
-# only Python 2.7.9 and Python 3.4 or above have true ssl context
-MODERN_SSL = sys.version_info >= (2, 7, 9)
-
 if PY3:
     text_type = str
     string_types = (str,)

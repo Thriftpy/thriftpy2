@@ -7,8 +7,6 @@ The codes in this ssl compat lib were inspired by urllib3.utils.ssl_ module.
 import ssl
 import warnings
 
-from .._compat import MODERN_SSL
-
 try:
     from ssl import (
         OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_COMPRESSION,
@@ -110,8 +108,7 @@ except ImportError:
 
 
 def create_thriftpy_context(server_side=False, ciphers=None):
-    """Backport create_default_context for older python versions.
-
+    """
     The SSLContext has some default security options, you can disable them
     manually, for example::
 
@@ -121,34 +118,25 @@ def create_thriftpy_context(server_side=False, ciphers=None):
 
     You can do the same to enable compression.
     """
-    if MODERN_SSL:
-        if server_side:
-            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        else:
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
 
-        if ciphers:
-            context.set_ciphers(ciphers)
+    context = SSLContext(ssl.PROTOCOL_SSLv23)
+    context.options |= OP_NO_SSLv2
+    context.options |= OP_NO_SSLv3
+    context.options |= OP_NO_COMPRESSION
 
+    # server/client default options
+    if server_side:
+        context.options |= OP_CIPHER_SERVER_PREFERENCE
+        context.options |= OP_SINGLE_DH_USE
+        context.options |= OP_SINGLE_ECDH_USE
     else:
-        context = SSLContext(ssl.PROTOCOL_SSLv23)
-        context.options |= OP_NO_SSLv2
-        context.options |= OP_NO_SSLv3
-        context.options |= OP_NO_COMPRESSION
+        context.verify_mode = ssl.CERT_REQUIRED
+        # context.check_hostname = True
+        warnings.warn(
+            "ssl check hostname support disabled, upgrade your python",
+            InsecurePlatformWarning)
 
-        # server/client default options
-        if server_side:
-            context.options |= OP_CIPHER_SERVER_PREFERENCE
-            context.options |= OP_SINGLE_DH_USE
-            context.options |= OP_SINGLE_ECDH_USE
-        else:
-            context.verify_mode = ssl.CERT_REQUIRED
-            # context.check_hostname = True
-            warnings.warn(
-                "ssl check hostname support disabled, upgrade your python",
-                InsecurePlatformWarning)
-
-        if ciphers:
-            context.set_ciphers(ciphers)
+    if ciphers:
+        context.set_ciphers(ciphers)
 
     return context
