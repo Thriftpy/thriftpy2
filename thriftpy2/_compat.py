@@ -11,6 +11,8 @@ from __future__ import absolute_import
 
 import platform
 import sys
+from urllib.request import urlopen
+from urllib.parse import urlparse
 
 PY3 = sys.version_info[0] == 3
 PY35 = sys.version_info >= (3, 5)
@@ -19,24 +21,12 @@ PYPY = "__pypy__" in sys.modules
 UNIX = platform.system() in ("Linux", "Darwin")
 CYTHON = UNIX and not PYPY  # Cython always disabled in pypy and windows
 
-if PY3:
-    text_type = str
-    string_types = (str,)
-    from urllib.request import urlopen
-    from urllib.parse import urlparse
+text_type = str
+string_types = (str,)
 
-    def u(s):
-        return s
-else:
-    text_type = unicode  # noqa
-    string_types = (str, unicode)  # noqa
-    from urllib2 import urlopen  # noqa
-    from urlparse import urlparse  # noqa
 
-    def u(s):
-        if not isinstance(s, text_type):
-            s = s.decode("utf-8")
-        return s
+def u(s):
+    return s
 
 
 def with_metaclass(meta, *bases):

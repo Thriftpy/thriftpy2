@@ -29,17 +29,8 @@ from .thrift import TApplicationException, TProcessor, TClient
 
 # TODO need TCyTornadoStreamTransport to work with cython binary protocol
 from .protocol.binary import TBinaryProtocolFactory
-from ._compat import PY3
 
-if PY3:
-    import urllib
-else:
-    import urllib2 as urllib
-    import urlparse
-
-    urllib.parse = urlparse
-    urllib.parse.quote = urllib.quote
-
+import urllib
 import logging
 import socket
 import struct

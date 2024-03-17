@@ -1,13 +1,6 @@
 # -*- coding: utf-8 -*-
 import warnings
-
-from thriftpy2._compat import PY3
-if PY3:
-    import urllib
-else:
-    import urllib2 as urllib
-    import urlparse
-    urllib.parse = urlparse
+import urllib
 
 from .processor import TAsyncProcessor
 from .client import TAsyncClient

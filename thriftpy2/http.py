@@ -38,19 +38,9 @@ import sys
 from contextlib import contextmanager
 from io import BytesIO
 
-from thriftpy2._compat import PY3
-if PY3:
-    import http.client as http_client
-    import http.server as http_server
-    import urllib
-else:
-    import httplib as http_client
-    import BaseHTTPServer as http_server
-    import urllib2 as urllib
-    import urlparse
-    urllib.parse = urlparse
-    urllib.parse.quote = urllib.quote
-
+import http.client as http_client
+import http.server as http_server
+import urllib
 
 from thriftpy2.thrift import TProcessor, TClient
 from thriftpy2.server import TServer

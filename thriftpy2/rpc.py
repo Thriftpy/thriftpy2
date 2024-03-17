@@ -6,14 +6,8 @@ import contextlib
 import socket
 import warnings
 
-from thriftpy2._compat import PY3, PY35
-if PY3:
-    import urllib
-else:
-    import urllib2 as urllib
-    import urlparse
-    urllib.parse = urlparse
-    urllib.parse.quote = urllib.quote
+from thriftpy2._compat import PY35
+import urllib
 
 from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.server import TThreadedServer
