@@ -32,23 +32,20 @@
 
 from __future__ import absolute_import
 
+import http.client as http_client
+import http.server as http_server
 import os
 import socket
 import sys
+import urllib
 from contextlib import contextmanager
 from io import BytesIO
 
-import http.client as http_client
-import http.server as http_server
-import urllib
-
-from thriftpy2.thrift import TProcessor, TClient
-from thriftpy2.server import TServer
-from thriftpy2.transport import TTransportBase, TMemoryBuffer
-
 from thriftpy2.protocol import TBinaryProtocolFactory
-from thriftpy2.transport import TBufferedTransportFactory
-
+from thriftpy2.server import TServer
+from thriftpy2.thrift import TClient, TProcessor
+from thriftpy2.transport import (TBufferedTransportFactory, TMemoryBuffer,
+                                 TTransportBase)
 
 HTTP_URI = '{scheme}://{host}:{port}{path}'
 DEFAULT_HTTP_CLIENT_TIMEOUT_MS = 30000  # 30 seconds

@@ -11,8 +11,8 @@ from __future__ import absolute_import
 
 import platform
 import sys
-from urllib.request import urlopen
 from urllib.parse import urlparse
+from urllib.request import urlopen
 
 PY3 = sys.version_info[0] == 3
 PY35 = sys.version_info >= (3, 5)
