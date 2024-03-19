@@ -17,32 +17,22 @@
 
 from __future__ import absolute_import
 
-from contextlib import contextmanager
-from tornado import tcpserver, iostream, gen
-from tornado import version as tornado_version
-from io import BytesIO
-from datetime import timedelta
-
-from .transport import TTransportException, TTransportBase
-from .transport.memory import TMemoryBuffer
-from .thrift import TApplicationException, TProcessor, TClient
-
-# TODO need TCyTornadoStreamTransport to work with cython binary protocol
-from .protocol.binary import TBinaryProtocolFactory
-from ._compat import PY3
-
-if PY3:
-    import urllib
-else:
-    import urllib2 as urllib
-    import urlparse
-
-    urllib.parse = urlparse
-    urllib.parse.quote = urllib.quote
-
 import logging
 import socket
 import struct
+import urllib
+from contextlib import contextmanager
+from datetime import timedelta
+from io import BytesIO
+
+from tornado import gen, iostream, tcpserver
+from tornado import version as tornado_version
+
+# TODO need TCyTornadoStreamTransport to work with cython binary protocol
+from .protocol.binary import TBinaryProtocolFactory
+from .thrift import TApplicationException, TClient, TProcessor
+from .transport import TTransportBase, TTransportException
+from .transport.memory import TMemoryBuffer
 
 try:
     from tornado.locks import Lock

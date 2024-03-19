@@ -4,27 +4,15 @@ from __future__ import absolute_import
 
 import contextlib
 import socket
+import urllib
 import warnings
 
-from thriftpy2._compat import PY3, PY35
-if PY3:
-    import urllib
-else:
-    import urllib2 as urllib
-    import urlparse
-    urllib.parse = urlparse
-    urllib.parse.quote = urllib.quote
-
+from thriftpy2._compat import PY35
 from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.server import TThreadedServer
-from thriftpy2.thrift import TProcessor, TClient
-from thriftpy2.transport import (
-    TBufferedTransportFactory,
-    TServerSocket,
-    TSSLServerSocket,
-    TSocket,
-    TSSLSocket,
-)
+from thriftpy2.thrift import TClient, TProcessor
+from thriftpy2.transport import (TBufferedTransportFactory, TServerSocket,
+                                 TSocket, TSSLServerSocket, TSSLSocket)
 
 
 def make_client(service, host="localhost", port=9090, unix_socket=None,
@@ -137,7 +125,6 @@ def client_context(service, host="localhost", port=9090, unix_socket=None,
 
 
 if PY35:
-    from thriftpy2.contrib.aio.rpc import (  # noqa
-        make_server as make_aio_server,
-        make_client as make_aio_client
-    )
+    from thriftpy2.contrib.aio.rpc import make_client as make_aio_client
+    from thriftpy2.contrib.aio.rpc import \
+        make_server as make_aio_server  # noqa
