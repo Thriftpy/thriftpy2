@@ -11,11 +11,9 @@ from __future__ import absolute_import
 
 import platform
 import sys
-from urllib.parse import urlparse
-from urllib.request import urlopen
+from urllib.parse import urlparse  # noqa
+from urllib.request import urlopen  # noqa
 
-PY3 = sys.version_info[0] == 3
-PY35 = sys.version_info >= (3, 5)
 PYPY = "__pypy__" in sys.modules
 
 UNIX = platform.system() in ("Linux", "Darwin")

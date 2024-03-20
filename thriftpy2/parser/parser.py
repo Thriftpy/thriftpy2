@@ -9,16 +9,15 @@ from __future__ import absolute_import
 
 import collections
 import os
-import sys
 import types
-from ply import lex, yacc
-from .lexer import *  # noqa
-from .exc import ThriftParserError, ThriftGrammarError
-from thriftpy2._compat import urlopen, urlparse, PY3
-from ..thrift import gen_init, TType, TPayload, TException
 
-if not PY3:
-    from io import open
+from ply import lex, yacc
+
+from thriftpy2._compat import urlopen, urlparse
+
+from ..thrift import TException, TPayload, TType, gen_init
+from .exc import ThriftGrammarError, ThriftParserError
+from .lexer import *  # noqa
 
 
 def p_error(p):
@@ -582,11 +581,8 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
                                 'with path in protocol \'{}\''.format(
                                     url_scheme))
 
-    if PY3:
-        if isinstance(data, bytes):
-            data = data.decode(encoding)
-    else:
-        data = data.encode(encoding)
+    if isinstance(data, bytes):
+        data = data.decode(encoding)
 
     if module_name is not None and not module_name.endswith('_thrift'):
         raise ThriftParserError('thriftpy2 can only generate module with '

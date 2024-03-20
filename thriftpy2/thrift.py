@@ -12,12 +12,9 @@ from __future__ import absolute_import
 import functools
 import linecache
 import types
+from itertools import zip_longest
 
-from ._compat import with_metaclass, PY3
-if PY3:
-    from itertools import zip_longest
-else:
-    from itertools import izip_longest as zip_longest
+from ._compat import with_metaclass
 
 
 def args_to_kwargs(thrift_spec, *args, **kwargs):
