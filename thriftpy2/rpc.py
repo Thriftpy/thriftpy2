@@ -7,7 +7,8 @@ import socket
 import urllib
 import warnings
 
-from thriftpy2._compat import PY35
+from thriftpy2.contrib.aio.rpc import make_client as make_aio_client  # noqa
+from thriftpy2.contrib.aio.rpc import make_server as make_aio_server  # noqa
 from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.server import TThreadedServer
 from thriftpy2.thrift import TClient, TProcessor
@@ -122,9 +123,3 @@ def client_context(service, host="localhost", port=9090, unix_socket=None,
 
     finally:
         transport.close()
-
-
-if PY35:
-    from thriftpy2.contrib.aio.rpc import make_client as make_aio_client
-    from thriftpy2.contrib.aio.rpc import \
-        make_server as make_aio_server  # noqa

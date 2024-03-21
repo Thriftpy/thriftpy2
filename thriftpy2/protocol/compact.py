@@ -8,12 +8,9 @@ from struct import pack, unpack
 
 import six
 
-from .exc import TProtocolException
+from ..thrift import TException, TType
 from .base import TProtocolBase
-from ..thrift import TException
-from ..thrift import TType
-
-from thriftpy2._compat import PY3
+from .exc import TProtocolException
 
 CLEAR = 0
 FIELD_WRITE = 1
@@ -66,10 +63,7 @@ def write_varint(trans, n):
             n = n >> 7
     data = array.array('B', out)
 
-    if PY3:
-        trans.write(data.tobytes())
-    else:
-        trans.write(data.tostring())
+    trans.write(data.tobytes())
 
 
 def read_varint(trans):
