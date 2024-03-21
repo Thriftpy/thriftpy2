@@ -10,10 +10,10 @@ from __future__ import absolute_import
 import collections
 import os
 import types
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 from ply import lex, yacc
-
-from thriftpy2._compat import urlopen, urlparse
 
 from ..thrift import TException, TPayload, TType, gen_init
 from .exc import ThriftGrammarError, ThriftParserError
