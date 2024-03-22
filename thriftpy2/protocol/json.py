@@ -2,19 +2,18 @@
 
 from __future__ import absolute_import
 
+import base64
 import json
 import struct
-import base64
 import sys
 from warnings import warn
 
 import six
 
-from thriftpy2._compat import u
 from thriftpy2.thrift import TType
 
-from .exc import TProtocolException
 from .base import TProtocolBase
+from .exc import TProtocolException
 
 VERSION = 1
 
@@ -32,7 +31,7 @@ def json_value(ttype, val, spec=None):
         TType.I32: (int, (val,)),
         TType.I64: (int, (val,)),
         TType.DOUBLE: (float, (val,)),
-        TType.STRING: (u, (val,)),
+        TType.STRING: (str, (val,)),
         TType.BOOL: (bool, (val,)),
         TType.STRUCT: (struct_to_json, (val,)),
         TType.SET: (list_to_json, (val, spec)),
@@ -59,7 +58,7 @@ def obj_value(ttype, val, spec=None):
             TType.I32: (int, (val,)),
             TType.I64: (int, (val,)),
             TType.DOUBLE: (float, (val,)),
-            TType.STRING: (u, (val,)),
+            TType.STRING: (str, (val,)),
             TType.BOOL: (bool, (val,)),
             TType.SET: (list_to_obj, (val, spec)),
             TType.LIST: (list_to_obj, (val, spec)),

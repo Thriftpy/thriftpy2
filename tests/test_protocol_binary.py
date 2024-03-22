@@ -4,12 +4,10 @@ from io import BytesIO
 
 import pytest
 
-from thriftpy2._compat import u
-from thriftpy2.thrift import TType, TPayload
-from thriftpy2.utils import hexlify
-from thriftpy2.protocol import binary as proto
 from thriftpy2 import load
-from thriftpy2.utils import serialize
+from thriftpy2.protocol import binary as proto
+from thriftpy2.thrift import TPayload, TType
+from thriftpy2.utils import hexlify, serialize
 
 
 class TItem(TPayload):
@@ -82,7 +80,7 @@ def test_pack_string():
         hexlify(b.getvalue())
 
     b = BytesIO()
-    proto.write_val(b, TType.STRING, u("你好世界"))
+    proto.write_val(b, TType.STRING, "你好世界")
     assert "00 00 00 0c e4 bd a0 e5 a5 bd e4 b8 96 e7 95 8c" == \
         hexlify(b.getvalue())
 
@@ -90,13 +88,13 @@ def test_pack_string():
 def test_unpack_string():
     b = BytesIO(b"\x00\x00\x00\x0c"
                 b"\xe4\xbd\xa0\xe5\xa5\xbd\xe4\xb8\x96\xe7\x95\x8c")
-    assert u("你好世界") == proto.read_val(b, TType.STRING)
+    assert "你好世界" == proto.read_val(b, TType.STRING)
 
 
 def test_unpack_binary():
     bs = BytesIO(b"\x00\x00\x00\x0c"
                  b"\xe4\xbd\xa0\xe5\xa5\xbd\xe4\xb8\x96\xe7\x95\x8c")
-    assert u("你好世界").encode("utf-8") == proto.read_val(
+    assert "你好世界".encode("utf-8") == proto.read_val(
         bs, TType.STRING, decode_response=False)
 
 

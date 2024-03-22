@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import thriftpy2.protocol.json as proto
 from thriftpy2.protocol import TJSONProtocol
 from thriftpy2.thrift import TPayload, TType
 from thriftpy2.transport import TMemoryBuffer
-from thriftpy2._compat import u
-
-import thriftpy2.protocol.json as proto
 
 
 class TItem(TPayload):
@@ -105,7 +103,7 @@ def test_unicode_string():
     trans = TMemoryBuffer()
     p = TJSONProtocol(trans)
 
-    foo = Foo(name=u('pão de açúcar'))
+    foo = Foo(name='pão de açúcar')
     foo.write(p)
 
     foo2 = Foo()

@@ -11,20 +11,11 @@ from __future__ import absolute_import
 
 import platform
 import sys
-from urllib.parse import urlparse  # noqa
-from urllib.request import urlopen  # noqa
 
 PYPY = "__pypy__" in sys.modules
 
 UNIX = platform.system() in ("Linux", "Darwin")
 CYTHON = UNIX and not PYPY  # Cython always disabled in pypy and windows
-
-text_type = str
-string_types = (str,)
-
-
-def u(s):
-    return s
 
 
 def with_metaclass(meta, *bases):

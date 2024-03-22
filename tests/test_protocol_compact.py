@@ -4,10 +4,9 @@ from io import BytesIO
 
 import pytest
 
-from thriftpy2._compat import u
-from thriftpy2.thrift import TType, TPayload
-from thriftpy2.utils import hexlify
 from thriftpy2.protocol import compact
+from thriftpy2.thrift import TPayload, TType
+from thriftpy2.utils import hexlify
 
 
 class TItem(TPayload):
@@ -102,11 +101,11 @@ def test_pack_string():
 def test_unpack_string():
     b, proto = gen_proto(b"\x0c\x68\x65\x6c\x6c\x6f"
                          b"\x20\x77\x6f\x72\x6c\x64\x21")
-    assert u('hello world!') == proto._read_val(TType.STRING)
+    assert 'hello world!' == proto._read_val(TType.STRING)
 
     b, proto = gen_proto(b'\x0c\xe4\xbd\xa0\xe5\xa5'
                          b'\xbd\xe4\xb8\x96\xe7\x95\x8c')
-    assert u('你好世界') == proto._read_val(TType.STRING)
+    assert '你好世界' == proto._read_val(TType.STRING)
 
 
 def test_unpack_binary():
@@ -114,7 +113,7 @@ def test_unpack_binary():
                          b'\xbd\xe4\xb8\x96\xe7\x95\x8c')
     proto.decode_response = False
 
-    assert u('你好世界').encode("utf-8") == proto._read_val(TType.STRING)
+    assert '你好世界'.encode("utf-8") == proto._read_val(TType.STRING)
 
 
 def test_strict_decode():
@@ -157,11 +156,10 @@ def test_unpack_container_bool():
     assert [True, False, True] == proto._read_val(TType.LIST, TType.BOOL)
 
     b, proto = gen_proto(b"\x01\x81\x01\x61\x01")
-    assert {u("a"): True} == proto._read_val(TType.MAP,
-                                             (TType.STRING, TType.BOOL))
+    assert {"a": True} == proto._read_val(TType.MAP, (TType.STRING, TType.BOOL))
 
     b, proto = gen_proto(b"\x01\x89\x01\x61\x21\x01\x02")
-    assert {u("a"): [True, False]} == proto._read_val(
+    assert {"a": [True, False]} == proto._read_val(
         TType.MAP, (TType.STRING, (TType.LIST, TType.BOOL)))
 
     b, proto = gen_proto(b"\x03\x81\x01\x61\x01\x01\x63\x01\x01\x62\x02")
