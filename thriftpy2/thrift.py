@@ -14,8 +14,6 @@ import linecache
 import types
 from itertools import zip_longest
 
-from ._compat import with_metaclass
-
 
 def args_to_kwargs(thrift_spec, *args, **kwargs):
     for item, value in zip_longest(sorted(thrift_spec.items()), args):
@@ -149,7 +147,7 @@ def gen_init(cls, thrift_spec=None, default_spec=None):
     return cls
 
 
-class TPayload(with_metaclass(TPayloadMeta, object)):
+class TPayload(metaclass=TPayloadMeta):
 
     __hash__ = None
 
