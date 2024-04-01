@@ -40,12 +40,6 @@ RESTRICTED_SERVER_CIPHERS = (
 )
 
 
-class InsecurePlatformWarning(Warning):
-    """Warned when certain SSL configuration is not available on a platform.
-    """
-    pass
-
-
 def create_thriftpy_context(server_side=False, ciphers=None):
     """
     The SSLContext has some default security options, you can disable them
