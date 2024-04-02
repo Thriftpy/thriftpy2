@@ -5,21 +5,7 @@ The codes in this ssl compat lib were inspired by urllib3.utils.ssl_ module.
 """
 
 import ssl
-import warnings
-
-try:
-    from ssl import (
-        OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_COMPRESSION,
-        OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE, OP_SINGLE_ECDH_USE
-    )
-except ImportError:
-    OP_NO_SSLv2 = 0x1000000
-    OP_NO_SSLv3 = 0x2000000
-    OP_NO_COMPRESSION = 0x20000
-    OP_CIPHER_SERVER_PREFERENCE = 0x400000
-    OP_SINGLE_DH_USE = 0x100000
-    OP_SINGLE_ECDH_USE = 0x80000
-
+from ssl import SSLContext
 
 # Disable weak or insecure ciphers by default
 # (OpenSSL's default setting is 'DEFAULT:!aNULL:!eNULL')
@@ -54,87 +40,25 @@ RESTRICTED_SERVER_CIPHERS = (
 )
 
 
-class InsecurePlatformWarning(Warning):
-    """Warned when certain SSL configuration is not available on a platform.
-    """
-    pass
-
-
-try:
-    from ssl import SSLContext
-except ImportError:
-    class SSLContext(object):
-
-        def __init__(self, protocol_version):
-            self.protocol = protocol_version
-            # Use default values from a real SSLContext
-            self.check_hostname = False
-            self.verify_mode = ssl.CERT_NONE
-            self.ca_certs = None
-            self.options = 0
-            self.certfile = None
-            self.keyfile = None
-            self.ciphers = None
-
-        def load_cert_chain(self, certfile=None, keyfile=None):
-            self.certfile = certfile
-            self.keyfile = keyfile
-
-        def load_verify_locations(self, cafile=None, capath=None):
-            if capath is not None:
-                raise OSError("CA directories not supported in older Pythons")
-            self.ca_certs = cafile
-
-        def set_ciphers(self, cipher_suite):
-            self.ciphers = cipher_suite
-
-        def wrap_socket(self, socket, server_hostname=None, server_side=False):
-            warnings.warn(
-                "A true SSLContext object is not available. This prevents "
-                "urllib3 from configuring SSL appropriately and may cause "
-                "certain SSL connections to fail.",
-                InsecurePlatformWarning
-            )
-            kwargs = {
-                "keyfile": self.keyfile,
-                "certfile": self.certfile,
-                "ca_certs": self.ca_certs,
-                "cert_reqs": self.verify_mode,
-                "ssl_version": self.protocol,
-                "server_side": server_side,
-            }
-
-            return ssl.wrap_socket(socket, ciphers=self.ciphers, **kwargs)
-
-
 def create_thriftpy_context(server_side=False, ciphers=None):
     """
     The SSLContext has some default security options, you can disable them
     manually, for example::
 
         from thriftpy2.transport import _ssl
+        import ssl
         context = _ssl.create_thriftpy_context()
-        context.options &= ~_ssl.OP_NO_SSLv3
+        context.options &= ~ssl.OP_NO_SSLv3
 
     You can do the same to enable compression.
     """
 
-    context = SSLContext(ssl.PROTOCOL_SSLv23)
-    context.options |= OP_NO_SSLv2
-    context.options |= OP_NO_SSLv3
-    context.options |= OP_NO_COMPRESSION
-
     # server/client default options
     if server_side:
-        context.options |= OP_CIPHER_SERVER_PREFERENCE
-        context.options |= OP_SINGLE_DH_USE
-        context.options |= OP_SINGLE_ECDH_USE
+        context = SSLContext(ssl.PROTOCOL_TLS_SERVER)
     else:
-        context.verify_mode = ssl.CERT_REQUIRED
-        # context.check_hostname = True
-        warnings.warn(
-            "ssl check hostname support disabled, upgrade your python",
-            InsecurePlatformWarning)
+        context = SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
 
     if ciphers:
         context.set_ciphers(ciphers)
