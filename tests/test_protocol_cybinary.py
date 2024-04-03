@@ -17,7 +17,8 @@ if not PYPY:
     from thriftpy2.transport.memory import TCyMemoryBuffer
 
 
-pytest.mark.skipif(PYPY, reason="cython not enabled in pypy.")
+if PYPY:
+    pytest.skip("cython not enabled in pypy.", allow_module_level=True)
 
 
 class TItem(TPayload):
