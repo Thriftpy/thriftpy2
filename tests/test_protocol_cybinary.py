@@ -11,13 +11,13 @@ from thriftpy2._compat import PYPY
 from thriftpy2.thrift import TDecodeException, TPayload, TType
 from thriftpy2.transport import TServerSocket, TSocket
 from thriftpy2.utils import hexlify
-
-pytestmark = pytest.mark.skipif(PYPY,
-                                reason="cython not enabled in pypy.")
 if not PYPY:
     from thriftpy2.protocol import cybin as proto
     from thriftpy2.transport.buffered import TCyBufferedTransport
     from thriftpy2.transport.memory import TCyMemoryBuffer
+
+
+pytest.mark.skipif(PYPY, reason="cython not enabled in pypy.")
 
 
 class TItem(TPayload):

@@ -7,11 +7,8 @@ from multiprocessing import Process
 import pytest
 import six
 
+from thriftpy2 import _compat
 from thriftpy2.thrift import TType, TPayloadMeta
-try:
-    from thriftpy2.protocol import cybin
-except ImportError:
-    cybin = None
 import thriftpy2
 from thriftpy2.http import (
     make_server as make_http_server,
@@ -263,12 +260,12 @@ def test_complex_binary(proto_factory):
     time.sleep(0.2)
 
 
-@pytest.mark.skipif(cybin is None, reason="Must be run in cpython")
+@pytest.mark.skipif(_compat.PYPY, reason="Must be run in cpython")
 def test_complex_map():
     """
     Test from #156
     """
-    proto = cybin
+    from thriftpy2.protocol import cybin as proto
     b1 = TCyMemoryBuffer()
     proto.write_val(b1, TType.MAP, {"hello": "1"},
                     spec=(TType.STRING, TType.STRING))
