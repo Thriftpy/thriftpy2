@@ -15,9 +15,7 @@ if not PYPY:
     from thriftpy2.protocol import cybin as proto
     from thriftpy2.transport.buffered import TCyBufferedTransport
     from thriftpy2.transport.memory import TCyMemoryBuffer
-
-
-if PYPY:
+else:
     pytest.skip("cython not enabled in pypy.", allow_module_level=True)
 
 
