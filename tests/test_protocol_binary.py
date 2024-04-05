@@ -4,6 +4,7 @@ from io import BytesIO
 
 import pytest
 
+from thriftpy2 import _compat
 from thriftpy2 import load
 from thriftpy2.protocol import binary as proto
 from thriftpy2.thrift import TPayload, TType
@@ -172,6 +173,7 @@ def test_write_huge_struct():
     proto.TBinaryProtocol(b).write_struct(item)
 
 
+@pytest.mark.skipif(_compat.PYPY, reason="cybin can't be used in pypy")
 def test_string_binary_equivalency():
     from thriftpy2.protocol.binary import TBinaryProtocolFactory
     from thriftpy2.protocol.cybin import TCyBinaryProtocolFactory
