@@ -2,11 +2,12 @@
 
 from __future__ import absolute_import
 
-import os
 import multiprocessing
+import os
 import socket
-import time
 import ssl
+import sys
+import time
 
 import pytest
 
@@ -17,6 +18,10 @@ thriftpy2.install_import_hook()
 from thriftpy2.rpc import make_server, client_context  # noqa
 from thriftpy2.transport import TTransportException  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
+
+
+if sys.platform == "win32":
+    pytest.skip("requires unix domain socket", allow_module_level=True)
 
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),

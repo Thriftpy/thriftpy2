@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import json
+import sys
 import time
 from multiprocessing import Process
 
@@ -126,6 +127,7 @@ def test_thrift_transport():
            json.loads(final_data.decode('utf8'))[4]['0']
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="this test requires fork")
 @pytest.mark.parametrize('server_func', [(make_rpc_server, make_rpc_client),
                                          (make_http_server, make_http_client)])
 def test_client(server_func):
