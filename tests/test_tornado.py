@@ -10,12 +10,17 @@ else:
     import logging
     import socket
 
+    import pytest
     from tornado import gen, testing
 
     import thriftpy2
     from thriftpy2.tornado import make_client
     from thriftpy2.tornado import make_server
     from thriftpy2.transport import TTransportException
+
+    if sys.platform == "win32":
+        pytest.skip("add_socket is not implemented on Windiws",
+                    allow_module_level=True)
 
     logging.basicConfig(level=logging.INFO)
 
