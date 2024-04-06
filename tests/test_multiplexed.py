@@ -2,8 +2,9 @@
 
 from __future__ import absolute_import
 
-import os
 import multiprocessing
+import os
+import sys
 import time
 
 import pytest
@@ -17,6 +18,10 @@ from thriftpy2.rpc import client_context
 from thriftpy2.server import TThreadedServer
 from thriftpy2.thrift import TProcessor, TMultiplexedProcessor
 from thriftpy2.transport import TBufferedTransportFactory, TServerSocket
+
+
+if sys.platform == "win32":
+    pytest.skip("requires fork", allow_module_level=True)
 
 
 mux = thriftpy2.load(os.path.join(os.path.dirname(__file__),
