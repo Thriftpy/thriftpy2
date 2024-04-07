@@ -4,9 +4,11 @@ from __future__ import absolute_import
 
 import logging
 import multiprocessing
+import sys
 import time
-
 from os import path
+
+import pytest
 from unittest import TestCase
 
 import thriftpy2
@@ -43,6 +45,7 @@ class Dispatcher(object):
         return self.registry[name]
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="requires fork")
 class BufferedTransportTestCase(TestCase):
     TRANSPORT_FACTORY = TBufferedTransportFactory()
     PROTOCOL_FACTORY = TBinaryProtocolFactory()

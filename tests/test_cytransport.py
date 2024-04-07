@@ -2,14 +2,15 @@
 
 import pytest
 
-from thriftpy2._compat import PYPY
+from thriftpy2._compat import CYTHON
 
-pytestmark = pytest.mark.skipif(PYPY, reason="cython not enabled in pypy.")
 
-if not PYPY:
+if CYTHON:
     from thriftpy2.transport.framed import TCyFramedTransport
     from thriftpy2.transport.buffered import TCyBufferedTransport
     from thriftpy2.transport import TMemoryBuffer, TTransportException
+else:
+    pytest.skip("cython not enabled.", allow_module_level=True)
 
 
 def test_transport_mismatch():

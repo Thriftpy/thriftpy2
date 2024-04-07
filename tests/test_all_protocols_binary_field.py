@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import sys
 import time
 import traceback
 from multiprocessing import Process
@@ -23,6 +24,11 @@ from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.rpc import make_server as make_rpc_server, \
     make_client as make_rpc_client
 from thriftpy2.transport import TBufferedTransportFactory, TCyMemoryBuffer
+
+
+if sys.platform == "win32":
+    pytest.skip("requires fork", allow_module_level=True)
+
 
 protocols = [TApacheJSONProtocolFactory,
              TJSONProtocolFactory,
