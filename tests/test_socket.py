@@ -115,6 +115,8 @@ def test_inet6_socket():
 @pytest.mark.skipif(
     sys.platform == 'darwin' and os.getuid() != 0,
     reason='os.mknod() requires super-user privileges on darwin')
+@pytest.mark.skipif(sys.platform == "win32",
+                    reason="os.mknod is missing on Windows")
 def test_unix_domain_socket():
     sock_file = "/tmp/thriftpy_test.sock"
 

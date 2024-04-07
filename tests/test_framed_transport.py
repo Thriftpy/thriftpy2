@@ -4,15 +4,18 @@ from __future__ import absolute_import
 
 import logging
 import socket
+import sys
 import threading
 import time
 
 from os import path
 from unittest import TestCase
 
+import pytest
 from tornado import ioloop
 
 import thriftpy2
+from thriftpy2._compat import CYTHON
 from thriftpy2.tornado import make_server
 from thriftpy2.rpc import make_client
 from thriftpy2.transport.framed import TFramedTransportFactory
@@ -23,7 +26,12 @@ try:
 except ImportError:
     asyncio = None
 
-from thriftpy2._compat import CYTHON
+
+if sys.platform == "win32":
+    pytest.skip("add_socket is not implemented on Windiws",
+                allow_module_level=True)
+
+
 logging.basicConfig(level=logging.INFO)
 
 addressbook = thriftpy2.load(path.join(path.dirname(__file__),
