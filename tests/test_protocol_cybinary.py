@@ -3,6 +3,7 @@
 import collections
 import multiprocessing
 import os
+import sys
 import time
 
 import pytest
@@ -317,6 +318,7 @@ def test_skip_struct():
     assert 123 == proto.read_val(b, TType.I32)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Unix domain socket required")
 def test_read_long_data():
     val = 'z' * 97 * 1024
 
