@@ -46,13 +46,18 @@ ext_modules = []
 # pypy detection
 PYPY = "__pypy__" in sys.modules
 UNIX = platform.system() in ("Linux", "Darwin")
+WINDOWS = platform.system() == "Windows"
 
-# only build ext in CPython with UNIX platform
-if UNIX and not PYPY:
+# only build ext in CPython
+if not PYPY:
     from Cython.Build import cythonize
     cythonize("thriftpy2/transport/cybase.pyx")
     cythonize("thriftpy2/transport/**/*.pyx")
     cythonize("thriftpy2/protocol/cybin/cybin.pyx")
+
+    libraries = []
+    if WINDOWS:
+        libraries.append("Ws2_32")
 
     ext_modules.append(Extension("thriftpy2.transport.cybase",
                                  ["thriftpy2/transport/cybase.c"]))
@@ -61,11 +66,13 @@ if UNIX and not PYPY:
     ext_modules.append(Extension("thriftpy2.transport.memory.cymemory",
                                  ["thriftpy2/transport/memory/cymemory.c"]))
     ext_modules.append(Extension("thriftpy2.transport.framed.cyframed",
-                                 ["thriftpy2/transport/framed/cyframed.c"]))
+                                 ["thriftpy2/transport/framed/cyframed.c"],
+                                 libraries=libraries))
     ext_modules.append(Extension("thriftpy2.transport.sasl.cysasl",
                                  ["thriftpy2/transport/sasl/cysasl.c"]))
     ext_modules.append(Extension("thriftpy2.protocol.cybin",
-                                 ["thriftpy2/protocol/cybin/cybin.c"]))
+                                 ["thriftpy2/protocol/cybin/cybin.c"],
+                                 libraries=libraries))
 
 setup(name="thriftpy2",
       version=version,

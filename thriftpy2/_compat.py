@@ -15,4 +15,4 @@ import sys
 PYPY = "__pypy__" in sys.modules
 
 UNIX = platform.system() in ("Linux", "Darwin")
-CYTHON = UNIX and not PYPY  # Cython always disabled in pypy and windows
+CYTHON = not PYPY  # Cython always disabled in pypy

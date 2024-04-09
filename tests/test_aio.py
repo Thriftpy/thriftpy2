@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 import asyncio
 # import uvloop
 import threading
@@ -25,6 +26,12 @@ from thriftpy2.contrib.aio.protocol import (
 from thriftpy2.rpc import make_aio_server, make_aio_client
 from thriftpy2.transport import TTransportException
 from thriftpy2.thrift import TApplicationException
+
+
+if sys.platform == "win32":
+    pytest.skip("Unix domain socket is not supported on Windows",
+                allow_module_level=True)
+
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))

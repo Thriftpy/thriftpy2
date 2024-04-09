@@ -3,20 +3,21 @@
 import collections
 import multiprocessing
 import os
+import sys
 import time
 
 import pytest
 
-from thriftpy2._compat import PYPY
+from thriftpy2._compat import CYTHON
 from thriftpy2.thrift import TDecodeException, TPayload, TType
 from thriftpy2.transport import TServerSocket, TSocket
 from thriftpy2.utils import hexlify
-if not PYPY:
+if CYTHON:
     from thriftpy2.protocol import cybin as proto
     from thriftpy2.transport.buffered import TCyBufferedTransport
     from thriftpy2.transport.memory import TCyMemoryBuffer
 else:
-    pytest.skip("cython not enabled in pypy.", allow_module_level=True)
+    pytest.skip("cython not enabled.", allow_module_level=True)
 
 
 class TItem(TPayload):
@@ -317,6 +318,7 @@ def test_skip_struct():
     assert 123 == proto.read_val(b, TType.I32)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Unix domain socket required")
 def test_read_long_data():
     val = 'z' * 97 * 1024
 

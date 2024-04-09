@@ -173,7 +173,7 @@ def test_write_huge_struct():
     proto.TBinaryProtocol(b).write_struct(item)
 
 
-@pytest.mark.skipif(_compat.PYPY, reason="cybin can't be used in pypy")
+@pytest.mark.skipif(not _compat.CYTHON, reason="cybin required")
 def test_string_binary_equivalency():
     from thriftpy2.protocol.binary import TBinaryProtocolFactory
     from thriftpy2.protocol.cybin import TCyBinaryProtocolFactory

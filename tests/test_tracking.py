@@ -23,6 +23,7 @@ import os
 import pickle
 import random
 import socket
+import sys
 import tempfile
 import time
 
@@ -56,6 +57,11 @@ except ImportError:
     pass
 else:
     cleanup_on_sigterm()
+
+
+if sys.platform == "win32":
+    pytest.skip("requires fork", allow_module_level=True)
+
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))

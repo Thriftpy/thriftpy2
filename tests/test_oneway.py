@@ -1,7 +1,15 @@
+import sys
+import time
+
+import pytest
+
 import multiprocessing
 import thriftpy2
-import time
 from thriftpy2.rpc import make_client, make_server
+
+
+if sys.platform == "win32":
+    pytest.skip("requires fork", allow_module_level=True)
 
 
 class Dispatcher(object):

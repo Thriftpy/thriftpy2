@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 import multiprocessing
 import socket
+import sys
 import time
 import uuid
 
@@ -19,6 +20,10 @@ from thriftpy2.thrift import TApplicationException  # noqa
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
+
+
+if sys.platform == "win32":
+    pytest.skip("requires fork", allow_module_level=True)
 
 
 class Dispatcher():
