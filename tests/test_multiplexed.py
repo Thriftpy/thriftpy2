@@ -20,6 +20,8 @@ from thriftpy2.thrift import TProcessor, TMultiplexedProcessor
 from thriftpy2.transport import TBufferedTransportFactory, TServerSocket
 
 
+multiprocessing.set_start_method("fork", force=True)
+
 if sys.platform == "win32":
     pytest.skip("requires fork", allow_module_level=True)
 

@@ -18,6 +18,8 @@ thriftpy2.install_import_hook()  # noqa
 from thriftpy2.http import make_server, make_client, client_context, THttpHeaderFactory  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
 
+multiprocessing.set_start_method("fork", force=True)
+
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
 

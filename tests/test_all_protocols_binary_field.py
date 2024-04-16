@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import sys
 import time
 import traceback
+import multiprocessing
 from multiprocessing import Process
 
 import pytest
@@ -25,6 +26,7 @@ from thriftpy2.rpc import make_server as make_rpc_server, \
     make_client as make_rpc_client
 from thriftpy2.transport import TBufferedTransportFactory, TCyMemoryBuffer
 
+multiprocessing.set_start_method("fork", force=True)
 
 if sys.platform == "win32":
     pytest.skip("requires fork", allow_module_level=True)

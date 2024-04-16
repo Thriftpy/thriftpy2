@@ -58,6 +58,7 @@ except ImportError:
 else:
     cleanup_on_sigterm()
 
+multiprocessing.set_start_method("fork", force=True)
 
 if sys.platform == "win32":
     pytest.skip("requires fork", allow_module_level=True)

@@ -8,6 +8,8 @@ import thriftpy2
 from thriftpy2.rpc import make_client, make_server
 
 
+multiprocessing.set_start_method("fork", force=True)
+
 if sys.platform == "win32":
     pytest.skip("requires fork", allow_module_level=True)
 

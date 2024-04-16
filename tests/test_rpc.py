@@ -19,6 +19,7 @@ from thriftpy2.rpc import make_server, client_context  # noqa
 from thriftpy2.transport import TTransportException  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
 
+multiprocessing.set_start_method("fork", force=True)
 
 if sys.platform == "win32":
     pytest.skip("requires unix domain socket", allow_module_level=True)

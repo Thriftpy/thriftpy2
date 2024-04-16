@@ -19,6 +19,8 @@ if CYTHON:
 else:
     pytest.skip("cython not enabled.", allow_module_level=True)
 
+multiprocessing.set_start_method("fork", force=True)
+
 
 class TItem(TPayload):
     thrift_spec = {

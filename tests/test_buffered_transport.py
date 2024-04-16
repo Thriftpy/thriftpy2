@@ -19,6 +19,8 @@ from thriftpy2.protocol.binary import TBinaryProtocolFactory
 from thriftpy2._compat import CYTHON
 logging.basicConfig(level=logging.INFO)
 
+multiprocessing.set_start_method("fork", force=True)
+
 addressbook = thriftpy2.load(path.join(path.dirname(__file__),
                                        "addressbook.thrift"))
 

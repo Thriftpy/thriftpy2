@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import json
 import sys
 import time
+import multiprocessing
 from multiprocessing import Process
 
 import pytest
@@ -18,6 +19,8 @@ from thriftpy2.rpc import make_server as make_rpc_server, \
 from thriftpy2.thrift import TProcessor, TType
 from thriftpy2.transport import TMemoryBuffer
 from thriftpy2.transport.buffered import TBufferedTransportFactory
+
+multiprocessing.set_start_method("fork", force=True)
 
 
 def recursive_vars(obj):
