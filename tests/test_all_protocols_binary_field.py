@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import sys
 import time
 import traceback
-from multiprocessing import Process
+from multiprocess import Process
 
 import pytest
 import six
@@ -26,8 +26,8 @@ from thriftpy2.rpc import make_server as make_rpc_server, \
 from thriftpy2.transport import TBufferedTransportFactory, TCyMemoryBuffer
 
 
-if sys.platform == "win32":
-    pytest.skip("requires fork", allow_module_level=True)
+# if sys.platform == "win32":
+#     pytest.skip("requires fork", allow_module_level=True)
 
 
 protocols = [TApacheJSONProtocolFactory,
@@ -72,6 +72,11 @@ def test_protocols(proto_factory, binary, tlist, server_func):
     trans_factory = TBufferedTransportFactory
 
     def run_server():
+        import thriftpy2
+        test_thrift = thriftpy2.load(
+            "apache_json_test.thrift",
+            module_name="test_thrift"
+        )
         server = server_func[0](
             test_thrift.TestService,
             handler=Handler(),

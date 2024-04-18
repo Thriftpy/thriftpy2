@@ -37,6 +37,7 @@ dev_requires = [
     "sphinx-rtd-theme>=0.1.9",
     "sphinx>=1.3",
     "pytest>=6.1.1",
+    "multiprocess"
 ] + tornado_requires
 
 
