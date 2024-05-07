@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import collections
 import os
+import threading
 import types
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -18,6 +19,9 @@ from ply import lex, yacc
 from ..thrift import TException, TPayload, TType, gen_init
 from .exc import ThriftGrammarError, ThriftParserError
 from .lexer import *  # noqa
+
+
+threadlocal = threading.local()
 
 
 def p_error(p):
@@ -49,12 +53,12 @@ def p_header_unit(p):
 
 def p_include(p):
     '''include : INCLUDE LITERAL'''
-    thrift = thrift_stack[-1]
+    thrift = threadlocal.thrift_stack[-1]
     if thrift.__thrift_file__ is None:
         raise ThriftParserError('Unexpected include statement while loading '
                                 'from file like object.')
     replace_include_dirs = [os.path.dirname(thrift.__thrift_file__)] \
-        + include_dirs_
+        + threadlocal.include_dirs_
     for include_dir in replace_include_dirs:
         path = os.path.join(include_dir, p[2])
         if os.path.exists(path):
@@ -74,7 +78,7 @@ def p_namespace(p):
     '''namespace : NAMESPACE namespace_scope IDENTIFIER'''
     # namespace is useless in thriftpy2
     # if p[2] == 'py' or p[2] == '*':
-    #     setattr(thrift_stack[-1], '__name__', p[3])
+    #     setattr(threadlocal.thrift_stack[-1], '__name__', p[3])
 
 
 def p_namespace_scope(p):
@@ -114,7 +118,7 @@ def p_const(p):
     except AssertionError:
         raise ThriftParserError('Type error for constant %s at line %d' %
                                 (p[3], p.lineno(3)))
-    setattr(thrift_stack[-1], p[3], val)
+    setattr(threadlocal.thrift_stack[-1], p[3], val)
     _add_thrift_meta('consts', val)
 
 
@@ -160,7 +164,7 @@ def p_const_map_item(p):
 
 def p_const_ref(p):
     '''const_ref : IDENTIFIER'''
-    child = thrift_stack[-1]
+    child = threadlocal.thrift_stack[-1]
     for name in p[1].split('.'):
         father = child
         child = getattr(child, name, None)
@@ -187,13 +191,13 @@ def p_ttype(p):
 
 def p_typedef(p):
     '''typedef : TYPEDEF field_type IDENTIFIER type_annotations'''
-    setattr(thrift_stack[-1], p[3], p[2])
+    setattr(threadlocal.thrift_stack[-1], p[3], p[2])
 
 
 def p_enum(p):  # noqa
     '''enum : ENUM IDENTIFIER '{' enum_seq '}' type_annotations'''
     val = _make_enum(p[2], p[4])
-    setattr(thrift_stack[-1], p[2], val)
+    setattr(threadlocal.thrift_stack[-1], p[2], val)
     _add_thrift_meta('enums', val)
 
 
@@ -223,7 +227,7 @@ def p_struct(p):
 def p_seen_struct(p):
     '''seen_struct : STRUCT IDENTIFIER '''
     val = _make_empty_struct(p[2])
-    setattr(thrift_stack[-1], p[2], val)
+    setattr(threadlocal.thrift_stack[-1], p[2], val)
     p[0] = val
 
 
@@ -236,14 +240,14 @@ def p_union(p):
 def p_seen_union(p):
     '''seen_union : UNION IDENTIFIER '''
     val = _make_empty_struct(p[2])
-    setattr(thrift_stack[-1], p[2], val)
+    setattr(threadlocal.thrift_stack[-1], p[2], val)
     p[0] = val
 
 
 def p_exception(p):
     '''exception : EXCEPTION IDENTIFIER '{' field_seq '}' type_annotations '''
     val = _make_struct(p[2], p[4], base_cls=TException)
-    setattr(thrift_stack[-1], p[2], val)
+    setattr(threadlocal.thrift_stack[-1], p[2], val)
     _add_thrift_meta('exceptions', val)
 
 
@@ -251,7 +255,7 @@ def p_simple_service(p):
     '''simple_service : SERVICE IDENTIFIER '{' function_seq '}'
                 | SERVICE IDENTIFIER EXTENDS IDENTIFIER '{' function_seq '}'
     '''
-    thrift = thrift_stack[-1]
+    thrift = threadlocal.thrift_stack[-1]
 
     if len(p) == 8:
         extends = thrift
@@ -386,12 +390,12 @@ class CurrentIncompleteType(dict):
         return self.index + 1
 
 
-incomplete_type = CurrentIncompleteType()
+threadlocal.incomplete_type = CurrentIncompleteType()
 
 
 def p_ref_type(p):
     '''ref_type : IDENTIFIER'''
-    ref_type = thrift_stack[-1]
+    ref_type = threadlocal.thrift_stack[-1]
 
     for attr in dir(ref_type):
         if attr in {'__doc__', '__loader__', '__name__', '__package__',
@@ -411,7 +415,7 @@ def p_ref_type(p):
                 if index != len(p[1].split('.')) - 1:
                     raise ThriftParserError('No type found: %r, at line %d' %
                                             (p[1], p.lineno(1)))
-                p[0] = incomplete_type.set_info((p[1], p.lineno(1)))
+                p[0] = threadlocal.incomplete_type.set_info((p[1], p.lineno(1)))
                 return
 
     if hasattr(ref_type, '_ttype'):
@@ -511,9 +515,9 @@ def p_type_annotation(p):
         p[0] = p[1], None  # Without Value
 
 
-thrift_stack = []
-include_dirs_ = ['.']
-thrift_cache = {}
+threadlocal.thrift_stack = []
+threadlocal.include_dirs_ = ['.']
+threadlocal.thrift_cache = {}
 
 
 def parse(path, module_name=None, include_dirs=None, include_dir=None,
@@ -540,29 +544,25 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
                          is provided, use it as cache key, else use the `path`.
     """
     # dead include checking on current stack
-    for thrift in thrift_stack:
+    for thrift in threadlocal.thrift_stack:
         if thrift.__thrift_file__ is not None and \
                 os.path.samefile(path, thrift.__thrift_file__):
             raise ThriftParserError('Dead including on %s' % path)
 
-    global thrift_cache
-
     cache_key = module_name or os.path.normpath(path)
 
-    if enable_cache and cache_key in thrift_cache:
-        return thrift_cache[cache_key]
+    if enable_cache and cache_key in threadlocal.thrift_cache:
+        return threadlocal.thrift_cache[cache_key]
 
     if lexer is None:
         lexer = lex.lex()
     if parser is None:
         parser = yacc.yacc(debug=False, write_tables=0)
 
-    global include_dirs_
-
     if include_dirs is not None:
-        include_dirs_ = include_dirs
+        threadlocal.include_dirs_ = include_dirs
     if include_dir is not None:
-        include_dirs_.append(include_dir)
+        threadlocal.include_dirs_.append(include_dir)
 
     if not path.endswith('.thrift'):
         raise ThriftParserError('Path should end with .thrift')
@@ -594,13 +594,13 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
 
     thrift = types.ModuleType(module_name)
     setattr(thrift, '__thrift_file__', path)
-    thrift_stack.append(thrift)
+    threadlocal.thrift_stack.append(thrift)
     lexer.lineno = 1
     parser.parse(data)
-    thrift_stack.pop()
+    threadlocal.thrift_stack.pop()
 
     if enable_cache:
-        thrift_cache[cache_key] = thrift
+        threadlocal.thrift_cache[cache_key] = thrift
     return thrift
 
 
@@ -624,8 +624,8 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
         raise ThriftParserError('thriftpy2 can only generate module with '
                                 '\'_thrift\' suffix')
 
-    if enable_cache and module_name in thrift_cache:
-        return thrift_cache[module_name]
+    if enable_cache and module_name in threadlocal.thrift_cache:
+        return threadlocal.thrift_cache[module_name]
 
     if not hasattr(source, 'read'):
         raise ThriftParserError('Expected `source` to be a file-like object '
@@ -640,18 +640,18 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
 
     thrift = types.ModuleType(module_name)
     setattr(thrift, '__thrift_file__', None)
-    thrift_stack.append(thrift)
+    threadlocal.thrift_stack.append(thrift)
     lexer.lineno = 1
     parser.parse(data)
-    thrift_stack.pop()
+    threadlocal.thrift_stack.pop()
 
     if enable_cache:
-        thrift_cache[module_name] = thrift
+        threadlocal.thrift_cache[module_name] = thrift
     return thrift
 
 
 def _add_thrift_meta(key, val):
-    thrift = thrift_stack[-1]
+    thrift = threadlocal.thrift_stack[-1]
 
     if not hasattr(thrift, '__thrift_meta__'):
         meta = collections.defaultdict(list)
@@ -827,7 +827,10 @@ def _cast_struct(t):   # struct/exception/union
 
 
 def _make_enum(name, kvs):
-    attrs = {'__module__': thrift_stack[-1].__name__, '_ttype': TType.I32}
+    attrs = {
+        '__module__': threadlocal.thrift_stack[-1].__name__,
+        '_ttype': TType.I32
+    }
     cls = type(name, (object, ), attrs)
 
     _values_to_names = {}
@@ -851,7 +854,10 @@ def _make_enum(name, kvs):
 
 
 def _make_empty_struct(name, ttype=TType.STRUCT, base_cls=TPayload):
-    attrs = {'__module__': thrift_stack[-1].__name__, '_ttype': ttype}
+    attrs = {
+        '__module__': threadlocal.thrift_stack[-1].__name__,
+        '_ttype': ttype
+    }
     return type(name, (base_cls, ), attrs)
 
 
@@ -887,7 +893,7 @@ def _make_service(name, funcs, extends):
     if extends is None:
         extends = object
 
-    attrs = {'__module__': thrift_stack[-1].__name__}
+    attrs = {'__module__': threadlocal.thrift_stack[-1].__name__}
     cls = type(name, (extends, ), attrs)
     thrift_services = []
 
