@@ -1,6 +1,21 @@
 Changelog
 =========
 
+0.5.0
+~~~~~
+
+Version 0.5.0
+-------------
+
+Released on May 7, 2024.
+
+- Dropped Python2 and Python3.5 Support.
+- Added SASL transport client.
+- Add submodule to sys.path when loading child idl file.
+- Support cythonized module on Windows.
+- Support using ipv6 in make_client/make_server method.
+- Basic multi-thread support in parser.
+
 0.4.x
 ~~~~~
 
