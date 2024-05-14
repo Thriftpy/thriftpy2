@@ -1,6 +1,11 @@
 Changelog
 =========
 
+UNRELEASED
+~~~~~~~~~~
+
+- Fix an issue where loading a thrift file in a sub-thread will cause an error.
+
 0.5.0
 ~~~~~
 
