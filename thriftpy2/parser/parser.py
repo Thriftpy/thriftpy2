@@ -512,11 +512,6 @@ def p_type_annotation(p):
         p[0] = p[1], None  # Without Value
 
 
-threadlocal.thrift_stack = []
-threadlocal.include_dirs_ = ['.']
-threadlocal.thrift_cache = {}
-
-
 def parse(path, module_name=None, include_dirs=None, include_dir=None,
           lexer=None, parser=None, enable_cache=True, encoding='utf-8'):
     """Parse a single thrift file to module object, e.g.::
