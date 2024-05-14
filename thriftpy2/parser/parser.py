@@ -390,9 +390,6 @@ class CurrentIncompleteType(dict):
         return self.index + 1
 
 
-threadlocal.incomplete_type = CurrentIncompleteType()
-
-
 def p_ref_type(p):
     '''ref_type : IDENTIFIER'''
     ref_type = threadlocal.thrift_stack[-1]
@@ -543,6 +540,15 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
                          cached, this is enabled by default. If `module_name`
                          is provided, use it as cache key, else use the `path`.
     """
+    # threadlocal should be initialized in every threads
+    initialized = getattr(threadlocal, 'initialized', None)
+    if initialized is None:
+        threadlocal.thrift_stack = []
+        threadlocal.include_dirs_ = ['.']
+        threadlocal.thrift_cache = {}
+        threadlocal.incomplete_type = CurrentIncompleteType()
+        threadlocal.initialized = True
+
     # dead include checking on current stack
     for thrift in threadlocal.thrift_stack:
         if thrift.__thrift_file__ is not None and \
