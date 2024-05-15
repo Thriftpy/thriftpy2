@@ -43,8 +43,12 @@ def test_cpp_include():
     load('parser-cases/cpp_include.thrift')
 
 
-def test_load_in_sub_thread():
-    t = threading.Thread(target=lambda: load('addressbook.thrift'))
+def test_load_in_sub_thread(reraise):
+    @reraise.wrap
+    def f():
+        load('addressbook.thrift')
+
+    t = threading.Thread(target=f)
     t.start()
     t.join()
 
