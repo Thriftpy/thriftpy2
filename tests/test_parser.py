@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import threading
+
 import pytest
 from thriftpy2.thrift import TType
 from thriftpy2.parser import load, load_fp
@@ -39,6 +41,12 @@ def test_include():
 
 def test_cpp_include():
     load('parser-cases/cpp_include.thrift')
+
+
+def test_load_in_sub_thread():
+    t = threading.Thread(target=lambda: load('addressbook.thrift'))
+    t.start()
+    t.join()
 
 
 def test_tutorial():
