@@ -37,6 +37,7 @@ dev_requires = [
     "sphinx>=1.3",
     "pytest-reraise",
     "pytest>=6.1.1",
+    "multiprocess"
 ] + tornado_requires
 
 
