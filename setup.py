@@ -36,7 +36,7 @@ dev_requires = [
     "sphinx-rtd-theme>=0.1.9",
     "sphinx>=1.3",
     "pytest-reraise",
-    "pytest>=6.1.1",
+    "pytest>=6.1.1,<8.2.0",
 ] + tornado_requires
 
 
