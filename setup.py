@@ -33,10 +33,10 @@ except ImportError:
 
 dev_requires = [
     "flake8>=2.5",
-    "pytest>=2.8",
     "sphinx-rtd-theme>=0.1.9",
     "sphinx>=1.3",
-    "pytest>=6.1.1",
+    "pytest-reraise",
+    "pytest>=6.1.1,<8.2.0",
 ] + tornado_requires
 
 
