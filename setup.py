@@ -70,7 +70,7 @@ if not PYPY:
                                  libraries=libraries))
     ext_modules.append(Extension("thriftpy2.transport.sasl.cysasl",
                                  ["thriftpy2/transport/sasl/cysasl.c"]))
-    ext_modules.append(Extension("thriftpy2.protocol.cybin",
+    ext_modules.append(Extension("thriftpy2.protocol.cybin.cybin",
                                  ["thriftpy2/protocol/cybin/cybin.c"],
                                  libraries=libraries))
 
