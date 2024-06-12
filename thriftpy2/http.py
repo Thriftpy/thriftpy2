@@ -125,7 +125,7 @@ class THttpServer(TServer):
 
         thttpserver = self
 
-        class RequestHander(http_server.BaseHTTPRequestHandler):
+        class RequestHandler(http_server.BaseHTTPRequestHandler):
             # Don't care about the request path.
 
             def do_POST(self):
@@ -153,7 +153,7 @@ class THttpServer(TServer):
                     self.end_headers()
                     self.wfile.write(otrans.getvalue())
 
-        self.httpd = server_class(server_address, RequestHander)
+        self.httpd = server_class(server_address, RequestHandler)
 
     def serve(self):
         self.httpd.serve_forever()
