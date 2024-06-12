@@ -5,7 +5,7 @@ import threading
 import pytest
 from thriftpy2.thrift import TType
 from thriftpy2.parser import load, load_fp
-from thriftpy2.parser.exc import ThriftParserError, ThriftGrammerError
+from thriftpy2.parser.exc import ThriftParserError, ThriftGrammarError
 
 
 def test_comments():
@@ -217,7 +217,7 @@ def test_e_dead_include():
 
 
 def test_e_grammer_error_at_eof():
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_grammer_error_at_eof.thrift')
     assert str(excinfo.value) == 'Grammar error at EOF'
 
@@ -229,28 +229,28 @@ def test_e_use_thrift_reserved_keywords():
 
 
 def test_e_duplicate_field_id_or_name():
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_field_id.thrift')
     assert 'field identifier/name has already been used' in str(excinfo.value)
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_field_name.thrift')
     assert 'field identifier/name has already been used' in str(excinfo.value)
 
 
 def test_e_duplicate_struct_exception_service():
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_struct.thrift')
     assert 'type is already defined in' in str(excinfo.value)
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_exception.thrift')
     assert 'type is already defined in' in str(excinfo.value)
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_service.thrift')
     assert 'type is already defined in' in str(excinfo.value)
 
 
 def test_e_duplicate_function():
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_function.thrift')
     assert 'function is already defined in' in str(excinfo.value)
 
