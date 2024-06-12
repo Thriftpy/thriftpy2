@@ -216,9 +216,9 @@ def test_e_dead_include():
     assert 'Dead including' in str(excinfo.value)
 
 
-def test_e_grammer_error_at_eof():
+def test_e_grammar_error_at_eof():
     with pytest.raises(ThriftGrammarError) as excinfo:
-        load('parser-cases/e_grammer_error_at_eof.thrift')
+        load('parser-cases/e_grammar_error_at_eof.thrift')
     assert str(excinfo.value) == 'Grammar error at EOF'
 
 
