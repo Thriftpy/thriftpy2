@@ -37,7 +37,7 @@ class RequestInfo(object):
         :status: request status
         :start: start timestamp
         :end: end timestamp
-        :annotation: application-level key-value datas
+        :annotation: application-level key-value data
         """
         self.request_id = request_id
         self.api = api
