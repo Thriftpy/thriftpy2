@@ -527,7 +527,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
                          the `include` directive, by default: ['.'].
     :param include_dir: directory to find child thrift files. Note this keyword
                         parameter will be deprecated in the future, it exists
-                        for compatiable reason. If it's provided (not `None`),
+                        for compatible reason. If it's provided (not `None`),
                         it will be appended to `include_dirs`.
     :param lexer: ply lexer to use, if not provided, `parse` will new one.
     :param parser: ply parser to use, if not provided, `parse` will new one.
@@ -614,7 +614,7 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
         <module 'note_thrift' (built-in)>
 
     :param source: file-like object, expected to have a method named `read`.
-    :param module_name: the name for parsed module, shoule be endswith
+    :param module_name: the name for parsed module, should be endswith
                         '_thrift'.
     :param lexer: ply lexer to use, if not provided, `parse` will new one.
     :param parser: ply parser to use, if not provided, `parse` will new one.

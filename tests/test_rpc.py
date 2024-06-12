@@ -279,7 +279,7 @@ def test_exception():
             c.remove("Bob")
 
 
-def test_exception_iwth_ssl():
+def test_exception_with_ssl():
     with pytest.raises(addressbook.PersonNotExistsError):
         with ssl_client() as c:
             c.remove("Bob")

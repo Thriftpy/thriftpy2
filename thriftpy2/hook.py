@@ -10,7 +10,7 @@ from .parser import load_module
 
 
 # TODO: The load process does not compatible with Python standard, e.g., if the
-# specified thrift file does not exists, it raises FileNotFoundError, and skiped
+# specified thrift file does not exists, it raises FileNotFoundError, and skipped
 # the other meta finders in the sys.meta_path.
 class ThriftImporter(importlib.abc.MetaPathFinder):
     def __init__(self, extension="_thrift"):
