@@ -169,7 +169,7 @@ def p_const_ref(p):
         father = child
         child = getattr(child, name, None)
         if child is None:
-            raise ThriftParserError('Cann\'t find name %r at line %d'
+            raise ThriftParserError('Can\'t find name %r at line %d'
                                     % (p[1], p.lineno(1)))
 
     if _get_ttype(child) is None or _get_ttype(father) == TType.I32:
