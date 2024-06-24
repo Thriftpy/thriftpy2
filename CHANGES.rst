@@ -1,8 +1,10 @@
 Changelog
 =========
 
-UNRELEASED
-~~~~~~~~~~
+0.5.1
+-----
+
+Released on Jun 24, 2024.
 
 - Fix an issue where loading a thrift file in a sub-thread will cause an error.
 - Some typo fixes.
