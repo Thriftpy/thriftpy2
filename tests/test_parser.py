@@ -3,6 +3,7 @@
 import threading
 
 import pytest
+
 from thriftpy2.thrift import TType
 from thriftpy2.parser import load, load_fp
 from thriftpy2.parser.exc import ThriftParserError, ThriftGrammarError
@@ -43,10 +44,37 @@ def test_cpp_include():
     load('parser-cases/cpp_include.thrift')
 
 
-def test_load_in_sub_thread(reraise):
+@pytest.fixture
+def reset_parser_threadlocal():
+    def delattr_no_error(o, name):
+        try:
+            delattr(o, name)
+        except AttributeError:
+            pass
+
+    from thriftpy2.parser.parser import threadlocal
+    delattr_no_error(threadlocal, 'thrift_stack')
+    delattr_no_error(threadlocal, 'include_dirs_')
+    delattr_no_error(threadlocal, 'thrift_cache')
+    delattr_no_error(threadlocal, 'incomplete_type')
+    delattr_no_error(threadlocal, 'initialized')
+
+
+def test_load_in_sub_thread(reraise, reset_parser_threadlocal):
     @reraise.wrap
     def f():
         load('addressbook.thrift')
+
+    t = threading.Thread(target=f)
+    t.start()
+    t.join()
+
+
+def test_load_fp_in_sub_thread(reraise, reset_parser_threadlocal):
+    @reraise.wrap
+    def f():
+        with open('container.thrift') as fp:
+            load_fp(fp, 'container_thrift')
 
     t = threading.Thread(target=f)
     t.start()
