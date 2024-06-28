@@ -64,6 +64,8 @@ class TAsyncSocket(object):
             to persist SSLContext object. Caution it's easy to get wrong, only
             use if you know what you're doing.
         """
+        self.read_sock = None
+        self.write_sock = None
         if sock:
             self.raw_sock = sock
         elif unix_socket:
@@ -117,16 +119,37 @@ class TAsyncSocket(object):
                     asyncio.open_connection(self.host, self.port, ssl=self.ssl_context),
                     self.connect_timeout,
                 )
-            sock = self.writer.get_extra_info("socket")
-            # socket options
+
+            write_sock = self.writer.get_extra_info("socket")
+            read_sock = self.reader._transport.get_extra_info("socket")
+            self.write_sock = write_sock
+            self.read_sock = read_sock
             linger = struct.pack("ii", 0, 0)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, linger)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            for sock in [self.read_sock, self.write_sock]:
+                # socket options
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, linger)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         except (socket.error, OSError):
             raise TTransportException(
                 type=TTransportException.NOT_OPEN,
-                message="Could not connect to %s" % str(addr))
+                message="Could not connect to %s" % str(addr),
+            )
+
+    def set_handle(self, sock):
+        self.raw_sock = sock
+
+    def set_timeout(self, ms):
+        """Backward compat api, will bind the timeout to both connect_timeout
+        and socket_timeout.
+        """
+        self.socket_timeout = ms / 1000 if (ms and ms > 0) else None
+        self.connect_timeout = self.socket_timeout
+        if self.read_sock:
+            self.read_sock.settimeout(self.socket_timeout)
+        if self.write_sock:
+            self.write_sock.settimeout(self.socket_timeout)
+
 
     async def read(self, sz):
         try:
@@ -163,15 +186,18 @@ class TAsyncSocket(object):
         await asyncio.wait_for(self.writer.drain(), self.connect_timeout)
 
     def close(self):
-        if not self.raw_sock:
-            return
-
-        try:
+        if self.writer:
             self.writer.close()
-            self.raw_sock = None
-        except (socket.error, OSError):
-            pass
+            # await self.writer.wait_closed()
+        
+        if self.reader:
+            self.reader._transport.close()
 
+        if self.read_sock:
+            self.read_sock.close()
+
+        if self.write_sock:
+            self.write_sock.close()
 
 class TAsyncServerSocket(object):
     """Socket implementation for server side."""
