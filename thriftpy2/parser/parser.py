@@ -621,6 +621,15 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
     :param enable_cache: if this is set to be `True`, parsed module will be
                          cached by `module_name`, this is enabled by default.
     """
+    # threadlocal should be initialized in every threads
+    initialized = getattr(threadlocal, 'initialized', None)
+    if initialized is None:
+        threadlocal.thrift_stack = []
+        threadlocal.include_dirs_ = ['.']
+        threadlocal.thrift_cache = {}
+        threadlocal.incomplete_type = CurrentIncompleteType()
+        threadlocal.initialized = True
+
     if not module_name.endswith('_thrift'):
         raise ThriftParserError('thriftpy2 can only generate module with '
                                 '\'_thrift\' suffix')
