@@ -4,8 +4,14 @@ Changelog
 0.5.x
 ~~~~~
 
-Version0.5.1
-------------
+UNRELEASED
+----------
+
+- Fix an issue where loading a thrift file in a sub-thread will cause an error with ``load_fp``.
+
+
+Version 0.5.1
+-------------
 
 Released on Jun 24, 2024.
 
