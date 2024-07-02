@@ -1,2 +1,39 @@
 [build-system]
 requires = ["setuptools", "cython>=0.28.4,<4"]
+
+[project]
+name = "thriftpy2"
+version = "0.5.1"
+description = "Pure python implementation of Apache Thrift."
+authors = [
+    {name = "ThriftPy Organization", email = "gotzehsing@gmail.com"},
+]
+dependencies = [
+    "Cython>=3.0.10",
+    "ply>=3.4,<4.0",
+    "six~=1.15",
+]
+requires-python = ">=3.6"
+readme = "README.rst"
+license = {file = "LICENSE"}
+keywords = ["thrift python thriftpy thriftpy2"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development",
+]
+
+[project.urls]
+Homepage = "https://thriftpy2.readthedocs.io/"
+Source = "https://github.com/Thriftpy/thriftpy2"

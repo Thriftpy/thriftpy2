@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import re
 import sys
 import platform
 
-from os.path import join, dirname
+from setuptools import setup, find_packages, Extension
 
-from setuptools import setup, find_packages
-from setuptools.extension import Extension
-
-with open(join(dirname(__file__), 'thriftpy2', '__init__.py'), 'r') as f:
-    version = re.match(r".*__version__ = '(.*?)'", f.read(), re.S).group(1)
 
 install_requires = [
     "ply>=3.4,<4.0",
@@ -38,7 +32,6 @@ dev_requires = [
     "pytest-reraise",
     "pytest>=6.1.1,<8.2.0",
 ] + tornado_requires
-
 
 cmdclass = {}
 ext_modules = []
@@ -74,24 +67,11 @@ if not PYPY:
                                  ["thriftpy2/protocol/cybin/cybin.c"],
                                  libraries=libraries))
 
-setup(name="thriftpy2",
-      version=version,
-      description="Pure python implementation of Apache Thrift.",
-      keywords="thrift python thriftpy thriftpy2",
-      author="ThriftPy Organization",
-      author_email="gotzehsing@gmail.com",
+setup(
       packages=find_packages(exclude=['benchmark', 'docs', 'tests']),
-      entry_points={},
-      url="https://thriftpy2.readthedocs.io/",
-      project_urls={
-          "Source": "https://github.com/Thriftpy/thriftpy2",
-      },
-      license="MIT",
       zip_safe=False,
       long_description=open("README.rst").read(),
       install_requires=install_requires,
-      tests_require=tornado_requires,
-      python_requires='>=3.6',
       extras_require={
           "dev": dev_requires,
           "tornado": tornado_requires
@@ -99,19 +79,4 @@ setup(name="thriftpy2",
       cmdclass=cmdclass,
       ext_modules=ext_modules,
       include_package_data=True,
-      classifiers=[
-          "Topic :: Software Development",
-          "Development Status :: 4 - Beta",
-          "Intended Audience :: Developers",
-          "License :: OSI Approved :: MIT License",
-          "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.6",
-          "Programming Language :: Python :: 3.7",
-          "Programming Language :: Python :: 3.8",
-          "Programming Language :: Python :: 3.9",
-          "Programming Language :: Python :: 3.10",
-          "Programming Language :: Python :: 3.11",
-          "Programming Language :: Python :: 3.12",
-          "Programming Language :: Python :: Implementation :: CPython",
-          "Programming Language :: Python :: Implementation :: PyPy",
-      ])
+)
