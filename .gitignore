@@ -47,6 +47,9 @@ pip-log.txt
 env/
 .vscode/
 
+# lock file
+*.lock
+
 pyvenv.cfg
 share/*
 
