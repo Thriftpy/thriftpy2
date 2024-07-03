@@ -145,7 +145,11 @@ class TAsyncSocket(object):
             if self.connect_timeout:
                 self.raw_sock.settimeout(self.connect_timeout)
 
-            self.raw_sock.connect(addr)
+            loop = asyncio.get_running_loop()
+            # The raw_sock.connect may block the event loop if the target
+            # server is slow or unreachable. Using a thread pool to solve it
+            # as a quick and dirty way. See #270.
+            await loop.run_in_executor(None, lambda: self.raw_sock.connect(addr))
 
             if self.socket_timeout:
                 self.raw_sock.settimeout(self.socket_timeout)
