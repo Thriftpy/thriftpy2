@@ -2,13 +2,17 @@
 
 from __future__ import absolute_import, division
 
-import ssl
 import asyncio
 import errno
 import os
 import socket
+import ssl
 import struct
 import sys
+if sys.version_info >= (3, 7, 0):
+    from asyncio import get_running_loop
+else:
+    from asyncio import _get_running_loop as get_running_loop
 
 from thriftpy2.transport import TTransportException
 from thriftpy2.transport._ssl import (
@@ -16,6 +20,7 @@ from thriftpy2.transport._ssl import (
     RESTRICTED_SERVER_CIPHERS,
     DEFAULT_CIPHERS
 )
+
 
 MAC_OR_BSD = sys.platform == 'darwin' or sys.platform.startswith('freebsd')
 
@@ -145,7 +150,11 @@ class TAsyncSocket(object):
             if self.connect_timeout:
                 self.raw_sock.settimeout(self.connect_timeout)
 
-            self.raw_sock.connect(addr)
+            loop = get_running_loop()
+            # The raw_sock.connect may block the event loop if the target
+            # server is slow or unreachable. Using a thread pool to solve it
+            # as a quick and dirty way. See #270.
+            await loop.run_in_executor(None, lambda: self.raw_sock.connect(addr))
 
             if self.socket_timeout:
                 self.raw_sock.settimeout(self.socket_timeout)
