@@ -9,6 +9,7 @@ UNRELEASED
 
 - Fix an issue where loading a thrift file in a sub-thread will cause an error with ``load_fp``.
 - Move static metadata from ``setup.py`` to ``pyproject.toml``.
+- Using a thread pool to avoid ``TAsyncSocket.open`` block the event loop.
 
 
 Version 0.5.1
