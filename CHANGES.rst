@@ -8,6 +8,7 @@ UNRELEASED
 ----------
 
 - Fix an issue where loading a thrift file in a sub-thread will cause an error with ``load_fp``.
+- Move static metadata from ``setup.py`` to ``pyproject.toml``.
 
 
 Version 0.5.1

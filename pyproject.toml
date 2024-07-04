@@ -3,7 +3,7 @@ requires = ["setuptools", "cython>=0.28.4,<4"]
 
 [project]
 name = "thriftpy2"
-version = "0.5.1"
+version = "0.5.2b2"
 description = "Pure python implementation of Apache Thrift."
 authors = [
     {name = "ThriftPy Organization", email = "gotzehsing@gmail.com"},
