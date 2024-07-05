@@ -4,8 +4,10 @@ Changelog
 0.5.x
 ~~~~~
 
-UNRELEASED
-----------
+Version 0.5.2
+-------------
+
+Released on Jul 5, 2024.
 
 - Fix an issue where loading a thrift file in a sub-thread will cause an error with ``load_fp``.
 - Move static metadata from ``setup.py`` to ``pyproject.toml``.
