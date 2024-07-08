@@ -3,37 +3,26 @@
 
 import sys
 import platform
+import toml
 
+from os.path import join, dirname
 from setuptools import setup, find_packages, Extension
 
 
-install_requires = [
-    "ply>=3.4,<4.0",
-    "six~=1.15",
-]
-
-tornado_requires = [
-    "tornado>=4.0,<7.0; python_version>='3.12'",
-    "tornado>=4.0,<6.0; python_version<'3.12'",
-]
+meta = toml.load(join(dirname(__file__), 'pyproject.toml') )
+install_requires = meta["project"]["dependencies"]
+dev_requires = meta["project"]["optional-dependencies"]["dev"]
+tornado_requires = meta["project"]["optional-dependencies"]["tornado"]
 
 try:
     from tornado import version as tornado_version
     if tornado_version < '5.0':
         tornado_requires.append("toro>=0.6")
+        dev_requires.append("toro>=0.6")
 except ImportError:
     # tornado will now only get installed and we'll get the newer one
     pass
 
-dev_requires = [
-    "flake8>=2.5",
-    "sphinx-rtd-theme>=0.1.9",
-    "sphinx>=1.3",
-    "pytest-reraise",
-    "pytest>=6.1.1,<8.2.0",
-] + tornado_requires
-
-cmdclass = {}
 ext_modules = []
 
 # pypy detection
@@ -76,7 +65,6 @@ setup(
           "dev": dev_requires,
           "tornado": tornado_requires
       },
-      cmdclass=cmdclass,
       ext_modules=ext_modules,
       include_package_data=True,
 )
