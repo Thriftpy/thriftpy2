@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "cython>=0.28.4,<4"]
+requires = ["setuptools", "cython>=0.28.4,<4", "toml"]
 
 [project]
 name = "thriftpy2"
@@ -9,7 +9,6 @@ authors = [
     {name = "ThriftPy Organization", email = "gotzehsing@gmail.com"},
 ]
 dependencies = [
-    "Cython>=3.0.10",
     "ply>=3.4,<4.0",
     "six~=1.15",
 ]
@@ -37,3 +36,19 @@ classifiers = [
 [project.urls]
 Homepage = "https://thriftpy2.readthedocs.io/"
 Source = "https://github.com/Thriftpy/thriftpy2"
+
+[project.optional-dependencies]
+dev = [
+    "flake8>=2.5",
+    "sphinx-rtd-theme>=0.1.9",
+    "sphinx>=1.3",
+    "pytest-reraise",
+    "pytest>=6.1.1,<8.2.0",
+    "tornado>=4.0,<7.0; python_version>='3.12'",
+    "tornado>=4.0,<6.0; python_version<'3.12'",
+]
+
+tornado = [
+    "tornado>=4.0,<7.0; python_version>='3.12'",
+    "tornado>=4.0,<6.0; python_version<'3.12'",
+]
