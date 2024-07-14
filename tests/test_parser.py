@@ -304,6 +304,16 @@ def test_load_fp():
     assert thrift.__thrift_meta__['services'] == [thrift.SharedService]
 
 
+def test_load_fp_without_module_name():
+    thrift = None
+    with open('parser-cases/shared.thrift') as thrift_fp:
+        thrift = load_fp(thrift_fp)
+    assert thrift.__name__ == 'shared_thrift'
+    assert thrift.__thrift_file__ is None
+    assert thrift.__thrift_meta__['structs'] == [thrift.SharedStruct]
+    assert thrift.__thrift_meta__['services'] == [thrift.SharedService]
+
+
 def test_e_load_fp():
     with pytest.raises(ThriftParserError) as excinfo:
         with open('parser-cases/tutorial.thrift') as thrift_fp:
