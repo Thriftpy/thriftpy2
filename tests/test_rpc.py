@@ -15,10 +15,9 @@ import thriftpy2
 
 thriftpy2.install_import_hook()
 
-from thriftpy2.rpc import make_server, client_context  # noqa
-from thriftpy2.transport import TTransportException  # noqa
+from thriftpy2.rpc import client_context, make_server  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
-
+from thriftpy2.transport import TTransportException  # noqa
 
 if sys.platform == "win32":
     pytest.skip("requires unix domain socket", allow_module_level=True)
@@ -103,6 +102,26 @@ def server(request):
 
 
 @pytest.fixture(scope="module")
+def ipv6_server(request):
+    server = make_server(addressbook.AddressBookService, Dispatcher(),
+                         unix_socket=unix_sock, socket_family=socket.AF_INET6)
+    ps = multiprocessing.Process(target=server.serve)
+    ps.start()
+
+    time.sleep(0.1)
+
+    def fin():
+        if ps.is_alive():
+            ps.terminate()
+        try:
+            os.remove(unix_sock)
+        except IOError:
+            pass
+
+    request.addfinalizer(fin)
+
+
+@pytest.fixture(scope="module")
 def ssl_server(request):
     ssl_server = make_server(addressbook.AddressBookService, Dispatcher(),
                              host='localhost', port=SSL_PORT,
@@ -145,6 +164,14 @@ def client(timeout=3000):
                           unix_socket=unix_sock)
 
 
+def ipv6_client(timeout=3000):
+    return client_context(addressbook.AddressBookService,
+                          socket_timeout=timeout,
+                          connect_timeout=timeout,
+                          unix_socket=unix_sock,
+                          socket_family=socket.AF_INET6)
+
+
 def ssl_client(timeout=3000):
     return client_context(addressbook.AddressBookService,
                           host='localhost', port=SSL_PORT,
@@ -172,6 +199,11 @@ def test_clients(ssl_server):
 
 def test_void_api(server):
     with client() as c:
+        assert c.ping() is None
+
+
+def test_ipv6_api(ipv6_server):
+    with ipv6_client() as c:
         assert c.ping() is None
 
 
@@ -247,7 +279,7 @@ def test_exception():
             c.remove("Bob")
 
 
-def test_exception_iwth_ssl():
+def test_exception_with_ssl():
     with pytest.raises(addressbook.PersonNotExistsError):
         with ssl_client() as c:
             c.remove("Bob")

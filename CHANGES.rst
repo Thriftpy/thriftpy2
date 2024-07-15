@@ -1,6 +1,39 @@
 Changelog
 =========
 
+0.5.x
+~~~~~
+
+Version 0.5.2
+-------------
+
+Released on Jul 5, 2024.
+
+- Fix an issue where loading a thrift file in a sub-thread will cause an error with ``load_fp``.
+- Move static metadata from ``setup.py`` to ``pyproject.toml``.
+- Using a thread pool to avoid ``TAsyncSocket.open`` block the event loop.
+
+
+Version 0.5.1
+-------------
+
+Released on Jun 24, 2024.
+
+- Fix an issue where loading a thrift file in a sub-thread will cause an error.
+- Some typo fixes.
+
+Version 0.5.0
+-------------
+
+Released on May 7, 2024.
+
+- Dropped Python2 and Python3.5 Support.
+- Added SASL transport client.
+- Add submodule to sys.path when loading child idl file.
+- Support cythonized module on Windows.
+- Support using ipv6 in make_client/make_server method.
+- Basic multi-thread support in parser.
+
 0.4.x
 ~~~~~
 
@@ -165,7 +198,7 @@ Version 0.4.5
 Released on August 27, 2019.
 
 - Support kwargs style parameters passing in TSimpleServer, via `2-#67`_.
-- Fix #65 allow double const to ommit integer part, via `2-#66`_.
+- Fix #65 allow double const to omit integer part, via `2-#66`_.
 
 .. _2-#67: https://github.com/Thriftpy/thriftpy2/pull/67
 .. _2-#66: https://github.com/Thriftpy/thriftpy2/pull/66
@@ -441,7 +474,7 @@ Released on April 15, 2015.
 - add limitation on thrift reserved keyword for compatible with upstream, via
   `#115`_.
 - bugfix EOF grammar error, via `#103`_.
-- bugfix for mis-mach transport in client caused server crash, via `#119`_.
+- bugfix for mismatch transport in client caused server crash, via `#119`_.
 - bugfix for typedef on included thrift files, via `#121`_.
 
 .. _`#96`: https://github.com/eleme/thriftpy/pull/96
@@ -467,7 +500,7 @@ Released on March 3, 2015.
 - bugfix for transport clean in read_struct in cybin, via `#70`_.
 - bugfix for large reading size in framed transport, via `#73`_.
 - bugfix for cython build failed in older CentOS, via `#92`_.
-- bugfix for thrift file version mis-match caused message corrupt in
+- bugfix for thrift file version mismatch caused message corrupt in
   `read_struct`, via `#95`_.
 
 Non-Backward Compatible changes:
@@ -699,7 +732,7 @@ Released on June 7, 2014.
 - disabled the magic import hook by default. and add install/remove
   function to switch the hook on and off.
 - reworked benchmark suit and add benchmark results.
-- new `__init__` function code generator. get a noticable speed boost.
+- new `__init__` function code generator. get a noticeable speed boost.
 - bug fixes
 
 

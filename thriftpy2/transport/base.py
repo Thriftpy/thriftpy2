@@ -61,7 +61,7 @@ class TTransportBase(object):
 
     def write(self, buf):
         """
-        Submit some data to tbe written to the connection. May be
+        Submit some data to be written to the connection. May be
         buffered until flush is called.
         """
         raise NotImplementedError

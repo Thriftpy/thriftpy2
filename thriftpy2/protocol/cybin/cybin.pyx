@@ -7,9 +7,8 @@ from cpython cimport bool
 
 import six
 
+from thriftpy2.thrift import TDecodeException
 from thriftpy2.transport.cybase cimport CyTransportBase, STACK_STRING_LEN
-
-from ..thrift import TDecodeException
 
 cdef extern from "endian_port.h":
     int16_t htobe16(int16_t n)

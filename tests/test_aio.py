@@ -1,31 +1,31 @@
 # -*- coding: utf-8 -*-
-import os
-import sys
 import asyncio
+import os
+import random
+import socket
+import sys
 # import uvloop
 import threading
-import random
-from unittest.mock import patch
-
-# asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
 import time
+from unittest.mock import patch
 
 import pytest
 
 import thriftpy2
-
-from thriftpy2.contrib.aio.transport import (
-    TAsyncBufferedTransportFactory,
-    TAsyncFramedTransportFactory,
-)
-from thriftpy2.contrib.aio.protocol import (
-    TAsyncBinaryProtocolFactory,
-    TAsyncCompactProtocolFactory,
-)
-from thriftpy2.rpc import make_aio_server, make_aio_client
-from thriftpy2.transport import TTransportException
+from thriftpy2.contrib.aio.protocol import (TAsyncBinaryProtocolFactory,
+                                            TAsyncCompactProtocolFactory)
+from thriftpy2.contrib.aio.transport import (TAsyncBufferedTransportFactory,
+                                             TAsyncFramedTransportFactory)
+from thriftpy2.rpc import make_aio_client, make_aio_server
 from thriftpy2.thrift import TApplicationException
+from thriftpy2.transport import TTransportException
+
+# asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+
+
+
+
 
 
 if sys.platform == "win32":
@@ -113,6 +113,7 @@ class _TestAIO:
     @classmethod
     def setup_class(cls):
         cls._start_server()
+        cls._start_ipv6_server()
         cls.person = _create_person()
 
     @classmethod
@@ -140,6 +141,22 @@ class _TestAIO:
         time.sleep(0.1)
 
     @classmethod
+    def _start_ipv6_server(cls):
+        cls.server = make_aio_server(
+            addressbook.AddressBookService,
+            Dispatcher(),
+            trans_factory=cls.TRANSPORT_FACTORY,
+            proto_factory=cls.PROTOCOL_FACTORY,
+            loop=asyncio.new_event_loop(),
+            socket_family=socket.AF_INET6,
+            **cls.server_kwargs(),
+        )
+        st = threading.Thread(target=cls.server.serve)
+        st.daemon = True
+        st.start()
+        time.sleep(0.1)
+
+    @classmethod
     def server_kwargs(cls):
         name = cls.__name__.lower()
         return {'unix_socket': '/tmp/aio_thriftpy_test_{}.sock'.format(name)}
@@ -157,9 +174,25 @@ class _TestAIO:
             **self.client_kwargs(),
         )
 
+    async def ipv6_client(self, timeout: int = 3000000):
+        return await make_aio_client(
+            addressbook.AddressBookService,
+            trans_factory=self.TRANSPORT_FACTORY,
+            proto_factory=self.PROTOCOL_FACTORY,
+            timeout=timeout,
+            socket_family=socket.AF_INET6,
+            **self.client_kwargs(),
+        )
+
     @pytest.mark.asyncio
     async def test_void_api(self):
         c = await self.client()
+        assert await c.ping() is None
+        c.close()
+
+    @pytest.mark.asyncio
+    async def test_api_ipv6(self):
+        c = await self.ipv6_client()
         assert await c.ping() is None
         c.close()
 

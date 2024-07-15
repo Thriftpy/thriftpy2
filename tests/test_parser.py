@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import threading
+
 import pytest
+
 from thriftpy2.thrift import TType
 from thriftpy2.parser import load, load_fp
-from thriftpy2.parser.exc import ThriftParserError, ThriftGrammerError
+from thriftpy2.parser.exc import ThriftParserError, ThriftGrammarError
 
 
 def test_comments():
@@ -39,6 +42,43 @@ def test_include():
 
 def test_cpp_include():
     load('parser-cases/cpp_include.thrift')
+
+
+@pytest.fixture
+def reset_parser_threadlocal():
+    def delattr_no_error(o, name):
+        try:
+            delattr(o, name)
+        except AttributeError:
+            pass
+
+    from thriftpy2.parser.parser import threadlocal
+    delattr_no_error(threadlocal, 'thrift_stack')
+    delattr_no_error(threadlocal, 'include_dirs_')
+    delattr_no_error(threadlocal, 'thrift_cache')
+    delattr_no_error(threadlocal, 'incomplete_type')
+    delattr_no_error(threadlocal, 'initialized')
+
+
+def test_load_in_sub_thread(reraise, reset_parser_threadlocal):
+    @reraise.wrap
+    def f():
+        load('addressbook.thrift')
+
+    t = threading.Thread(target=f)
+    t.start()
+    t.join()
+
+
+def test_load_fp_in_sub_thread(reraise, reset_parser_threadlocal):
+    @reraise.wrap
+    def f():
+        with open('container.thrift') as fp:
+            load_fp(fp, 'container_thrift')
+
+    t = threading.Thread(target=f)
+    t.start()
+    t.join()
 
 
 def test_tutorial():
@@ -204,9 +244,9 @@ def test_e_dead_include():
     assert 'Dead including' in str(excinfo.value)
 
 
-def test_e_grammer_error_at_eof():
-    with pytest.raises(ThriftGrammerError) as excinfo:
-        load('parser-cases/e_grammer_error_at_eof.thrift')
+def test_e_grammar_error_at_eof():
+    with pytest.raises(ThriftGrammarError) as excinfo:
+        load('parser-cases/e_grammar_error_at_eof.thrift')
     assert str(excinfo.value) == 'Grammar error at EOF'
 
 
@@ -217,28 +257,28 @@ def test_e_use_thrift_reserved_keywords():
 
 
 def test_e_duplicate_field_id_or_name():
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_field_id.thrift')
     assert 'field identifier/name has already been used' in str(excinfo.value)
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_field_name.thrift')
     assert 'field identifier/name has already been used' in str(excinfo.value)
 
 
 def test_e_duplicate_struct_exception_service():
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_struct.thrift')
     assert 'type is already defined in' in str(excinfo.value)
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_exception.thrift')
     assert 'type is already defined in' in str(excinfo.value)
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_service.thrift')
     assert 'type is already defined in' in str(excinfo.value)
 
 
 def test_e_duplicate_function():
-    with pytest.raises(ThriftGrammerError) as excinfo:
+    with pytest.raises(ThriftGrammarError) as excinfo:
         load('parser-cases/e_duplicate_function.thrift')
     assert 'function is already defined in' in str(excinfo.value)
 
