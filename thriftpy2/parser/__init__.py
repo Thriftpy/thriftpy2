@@ -165,11 +165,12 @@ def get_definition(thrift, name, lineno):
             return ref_type
 
 
-def load_fp(source, module_name):
+def load_fp(source, module_name=None):
     """Load thrift file like object as a module.
     """
     thrift = parse_fp(source, module_name)
-    sys.modules[module_name] = thrift
+    if module_name is not None:
+        sys.modules[module_name] = thrift
     return thrift
 
 
