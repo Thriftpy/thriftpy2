@@ -74,6 +74,9 @@ class CustomHeaderFactory(THttpHeaderFactory):
 
 @pytest.fixture(scope="module")
 def server(request):
+    import thriftpy2
+    addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
+                                          "addressbook.thrift"))
     server = make_server(addressbook.AddressBookService, Dispatcher(),
                          host="127.0.0.1", port=6080)
     ps = multiprocess.Process(target=server.serve)
