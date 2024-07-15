@@ -605,7 +605,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
     return thrift
 
 
-def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
+def parse_fp(source, module_name=None, lexer=None, parser=None, enable_cache=True):
     """Parse a file-like object to thrift module object, e.g.::
 
         >>> from thriftpy2.parser.parser import parse_fp
@@ -630,11 +630,11 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
         threadlocal.incomplete_type = CurrentIncompleteType()
         threadlocal.initialized = True
 
-    if not module_name.endswith('_thrift'):
+    if module_name is not None and not module_name.endswith('_thrift'):
         raise ThriftParserError('thriftpy2 can only generate module with '
                                 '\'_thrift\' suffix')
 
-    if enable_cache and module_name in threadlocal.thrift_cache:
+    if enable_cache and module_name is not None and module_name in threadlocal.thrift_cache:
         return threadlocal.thrift_cache[module_name]
 
     if not hasattr(source, 'read'):
@@ -648,7 +648,7 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
 
     data = source.read()
 
-    thrift = types.ModuleType(module_name)
+    thrift = types.ModuleType(module_name or '<unknown_thrift>')
     setattr(thrift, '__thrift_file__', None)
     threadlocal.thrift_stack.append(thrift)
     lexer.lineno = 1
