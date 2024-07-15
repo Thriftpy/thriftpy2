@@ -78,7 +78,7 @@ def client_two(timeout=3000):
                           socket_timeout=timeout, connect_timeout=timeout,
                           proto_factory=multiplexing_factory)
 
-@pytest.mark.skipif(sys.platform == "win32", "requires socket.UNIX")
+@pytest.mark.skipif(sys.platform == "win32", reason="Unix domain socket required")
 def test_multiplexed_server(server):
     with client_one() as c:
         assert c.doThingOne() is True
