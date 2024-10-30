@@ -41,12 +41,25 @@ def load(path,
     # add sub modules to sys.modules recursively
     if real_module:
         sys.modules[module_name] = thrift
-        sub_modules = thrift.__thrift_meta__["includes"][:]
-        while sub_modules:
-            module = sub_modules.pop()
-            if module not in sys.modules:
-                sys.modules[module.__name__] = module
-                sub_modules.extend(module.__thrift_meta__["includes"])
+        include_thrifts = list(zip(thrift.__thrift_meta__["includes"][:],
+                                   thrift.__thrift_meta__["sub_modules"][:]))
+        while include_thrifts:
+            include_thrift = include_thrifts.pop()
+            registered_thrift = sys.modules.get(include_thrift[1].__name__)
+            if registered_thrift is None:
+                sys.modules[include_thrift[1].__name__] = include_thrift[0]
+                if hasattr(include_thrift[0], "__thrift_meta__"):
+                    include_thrifts.extend(
+                        list(
+                            zip(
+                                include_thrift[0].__thrift_meta__["includes"],
+                                include_thrift[0].__thrift_meta__["sub_modules"])))
+            else:
+                if registered_thrift.__thrift_file__ != include_thrift[0].__thrift_file__:
+                    raise ThriftParserError(
+                        'Module name conflict between "%s" and "%s"' %
+                        (registered_thrift.__thrift_file__, include_thrift[0].__thrift_file__)
+                    )
     return thrift
 
 
