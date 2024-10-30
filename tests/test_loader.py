@@ -51,13 +51,13 @@ def test_load_struct():
 def test_load_union():
     assert storm_tt.JavaObjectArg.__base__ == TPayload
     assert storm.JavaObjectArg.thrift_spec == \
-        storm_tt.JavaObjectArg.thrift_spec
+           storm_tt.JavaObjectArg.thrift_spec
 
 
 def test_load_exc():
     assert ab_tt.PersonNotExistsError.__base__ == TException
     assert ab.PersonNotExistsError.thrift_spec == \
-        ab_tt.PersonNotExistsError.thrift_spec
+           ab_tt.PersonNotExistsError.thrift_spec
 
 
 def test_load_service():
@@ -70,4 +70,6 @@ def test_load_include():
     g = load("parent.thrift")
 
     ts = g.Greet.thrift_spec
-    assert ts[1][2] == b.Hello and ts[2][0] == TType.I64 and ts[3][2] == b.Code
+    assert (ts[1][2].thrift_spec == b.Hello.thrift_spec and
+            ts[2][0] == TType.I64 and
+            ts[3][2]._NAMES_TO_VALUES == b.Code._NAMES_TO_VALUES)

@@ -1,0 +1,1 @@
+include "included_2.thrift"
