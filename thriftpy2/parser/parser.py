@@ -75,10 +75,10 @@ def p_include(p):
             child_include_module_name = os.path.basename(path)
             if child_include_module_name.endswith(".thrift"):
                 child_include_module_name = child_include_module_name[:-7]
-            child.__name__ = child_include_module_name
+            setattr(child, '__name__', child_include_module_name)
+            setattr(child, '__thrift_module_name__', child_module_name)
             setattr(thrift, child.__name__, child)
             _add_thrift_meta('includes', child)
-            _add_thrift_meta('sub_modules', types.ModuleType(child_module_name))
             return
     raise ThriftParserError(('Couldn\'t include thrift %s in any '
                              'directories provided') % p[2])

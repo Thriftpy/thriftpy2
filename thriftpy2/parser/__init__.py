@@ -14,7 +14,7 @@ import sys
 import types
 
 from .parser import parse, parse_fp, threadlocal, _cast
-from .exc import ThriftParserError
+from .exc import ThriftParserError, ThriftModuleNameConflict
 from ..thrift import TPayloadMeta
 
 
@@ -42,21 +42,21 @@ def load(path,
     if real_module:
         sys.modules[module_name] = thrift
         include_thrifts = list(zip(thrift.__thrift_meta__["includes"][:],
-                                   thrift.__thrift_meta__["sub_modules"][:]))
+                                   [module.__thrift_module_name__ for module in thrift.__thrift_meta__["includes"][:]]))
         while include_thrifts:
             include_thrift = include_thrifts.pop()
-            registered_thrift = sys.modules.get(include_thrift[1].__name__)
+            registered_thrift = sys.modules.get(include_thrift[1])
             if registered_thrift is None:
-                sys.modules[include_thrift[1].__name__] = include_thrift[0]
+                sys.modules[include_thrift[1]] = include_thrift[0]
                 if hasattr(include_thrift[0], "__thrift_meta__"):
                     include_thrifts.extend(
                         list(
                             zip(
                                 include_thrift[0].__thrift_meta__["includes"],
-                                include_thrift[0].__thrift_meta__["sub_modules"])))
+                                [module.__thrift_module_name__ for module in include_thrift[0].__thrift_meta__["includes"]])))
             else:
                 if registered_thrift.__thrift_file__ != include_thrift[0].__thrift_file__:
-                    raise ThriftParserError(
+                    raise ThriftModuleNameConflict(
                         'Module name conflict between "%s" and "%s"' %
                         (registered_thrift.__thrift_file__, include_thrift[0].__thrift_file__)
                     )
