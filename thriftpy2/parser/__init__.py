@@ -41,24 +41,20 @@ def load(path,
     # add sub modules to sys.modules recursively
     if real_module:
         sys.modules[module_name] = thrift
-        include_thrifts = list(zip(thrift.__thrift_meta__["includes"][:],
-                                   [module.__thrift_module_name__ for module in thrift.__thrift_meta__["includes"][:]]))
+        include_thrifts = thrift.__thrift_meta__["includes"][:]
         while include_thrifts:
             include_thrift = include_thrifts.pop()
-            registered_thrift = sys.modules.get(include_thrift[1])
+            registered_thrift = sys.modules.get(include_thrift.__thrift_module_name__)
             if registered_thrift is None:
-                sys.modules[include_thrift[1]] = include_thrift[0]
-                if hasattr(include_thrift[0], "__thrift_meta__"):
+                sys.modules[include_thrift.__thrift_module_name__] = include_thrift
+                if hasattr(include_thrift, "__thrift_meta__"):
                     include_thrifts.extend(
-                        list(
-                            zip(
-                                include_thrift[0].__thrift_meta__["includes"],
-                                [module.__thrift_module_name__ for module in include_thrift[0].__thrift_meta__["includes"]])))
+                        include_thrift.__thrift_meta__["includes"][:])
             else:
-                if registered_thrift.__thrift_file__ != include_thrift[0].__thrift_file__:
+                if registered_thrift.__thrift_file__ != include_thrift.__thrift_file__:
                     raise ThriftModuleNameConflict(
                         'Module name conflict between "%s" and "%s"' %
-                        (registered_thrift.__thrift_file__, include_thrift[0].__thrift_file__)
+                        (registered_thrift.__thrift_file__, include_thrift.__thrift_file__)
                     )
     return thrift
 
