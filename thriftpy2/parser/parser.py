@@ -62,7 +62,21 @@ def p_include(p):
     for include_dir in replace_include_dirs:
         path = os.path.join(include_dir, p[2])
         if os.path.exists(path):
-            child = parse(path)
+            thrift_file_name_module = os.path.basename(thrift.__thrift_file__)
+            if thrift_file_name_module.endswith(".thrift"):
+                thrift_file_name_module = thrift_file_name_module[:-7] + "_thrift"
+            module_prefix = str(thrift.__name__).rstrip(thrift_file_name_module)
+
+            child_rel_path = os.path.relpath(str(path), os.path.dirname(thrift.__thrift_file__))
+            child_module_name = str(child_rel_path).replace(os.sep, ".").replace(".thrift", "_thrift")
+            child_module_name = module_prefix + child_module_name
+
+            child = parse(path, module_name=child_module_name)
+            child_include_module_name = os.path.basename(path)
+            if child_include_module_name.endswith(".thrift"):
+                child_include_module_name = child_include_module_name[:-7]
+            setattr(child, '__name__', child_include_module_name)
+            setattr(child, '__thrift_module_name__', child_module_name)
             setattr(thrift, child.__name__, child)
             _add_thrift_meta('includes', child)
             return
