@@ -281,7 +281,9 @@ class TAsyncServerSocket(object):
             _sock = socket.socket(self.socket_family, socket.SOCK_STREAM)
 
         _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        if hasattr(socket, "SO_REUSEPORT"):
+        # valid socket https://github.com/python/cpython/issues/128916
+        valid_family = (socket.AF_INET, socket.AF_INET6)
+        if _sock.family in valid_family and hasattr(socket, "SO_REUSEPORT"):
             try:
                 _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             except socket.error as err:
