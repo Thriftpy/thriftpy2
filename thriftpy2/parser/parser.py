@@ -348,7 +348,7 @@ def p_field_seq(p):
     '''field_seq : field sep field_seq
                  | field field_seq
                  |'''
-    threadlocal.incomplete_struct_fields = CurrentIncompleteStructFields()
+    threadlocal.field_seq_implicit_id = CurrentFieldSeqImplicitId()
     _parse_seq(p)
 
 
@@ -379,7 +379,7 @@ def p_field_id(p):
     '''field_id : INTCONSTANT ':'
                 |'''
     if len(p) == 1:
-        p[0] = threadlocal.incomplete_struct_fields.set_info((None, p.lineno(0)))
+        p[0] = threadlocal.field_seq_implicit_id.set_info((None, p.lineno(0)))
     else:
         p[0] = p[1]
 
@@ -409,7 +409,7 @@ class CurrentIncompleteType(dict):
         return self.index + 1
 
 
-class CurrentIncompleteStructFields(dict):
+class CurrentFieldSeqImplicitId(dict):
     def __init__(self, *args, **kwargs):
         self.index = -1
 
@@ -571,7 +571,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
         threadlocal.include_dirs_ = ['.']
         threadlocal.thrift_cache = {}
         threadlocal.incomplete_type = CurrentIncompleteType()
-        threadlocal.incomplete_struct_fields = CurrentIncompleteStructFields()
+        threadlocal.field_seq_implicit_id = CurrentFieldSeqImplicitId()
         threadlocal.initialized = True
 
     # dead include checking on current stack
@@ -658,7 +658,7 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
         threadlocal.include_dirs_ = ['.']
         threadlocal.thrift_cache = {}
         threadlocal.incomplete_type = CurrentIncompleteType()
-        threadlocal.incomplete_struct_fields = CurrentIncompleteStructFields()
+        threadlocal.field_seq_implicit_id = CurrentFieldSeqImplicitId()
         threadlocal.initialized = True
 
     if not module_name.endswith('_thrift'):
