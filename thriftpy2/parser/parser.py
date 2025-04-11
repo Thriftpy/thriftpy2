@@ -378,8 +378,7 @@ def p_field_id(p):
     '''field_id : INTCONSTANT ':'
                 |'''
     if len(p) == 1:
-        # TODO: How do we keep state to decrement this for every field missing and id?
-        p[0] = -1
+        p[0] = threadlocal.incomplete_type.set_info((None, p.lineno(0)))
     else:
         p[0] = p[1]
 

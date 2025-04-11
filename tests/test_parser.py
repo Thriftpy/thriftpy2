@@ -205,6 +205,7 @@ def test_structs():
     )
     assert thrift.Dog.thrift_spec == {
         -1: (TType.STRING, 'name', False),
+        1: (TType.I32, 'age', False),
         -2: (TType.STRING, 'nickname', False)
     }
 

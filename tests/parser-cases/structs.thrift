@@ -17,6 +17,7 @@ struct Email {
 
 struct Dog {
     string name;
+    1: i32 age;
     string nickname;
 }
 
