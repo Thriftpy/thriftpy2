@@ -14,8 +14,11 @@ exception NetworkError {
 }
 
 service EmailService {
-    void ping () 
+    void ping ()
         throws (1: NetworkError network_error)
     bool send(1: User recver, 2: User sender, 3: Email email)
         throws (1: NetworkError network_error)
+
+    void receive(Email recver, 12: User user)
+    void empty(Email recver)
 }
