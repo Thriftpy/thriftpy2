@@ -21,6 +21,10 @@ struct Dog {
     string nickname;
 }
 
+struct Cat {
+    string name;
+}
+
 
 const Email email = {'subject': 'Hello', 'content': 'Long time no see',
     'sender': {'name': 'jack', 'address': 'jack@gmail.com'},

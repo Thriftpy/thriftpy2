@@ -208,6 +208,9 @@ def test_structs():
         1: (TType.I32, 'age', False),
         -2: (TType.STRING, 'nickname', False)
     }
+    assert thrift.Cat.thrift_spec == {
+        -1: (TType.STRING, 'name', False),
+    }
 
 
 def test_e_structs():
