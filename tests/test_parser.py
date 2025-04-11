@@ -203,6 +203,10 @@ def test_structs():
         recver=thrift.Person(name='chao', address='chao@gmail.com'),
         metadata=thrift.MetaData(tags=set())
     )
+    assert thrift.Dog.thrift_spec == {
+        -1: (TType.STRING, 'name', False),
+        -2: (TType.STRING, 'nickname', False)
+    }
 
 
 def test_e_structs():

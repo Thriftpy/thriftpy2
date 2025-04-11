@@ -15,6 +15,11 @@ struct Email {
     5: MetaData metadata
 }
 
+struct Dog {
+    string name;
+    string nickname;
+}
+
 
 const Email email = {'subject': 'Hello', 'content': 'Long time no see',
     'sender': {'name': 'jack', 'address': 'jack@gmail.com'},

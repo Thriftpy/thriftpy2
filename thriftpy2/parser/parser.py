@@ -375,8 +375,13 @@ def p_field(p):
 
 
 def p_field_id(p):
-    '''field_id : INTCONSTANT ':' '''
-    p[0] = p[1]
+    '''field_id : INTCONSTANT ':'
+                |'''
+    if len(p) == 1:
+        # TODO: How do we keep state to decrement this for every field missing and id?
+        p[0] = -1
+    else:
+        p[0] = p[1]
 
 
 def p_field_req(p):
