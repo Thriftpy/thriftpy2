@@ -379,7 +379,7 @@ def p_field_id(p):
     '''field_id : INTCONSTANT ':'
                 |'''
     if len(p) == 1:
-        p[0] = threadlocal.field_seq_implicit_id.set_info((None, p.lineno(0)))
+        p[0] = threadlocal.field_seq_implicit_id.get_id()
     else:
         p[0] = p[1]
 
@@ -409,12 +409,11 @@ class CurrentIncompleteType(dict):
         return self.index + 1
 
 
-class CurrentFieldSeqImplicitId(dict):
+class CurrentFieldSeqImplicitId(object):
     def __init__(self, *args, **kwargs):
         self.index = -1
 
-    def set_info(self, info):
-        self[self.index] = info
+    def get_id(self):
         self.index -= 1
         return self.index + 1
 
