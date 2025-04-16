@@ -38,10 +38,8 @@ _imp = ThriftImporter()
 
 
 def install_import_hook():
-    global _imp
     sys.meta_path[:] = [x for x in sys.meta_path if _imp is not x] + [_imp]
 
 
 def remove_import_hook():
-    global _imp
     sys.meta_path[:] = [x for x in sys.meta_path if _imp is not x]
