@@ -72,7 +72,7 @@ class FramedTransportTestCase(TestCase):
         sock.setblocking(0)
         self.port = sock.getsockname()[-1]
         self.server_thread = threading.Thread(target=self.listen)
-        self.server_thread.setDaemon(True)
+        self.server_thread.daemon = True
         self.server_thread.start()
 
     def listen(self):
