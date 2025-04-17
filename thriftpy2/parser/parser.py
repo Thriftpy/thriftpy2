@@ -410,7 +410,7 @@ class CurrentIncompleteType(dict):
 
 
 class CurrentFieldSeqImplicitId(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.index = -1
 
     def get_id(self):
