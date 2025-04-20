@@ -19,7 +19,6 @@ jobs:
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel==2.23.2
 
-
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
@@ -27,8 +26,6 @@ jobs:
           CIBW_SKIP: pp*
           # Only build supported versions of Python for wheels.
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9"
-
-
 
       - uses: actions/upload-artifact@v4
         with:
