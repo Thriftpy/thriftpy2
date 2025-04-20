@@ -23,8 +23,8 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          # Python 3.8 with macOS AArch64 keeps falling when build, don't know why.
-          CIBW_SKIP: cp38-macosx_arm64
+          # Disable building PyPy wheels on all platforms because it's pure-python.
+          CIBW_SKIP: pp*
 
       - uses: actions/upload-artifact@v4
         with:
