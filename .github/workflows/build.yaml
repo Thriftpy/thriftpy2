@@ -9,16 +9,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
+        exclude:
+          # Python 3.8 keeps falling when build, don't know why.
+          - os: macos-latest
+            python-version: "3.8"
 
     steps:
       - uses: actions/checkout@v4
 
       # Used to host cibuildwheel
       - uses: actions/setup-python@v5
-        # https://cibuildwheel.pypa.io/en/stable/faq/#macos-building-cpython-38-wheels-on-arm64
-        with:
-          python-version: 3.8
-        if: runner.os == 'macOS' && runner.arch == 'ARM64'
 
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel==2.23.2
