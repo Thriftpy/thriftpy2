@@ -9,9 +9,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
-        exclude:
-          - os: macos-latest
-            python-version: "3.8"
 
     steps:
       - uses: actions/checkout@v4
