@@ -10,7 +10,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-latest]
         exclude:
-          # Python 3.8 keeps falling when build, don't know why.
           - os: macos-latest
             python-version: "3.8"
 
@@ -26,6 +25,9 @@ jobs:
 
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          # Python 3.8 with macOS AArch64 keeps falling when build, don't know why.
+          CIBW_SKIP: cp38-macosx_arm64
 
       - uses: actions/upload-artifact@v4
         with:
