@@ -25,6 +25,10 @@ jobs:
         env:
           # Disable building PyPy wheels on all platforms because it's pure-python.
           CIBW_SKIP: pp*
+          # Only build supported versions of Python for wheels.
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9"
+
+
 
       - uses: actions/upload-artifact@v4
         with:
