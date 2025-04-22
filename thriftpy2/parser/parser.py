@@ -410,15 +410,6 @@ class CurrentIncompleteType(dict):
         return self.index + 1
 
 
-class CurrentFieldSeqImplicitId(object):
-    def __init__(self):
-        self.index = -1
-
-    def get_id(self):
-        self.index -= 1
-        return self.index + 1
-
-
 def p_ref_type(p):
     '''ref_type : IDENTIFIER'''
     ref_type = threadlocal.thrift_stack[-1]
