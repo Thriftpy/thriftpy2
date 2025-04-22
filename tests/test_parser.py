@@ -379,5 +379,40 @@ def test_nest_incomplete_type():
     }
 
 
+
+
+def test_namespace_in_sub_thread(reraise, reset_parser_threadlocal):
+    @reraise.wrap
+    def f():
+        thrift = load('parser-cases/tutorial.thrift')
+        assert 'namespaces' in thrift.__thrift_meta__
+        assert thrift.__thrift_meta__['namespaces']['cpp'] == 'tutorial'
+        assert thrift.__thrift_meta__['namespaces']['java'] == 'tutorial'
+        assert thrift.__thrift_meta__['namespaces']['php'] == 'tutorial'
+        assert thrift.__thrift_meta__['namespaces']['perl'] == 'tutorial'
+        assert thrift.__thrift_meta__['namespaces']['haxe'] == 'tutorial'
+        assert thrift.__thrift_meta__['namespaces']['d'] == 'tutorial'
+
+    t = threading.Thread(target=f)
+    t.start()
+    t.join()
+
+
+
+def test_namespaces():
+    thrift = load('parser-cases/tutorial.thrift', include_dirs=['./parser-cases'])
+    
+    # Verify namespaces are correctly stored in __thrift_meta__
+    assert 'namespaces' in thrift.__thrift_meta__
+    namespaces = thrift.__thrift_meta__['namespaces']
+    
+    # Check all namespace declarations from tutorial.thrift
+    assert namespaces['cpp'] == 'tutorial'
+    assert namespaces['d'] == 'tutorial'
+    assert namespaces['java'] == 'tutorial'
+    assert namespaces['php'] == 'tutorial'
+    assert namespaces['perl'] == 'tutorial'
+    assert namespaces['haxe'] == 'tutorial'
+
 def test_issue_121():
     load('parser-cases/issue_121.thrift')

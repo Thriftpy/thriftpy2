@@ -90,9 +90,23 @@ def p_cpp_include(p):
 
 def p_namespace(p):
     '''namespace : NAMESPACE namespace_scope IDENTIFIER'''
-    # namespace is useless in thriftpy2
-    # if p[2] == 'py' or p[2] == '*':
-    #     setattr(threadlocal.thrift_stack[-1], '__name__', p[3])
+    thrift = threadlocal.thrift_stack[-1]
+    scope = p[2]      # language identifier, e.g. 'py', 'java', 'cpp'
+    namespace = p[3]  # namespace value, e.g. 'tutorial', 'shared'
+    
+    # Initialize __thrift_meta__ if not exists
+    if not hasattr(thrift, '__thrift_meta__'):
+        meta = collections.defaultdict(list)
+        setattr(thrift, '__thrift_meta__', meta)
+    else:
+        meta = getattr(thrift, '__thrift_meta__')
+    
+    # Initialize 'namespaces' as dict if not exists
+    if 'namespaces' not in meta:
+        meta['namespaces'] = {}
+    
+    # Store namespace information
+    meta['namespaces'][scope] = namespace
 
 
 def p_namespace_scope(p):
