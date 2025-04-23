@@ -203,6 +203,14 @@ def test_structs():
         recver=thrift.Person(name='chao', address='chao@gmail.com'),
         metadata=thrift.MetaData(tags=set())
     )
+    assert thrift.Dog.thrift_spec == {
+        -1: (TType.STRING, 'name', False),
+        1: (TType.I32, 'age', False),
+        -2: (TType.STRING, 'nickname', False)
+    }
+    assert thrift.Cat.thrift_spec == {
+        -1: (TType.STRING, 'name', False),
+    }
 
 
 def test_e_structs():
@@ -219,7 +227,7 @@ def test_e_structs():
 
 def test_service():
     thrift = load('parser-cases/service.thrift')
-    assert thrift.EmailService.thrift_services == ['ping', 'send']
+    assert thrift.EmailService.thrift_services == ['ping', 'send', 'receive', 'empty']
     assert thrift.EmailService.ping_args.thrift_spec == {}
     assert thrift.EmailService.ping_args.default_spec == []
     assert thrift.EmailService.ping_result.thrift_spec == {
@@ -243,6 +251,13 @@ def test_service():
     assert thrift.EmailService.send_result.default_spec == [
         ('success', None), ('network_error', None)
     ]
+    assert thrift.EmailService.receive_args.thrift_spec == {
+        -1: (TType.STRUCT, 'recver', thrift.Email, False),
+        12: (TType.STRUCT, 'user', thrift.User, False),
+    }
+    assert thrift.EmailService.empty_args.thrift_spec == {
+        -1: (TType.STRUCT, 'recver', thrift.Email, False),
+    }
 
 
 def test_service_extends():

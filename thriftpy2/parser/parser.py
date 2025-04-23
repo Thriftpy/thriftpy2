@@ -8,6 +8,7 @@ IDL Ref:
 from __future__ import absolute_import
 
 import collections
+import itertools
 import os
 import threading
 import types
@@ -348,6 +349,7 @@ def p_field_seq(p):
     '''field_seq : field sep field_seq
                  | field field_seq
                  |'''
+    threadlocal.field_seq_implicit_id = itertools.count(start=-1, step=-1)
     _parse_seq(p)
 
 
@@ -375,8 +377,12 @@ def p_field(p):
 
 
 def p_field_id(p):
-    '''field_id : INTCONSTANT ':' '''
-    p[0] = p[1]
+    '''field_id : INTCONSTANT ':'
+                |'''
+    if len(p) == 1:
+        p[0] = next(threadlocal.field_seq_implicit_id)
+    else:
+        p[0] = p[1]
 
 
 def p_field_req(p):
@@ -556,6 +562,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
         threadlocal.include_dirs_ = ['.']
         threadlocal.thrift_cache = {}
         threadlocal.incomplete_type = CurrentIncompleteType()
+        threadlocal.field_seq_implicit_id = itertools.count(start=-1, step=-1)
         threadlocal.initialized = True
 
     # dead include checking on current stack
@@ -642,6 +649,7 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
         threadlocal.include_dirs_ = ['.']
         threadlocal.thrift_cache = {}
         threadlocal.incomplete_type = CurrentIncompleteType()
+        threadlocal.field_seq_implicit_id = itertools.count(start=-1, step=-1)
         threadlocal.initialized = True
 
     if not module_name.endswith('_thrift'):
