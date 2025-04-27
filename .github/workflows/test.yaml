@@ -20,8 +20,6 @@ jobs:
         os: ["ubuntu-24.04", "windows-latest"]
         include:
           - os: "windows-latest"
-            python-version: "3.6"
-          - os: "windows-latest"
             python-version: "3.7"
 
     steps:
