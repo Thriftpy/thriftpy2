@@ -28,9 +28,9 @@ threadlocal = threading.local()
 def p_error(p):
     thrift = threadlocal.thrift_stack[-1]
     if p is None:
-        raise ThriftGrammarError('Grammar error at EOF of file path in %s' % thrift.__thrift_file__)
+        raise ThriftGrammarError("Grammar error at EOF of the file '%s'" % thrift.__thrift_file__)
 
-    raise ThriftGrammarError('Grammar error %r at line %d of file path in %s, ' %
+    raise ThriftGrammarError("Grammar error %r at line %d of the file '%s'" %
                              (p.value, p.lineno, thrift.__thrift_file__))
 
 
