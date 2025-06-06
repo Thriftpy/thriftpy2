@@ -18,12 +18,11 @@ v3            test_tracked_client_v3_native_server test_tracked_client_v3_tracke
 from __future__ import absolute_import
 
 import contextlib
-import multiprocessing
+import multiprocess
 import os
 import pickle
 import random
 import socket
-import sys
 import tempfile
 import time
 
@@ -56,11 +55,7 @@ try:
 except ImportError:
     pass
 else:
-    cleanup_on_sigterm()
-
-
-if sys.platform == "win32":
-    pytest.skip("requires fork", allow_module_level=True)
+    cleanup_on_sigterm()  
 
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
@@ -191,7 +186,7 @@ def gen_server(port, tracker=tracker, processor=TTrackedProcessor):
     server = TSampleServer(processor, server_socket,
                            prot_factory=TBinaryProtocolFactory(),
                            trans_factory=TBufferedTransportFactory())
-    ps = multiprocessing.Process(target=server.serve)
+    ps = multiprocess.Process(target=server.serve)
     ps.start()
     return ps, server
 
