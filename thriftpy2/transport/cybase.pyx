@@ -1,3 +1,5 @@
+# cython: freethreading_compatible = True
+
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy, memmove
 

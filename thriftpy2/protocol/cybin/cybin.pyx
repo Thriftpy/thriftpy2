@@ -1,3 +1,5 @@
+# cython: freethreading_compatible = True
+
 import sys
 
 from libc.stdlib cimport free, malloc

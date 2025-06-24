@@ -1,3 +1,5 @@
+# cython: freethreading_compatible = True
+
 from libc.string cimport memcpy
 from libc.stdlib cimport malloc, free
 from thriftpy2.transport.cybase cimport (

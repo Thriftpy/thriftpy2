@@ -1,3 +1,5 @@
+# cython: freethreading_compatible = True
+
 from thriftpy2.transport.cybase cimport (
     TCyBuffer,
     CyTransportBase,

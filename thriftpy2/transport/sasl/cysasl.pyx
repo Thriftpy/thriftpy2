@@ -1,3 +1,5 @@
+# cython: freethreading_compatible = True
+
 import struct
 
 from thriftpy2.transport.cybase cimport (
