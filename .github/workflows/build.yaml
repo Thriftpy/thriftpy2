@@ -28,7 +28,6 @@ jobs:
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9"
           # Enable freethreading wheels.
           CIBW_ENABLE: cpython-freethreading
-          CIBW_BUILD: cp313t-${{ matrix.buildplat }}
 
       - uses: actions/upload-artifact@v4
         with:
