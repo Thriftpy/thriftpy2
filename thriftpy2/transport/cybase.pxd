@@ -1,3 +1,5 @@
+# cython: freethreading_compatible = True
+
 cdef enum:
     DEFAULT_BUFFER = 4096
     STACK_STRING_LEN = 4096
