@@ -18,7 +18,7 @@ ThriftPy2
     :target: https://pypi.org/project/thriftpy2/
 
 
-ThriftPy: https://github.com/eleme/thriftpy has been deprecated, ThriftPy2 aims to provide long term support.
+ThriftPy: https://github.com/eleme/thriftpy has been deprecated. ThriftPy2 aims to provide long-term support.
 
 
 Migrate from Thriftpy?
@@ -37,26 +37,21 @@ That's it! thriftpy2 is fully compatible with thriftpy.
 Installation
 ============
 
-Install with pip.
+Install with pip:
 
 .. code:: bash
 
     $ pip install thriftpy2
 
-You may also install cython first to build cython extension locally.
-
-.. code:: bash
-
-    $ pip install cython thriftpy2
 
 
 Code Demo
 =========
 
-ThriftPy make it super easy to write server/client code with thrift. Let's
-checkout this simple pingpong service demo.
+ThriftPy makes it super easy to write server/client code with Thrift. Let's
+check out this simple pingpong service demo.
 
-We need a 'pingpong.thrift' file:
+We need a `pingpong.thrift` file:
 
 ::
 
@@ -138,57 +133,57 @@ And it also supports asyncio on Python 3.5 or later:
 
 See, it's that easy!
 
-You can refer to 'examples' and 'tests' directory in source code for more
+You can refer to the `examples` and `tests` directories in the source code for more
 usage examples.
 
 
 Features
 ========
 
-Currently ThriftPy have these features (also advantages over the upstream
-python lib):
+Currently, ThriftPy has these features (also advantages over the upstream
+Python lib):
 
 - Python 3.6+ and PyPy3.
 
-- Pure python implementation. No longer need to compile & install the 'thrift'
-  package. All you need is thriftpy2 and thrift file.
+- Pure Python implementation. You no longer need to compile and install the `thrift`
+  package. All you need is thriftpy2 and a thrift file.
 
 - Compatible with Apache Thrift. You can use ThriftPy together with the
-  official implementation servers and clients, such as a upstream server with
-  a thriftpy2 client or the opposite.
+  official implementation servers and clients, such as an upstream server with
+  a thriftpy2 client or vice-versa.
 
   Currently implemented protocols and transports:
 
-  * binary protocol (python and cython)
+  * binary protocol (Python and Cython)
 
-  * compact protocol (python and cython)
+  * compact protocol (Python and Cython)
 
-  * json protocol
+  * JSON protocol
 
-  * Apache JSON protocol compatible with apache thrift distribution's JSON protocol.
+  * Apache JSON protocol compatible with the Apache Thrift distribution's JSON protocol.
     Simply do ``from thriftpy2.protocol import TApacheJSONProtocolFactory`` and pass
     this to the ``proto_factory`` argument where appropriate.
 
-  * buffered transport (python & cython)
+  * buffered transport (Python & Cython)
 
   * framed transport
 
-  * tornado server and client (with tornado 4.0)
+  * Tornado server and client (with Tornado 4.0)
 
-  * http server and client
+  * HTTP server and client
 
-  * asyncio support (python 3.5 or later)
+  * asyncio support (Python 3.5 or later)
 
-- Can directly load thrift file as module, the sdk code will be generated on
+- Can directly load a thrift file as a module, the client code will be generated on
   the fly.
 
   For example, ``pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")``
-  will load 'pingpong.thrift' as 'pingpong_thrift' module.
+  will load `pingpong.thrift` as the `pingpong_thrift` module.
 
-  Or, when import hook enabled by ``thriftpy2.install_import_hook()``, you can
-  directly use ``import pingpong_thrift`` to import the 'pingpong.thrift' file
-  as module, you may also use ``from pingpong_thrift import PingService`` to
-  import specific object from the thrift module.
+  Or, when the import hook is enabled by ``thriftpy2.install_import_hook()``, you can
+  directly use ``import pingpong_thrift`` to import the `pingpong.thrift` file
+  as a module. You may also use ``from pingpong_thrift import PingService`` to
+  import a specific object from the thrift module.
 
 - Easy RPC server/client setup.
 
@@ -199,11 +194,11 @@ Contribute
 
 1. Fork the repo and make changes.
 
-2. Write a test which shows a bug was fixed or the feature works as expected.
+2. Write a test that shows a bug was fixed or the feature works as expected.
 
 3. Make sure ``tox`` tests succeed.
 
-4. Send pull request.
+4. Send a pull request.
 
 
 Contributors
@@ -222,4 +217,4 @@ Sponsors:
 Changelog
 =========
 
-https://github.com/Thriftpy/thriftpy2/blob/master/CHANGES.rst
+https://github.com/Thriftpy/thriftpy2/releases
