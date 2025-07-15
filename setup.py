@@ -3,14 +3,17 @@
 
 import sys
 import platform
-import tomli
+if sys.version_info < (3, 11):
+    import tomli as tomllib
+else:
+    import tomllib
 
 from os.path import join, dirname
 from setuptools import setup, find_packages, Extension
 
 
 with open(join(dirname(__file__), 'pyproject.toml'), "rb") as f:
-    meta = tomli.load(f)
+    meta = tomllib.load(f)
     install_requires = meta["project"]["dependencies"]
     dev_requires = meta["project"]["optional-dependencies"]["dev"]
     tornado_requires = meta["project"]["optional-dependencies"]["tornado"]
