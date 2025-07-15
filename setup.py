@@ -3,16 +3,17 @@
 
 import sys
 import platform
-import toml
+import tomli
 
 from os.path import join, dirname
 from setuptools import setup, find_packages, Extension
 
 
-meta = toml.load(join(dirname(__file__), 'pyproject.toml') )
-install_requires = meta["project"]["dependencies"]
-dev_requires = meta["project"]["optional-dependencies"]["dev"]
-tornado_requires = meta["project"]["optional-dependencies"]["tornado"]
+with open(join(dirname(__file__), 'pyproject.toml'), "rb") as f:
+    meta = tomli.load(f)
+    install_requires = meta["project"]["dependencies"]
+    dev_requires = meta["project"]["optional-dependencies"]["dev"]
+    tornado_requires = meta["project"]["optional-dependencies"]["tornado"]
 
 try:
     from tornado import version as tornado_version
