@@ -1,5 +1,9 @@
 [build-system]
-requires = ["setuptools>=68", "cython>=0.28.4,<4", "toml"]
+requires = [
+    "setuptools>=68",
+    "cython>=0.28.4,<4",
+    "tomli; python_version<'3.11'"
+]
 
 [project]
 name = "thriftpy2"
