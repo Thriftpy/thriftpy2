@@ -1,6 +1,9 @@
 Changelog
 =========
 
+.. note::
+   Future release notes will be available at https://github.com/Thriftpy/thriftpy2/releases
+
 0.5.x
 ~~~~~
 
