@@ -31,7 +31,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest pytest-asyncio cython
+        pip install -e ".[dev]"
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -40,6 +40,5 @@ jobs:
         flake8 thriftpy2 --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore C901
     - name: Test with pytest
       run: |
-        pip install -e ".[dev]"
         cd tests
-        pytest
+        pytest -v
