@@ -21,6 +21,7 @@ import logging
 import socket
 import struct
 import urllib
+import warnings
 from contextlib import contextmanager
 from datetime import timedelta
 from io import BytesIO
@@ -44,6 +45,14 @@ except ImportError:
                            '"toro"'.format(tornado_version))
 
 logger = logging.getLogger(__name__)
+
+
+warnings.warn(
+    "tornado support is deprecated and will be removed in a future version. "
+    "Consider using asyncio-based alternatives instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 class TTornadoStreamTransport(TTransportBase):
