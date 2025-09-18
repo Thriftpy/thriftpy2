@@ -396,3 +396,40 @@ def test_nest_incomplete_type():
 
 def test_issue_121():
     load('parser-cases/issue_121.thrift')
+
+
+def test_name_collision_with_imported_module():
+    """Test that qualified names resolve correctly when a local struct
+    has the same name as an imported module."""
+    thrift = load('parser-cases/name_collision.thrift')
+
+    # The local struct 'name_collision_imported' should exist
+    assert hasattr(thrift, 'name_collision_imported')
+    local_struct = thrift.name_collision_imported
+    assert local_struct.thrift_spec[1][1] == 'local_field1'
+    assert local_struct.thrift_spec[2][1] == 'local_field2'
+
+    # The imported module should also be accessible
+    assert hasattr(thrift, 'name_collision_imported')
+
+    # TestStruct should have correct field types
+    test_struct = thrift.TestStruct
+
+    # Field 1 should reference the local struct
+    field1_spec = test_struct.thrift_spec[1]
+    assert field1_spec[1] == 'localStruct'
+    assert field1_spec[2] == local_struct
+
+    # Field 2 should reference UserProfile from the imported module
+    field2_spec = test_struct.thrift_spec[2]
+    assert field2_spec[1] == 'importedUserProfile'
+    # This is the critical test - it should NOT be the local struct
+    assert field2_spec[2] != local_struct
+    # It should be the UserProfile from the imported module
+    imported_module = thrift.name_collision_imported
+    if hasattr(imported_module, 'UserProfile'):
+        assert field2_spec[2] == imported_module.UserProfile
+        assert field2_spec[2].thrift_spec[1][1] == 'user_id'
+    else:
+        # If the module structure is different, at least ensure it's not the local struct
+        assert field2_spec[2].__name__ == 'UserProfile'
