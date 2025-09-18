@@ -406,30 +406,30 @@ def test_name_collision_with_imported_module():
     # The local struct 'name_collision_imported' should exist
     assert hasattr(thrift, 'name_collision_imported')
     local_struct = thrift.name_collision_imported
+
+    # Verify it's the local struct with the expected fields
     assert local_struct.thrift_spec[1][1] == 'local_field1'
     assert local_struct.thrift_spec[2][1] == 'local_field2'
 
-    # The imported module should also be accessible
-    assert hasattr(thrift, 'name_collision_imported')
-
-    # TestStruct should have correct field types
+    # TestStruct should exist with two fields
     test_struct = thrift.TestStruct
+    assert len(test_struct.thrift_spec) == 2
 
-    # Field 1 should reference the local struct
+    # Field 1: should reference the local struct 'name_collision_imported'
     field1_spec = test_struct.thrift_spec[1]
     assert field1_spec[1] == 'localStruct'
     assert field1_spec[2] == local_struct
 
-    # Field 2 should reference UserProfile from the imported module
+    # Field 2: should reference UserProfile from the imported module
     field2_spec = test_struct.thrift_spec[2]
     assert field2_spec[1] == 'importedUserProfile'
-    # This is the critical test - it should NOT be the local struct
+
+    # Critical assertions: field2 must NOT be the local struct
     assert field2_spec[2] != local_struct
-    # It should be the UserProfile from the imported module
-    imported_module = thrift.name_collision_imported
-    if hasattr(imported_module, 'UserProfile'):
-        assert field2_spec[2] == imported_module.UserProfile
-        assert field2_spec[2].thrift_spec[1][1] == 'user_id'
-    else:
-        # If the module structure is different, at least ensure it's not the local struct
-        assert field2_spec[2].__name__ == 'UserProfile'
+
+    # It must be UserProfile with the correct structure
+    user_profile_type = field2_spec[2]
+    assert user_profile_type.__name__ == 'UserProfile'
+    assert user_profile_type.thrift_spec[1][1] == 'user_id'
+    assert user_profile_type.thrift_spec[2][1] == 'username'
+    assert user_profile_type.thrift_spec[3][1] == 'email'
