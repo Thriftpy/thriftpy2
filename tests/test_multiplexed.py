@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-
-import multiprocessing
-import os
 import sys
+
+import multiprocess
+import os
 import time
 
 import pytest
@@ -18,10 +18,6 @@ from thriftpy2.rpc import client_context
 from thriftpy2.server import TThreadedServer
 from thriftpy2.thrift import TProcessor, TMultiplexedProcessor
 from thriftpy2.transport import TBufferedTransportFactory, TServerSocket
-
-
-if sys.platform == "win32":
-    pytest.skip("requires fork", allow_module_level=True)
 
 
 mux = thriftpy2.load(os.path.join(os.path.dirname(__file__),
@@ -51,7 +47,7 @@ def server(request):
     _server = TThreadedServer(mux_proc, TServerSocket(unix_socket=sock_path),
                               iprot_factory=TBinaryProtocolFactory(),
                               itrans_factory=TBufferedTransportFactory())
-    ps = multiprocessing.Process(target=_server.serve)
+    ps = multiprocess.Process(target=_server.serve)
     ps.start()
     time.sleep(0.1)
 
@@ -82,7 +78,7 @@ def client_two(timeout=3000):
                           socket_timeout=timeout, connect_timeout=timeout,
                           proto_factory=multiplexing_factory)
 
-
+@pytest.mark.skipif(sys.platform == "win32", reason="Unix domain socket required")
 def test_multiplexed_server(server):
     with client_one() as c:
         assert c.doThingOne() is True
