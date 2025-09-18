@@ -213,7 +213,7 @@ def p_typedef(p):
 
 def p_enum(p):  # noqa
     '''enum : ENUM IDENTIFIER '{' enum_seq '}' type_annotations'''
-    val = _make_enum(p[2], p[4])
+    val = _make_enum(p[2], p[4], lineno=p.lineno(2))
     setattr(threadlocal.thrift_stack[-1], p[2], val)
     _add_thrift_meta('enums', val)
 
@@ -243,7 +243,7 @@ def p_struct(p):
 
 def p_seen_struct(p):
     '''seen_struct : STRUCT IDENTIFIER '''
-    val = _make_empty_struct(p[2])
+    val = _make_empty_struct(p[2], lineno=p.lineno(2))
     setattr(threadlocal.thrift_stack[-1], p[2], val)
     p[0] = val
 
@@ -256,14 +256,14 @@ def p_union(p):
 
 def p_seen_union(p):
     '''seen_union : UNION IDENTIFIER '''
-    val = _make_empty_struct(p[2])
+    val = _make_empty_struct(p[2], lineno=p.lineno(2))
     setattr(threadlocal.thrift_stack[-1], p[2], val)
     p[0] = val
 
 
 def p_exception(p):
     '''exception : EXCEPTION IDENTIFIER '{' field_seq '}' type_annotations '''
-    val = _make_struct(p[2], p[4], base_cls=TException)
+    val = _make_struct(p[2], p[4], base_cls=TException, lineno=p.lineno(2))
     setattr(threadlocal.thrift_stack[-1], p[2], val)
     _add_thrift_meta('exceptions', val)
 
@@ -290,7 +290,7 @@ def p_simple_service(p):
     else:
         extends = None
 
-    val = _make_service(p[2], p[len(p) - 2], extends)
+    val = _make_service(p[2], p[len(p) - 2], extends, lineno=p.lineno(2))
     setattr(thrift, p[2], val)
     _add_thrift_meta('services', val)
 
@@ -860,10 +860,13 @@ def _cast_struct(t):   # struct/exception/union
     return __cast_struct
 
 
-def _make_enum(name, kvs):
+def _make_enum(name, kvs, lineno=None):
+    thrift = threadlocal.thrift_stack[-1]
     attrs = {
-        '__module__': threadlocal.thrift_stack[-1].__name__,
-        '_ttype': TType.I32
+        '__module__': thrift.__name__,
+        '_ttype': TType.I32,
+        '__thrift_lineno__': lineno,
+        '__thrift_file__': getattr(thrift, '__thrift_file__', None)
     }
     cls = type(name, (object, ), attrs)
 
@@ -887,10 +890,13 @@ def _make_enum(name, kvs):
     return cls
 
 
-def _make_empty_struct(name, ttype=TType.STRUCT, base_cls=TPayload):
+def _make_empty_struct(name, ttype=TType.STRUCT, base_cls=TPayload, lineno=None):
+    thrift = threadlocal.thrift_stack[-1]
     attrs = {
-        '__module__': threadlocal.thrift_stack[-1].__name__,
-        '_ttype': ttype
+        '__module__': thrift.__name__,
+        '_ttype': ttype,
+        '__thrift_lineno__': lineno,
+        '__thrift_file__': getattr(thrift, '__thrift_file__', None)
     }
     return type(name, (base_cls, ), attrs)
 
@@ -918,16 +924,21 @@ def _fill_in_struct(cls, fields, _gen_init=True):
 
 
 def _make_struct(name, fields, ttype=TType.STRUCT, base_cls=TPayload,
-                 _gen_init=True):
-    cls = _make_empty_struct(name, ttype=ttype, base_cls=base_cls)
+                 _gen_init=True, lineno=None):
+    cls = _make_empty_struct(name, ttype=ttype, base_cls=base_cls, lineno=lineno)
     return _fill_in_struct(cls, fields, _gen_init=_gen_init)
 
 
-def _make_service(name, funcs, extends):
+def _make_service(name, funcs, extends, lineno=None):
     if extends is None:
         extends = object
 
-    attrs = {'__module__': threadlocal.thrift_stack[-1].__name__}
+    thrift = threadlocal.thrift_stack[-1]
+    attrs = {
+        '__module__': thrift.__name__,
+        '__thrift_lineno__': lineno,
+        '__thrift_file__': getattr(thrift, '__thrift_file__', None)
+    }
     cls = type(name, (extends, ), attrs)
     thrift_services = []
 
