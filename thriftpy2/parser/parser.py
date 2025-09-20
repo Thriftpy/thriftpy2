@@ -230,9 +230,9 @@ def p_enum_item(p):
                  | IDENTIFIER type_annotations
                  |'''
     if len(p) == 5:
-        p[0] = [p[1], p[3]]
+        p[0] = [p[1], p[3], p.lineno(1)]
     elif len(p) == 3:
-        p[0] = [p[1], None]
+        p[0] = [p[1], None, p.lineno(1)]
 
 
 def p_struct(p):
@@ -318,7 +318,7 @@ def p_simple_function(p):
     else:
         throws = p[len(p) - 1]
 
-    p[0] = [oneway, p[base + 1], p[base + 2], p[base + 4], throws]
+    p[0] = [oneway, p[base + 1], p[base + 2], p[base + 4], throws, p.lineno(base + 2)]
 
 
 def p_function(p):
@@ -873,6 +873,8 @@ def _make_enum(name, kvs, lineno=None):
     _values_to_names = {}
     _names_to_values = {}
 
+    _field_linenos = {}
+
     if kvs:
         val = kvs[0][1]
         if val is None:
@@ -881,12 +883,14 @@ def _make_enum(name, kvs, lineno=None):
             if item[1] is None:
                 item[1] = val + 1
             val = item[1]
-        for key, val in kvs:
+        for key, val, field_lineno in kvs:
             setattr(cls, key, val)
             _values_to_names[val] = key
             _names_to_values[key] = val
+            _field_linenos[key] = field_lineno
     setattr(cls, '_VALUES_TO_NAMES', _values_to_names)
     setattr(cls, '_NAMES_TO_VALUES', _names_to_values)
+    setattr(cls, '_field_linenos', _field_linenos)
     return cls
 
 
@@ -944,6 +948,7 @@ def _make_service(name, funcs, extends, lineno=None):
     }
     cls = type(name, (extends, ), attrs)
     thrift_services = []
+    _field_linenos = {}
 
     for func in funcs:
         func_name = func[2]
@@ -970,9 +975,11 @@ def _make_service(name, funcs, extends, lineno=None):
         gen_init(result_cls, result_cls.thrift_spec, result_cls.default_spec)
         setattr(cls, result_name, result_cls)
         thrift_services.append(func_name)
+        _field_linenos[func_name] = func[5]  # function lineno
     if extends is not None and hasattr(extends, 'thrift_services'):
         thrift_services.extend(extends.thrift_services)
     setattr(cls, 'thrift_services', thrift_services)
+    setattr(cls, '_field_linenos', _field_linenos)
     return cls
 
 
