@@ -370,7 +370,7 @@ def p_simple_field(p):
     else:
         val = None
 
-    p[0] = [p[1], p[2], p[3], p[4], val]
+    p[0] = [p[1], p[2], p[3], p[4], val, p.lineno(4)]
 
 
 def p_field(p):
@@ -905,6 +905,7 @@ def _fill_in_struct(cls, fields, _gen_init=True):
     thrift_spec = {}
     default_spec = []
     _tspec = {}
+    _field_linenos = {}
 
     for field in fields:
         if field[0] in thrift_spec or field[3] in _tspec:
@@ -915,9 +916,11 @@ def _fill_in_struct(cls, fields, _gen_init=True):
         thrift_spec[field[0]] = _ttype_spec(ttype, field[3], field[1])
         default_spec.append((field[3], field[4]))
         _tspec[field[3]] = field[1], ttype
+        _field_linenos[field[3]] = field[5]  # lineno
     setattr(cls, 'thrift_spec', thrift_spec)
     setattr(cls, 'default_spec', default_spec)
     setattr(cls, '_tspec', _tspec)
+    setattr(cls, '_field_linenos', _field_linenos)
     if _gen_init:
         gen_init(cls, thrift_spec, default_spec)
     return cls
