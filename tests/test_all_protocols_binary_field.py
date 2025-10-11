@@ -29,6 +29,14 @@ from thriftpy2.transport import TBufferedTransportFactory, TCyMemoryBuffer
 if sys.platform == "win32":
     pytest.skip("requires fork", allow_module_level=True)
 
+# Set start method to fork for compatibility with local function pickling
+import multiprocessing
+try:
+    multiprocessing.set_start_method('fork')
+except RuntimeError:
+    # Start method already set, ignore
+    pass
+
 
 protocols = [TApacheJSONProtocolFactory,
              TJSONProtocolFactory,
