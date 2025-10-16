@@ -149,7 +149,8 @@ def gen_init(cls, thrift_spec=None, default_spec=None):
 
 class TPayload(metaclass=TPayloadMeta):
 
-    __hash__ = None
+    def __hash__(self):
+        return super(TPayload, self).__hash__()
 
     def read(self, iprot):
         iprot.read_struct(self)
