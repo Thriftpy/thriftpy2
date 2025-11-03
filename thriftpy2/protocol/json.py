@@ -43,11 +43,10 @@ def json_value(ttype, val, spec=None):
     if result:
         func, args = result
         return func(*args)
-    else:
-        raise TProtocolException(
-            type=TProtocolException.INVALID_DATA,
-            message=f"Unknown TType {ttype} for JSON serialization"
-        )
+    raise TProtocolException(
+        type=TProtocolException.INVALID_DATA,
+        message=f"Unknown TType {ttype} for JSON serialization"
+    )
 
 
 def obj_value(ttype, val, spec=None):
@@ -75,11 +74,10 @@ def obj_value(ttype, val, spec=None):
         if result:
             func, args = result
             return func(*args)
-        else:
-            raise TProtocolException(
-                type=TProtocolException.INVALID_DATA,
-                message=f"Unknown TType {ttype} for JSON deserialization"
-            )
+        raise TProtocolException(
+            type=TProtocolException.INVALID_DATA,
+            message=f"Unknown TType {ttype} for JSON deserialization"
+        )
 
 
 def map_to_obj(val, spec):
