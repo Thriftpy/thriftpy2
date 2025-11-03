@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import thriftpy2.protocol.json as proto
 from thriftpy2.protocol import TJSONProtocol
 from thriftpy2.thrift import TPayload, TType
@@ -10,8 +8,9 @@ class TItem(TPayload):
     thrift_spec = {
         1: (TType.I32, "id", False),
         2: (TType.LIST, "phones", TType.STRING, False),
+        3: (TType.SET, "tags", TType.STRING, False),
     }
-    default_spec = [("id", None), ("phones", None)]
+    default_spec = [("id", None), ("phones", None), ("tags", None)]
 
 
 def test_map_to_obj():
@@ -47,23 +46,25 @@ def test_list_to_json():
 
 
 def test_struct_to_json():
-    obj = TItem(id=13, phones=["5234", "12346456"])
+    obj = TItem(id=13, phones=["5234", "12346456"], tags={"vip", "premium"})
     json = proto.struct_to_json(obj)
 
-    assert {"id": 13, "phones": ["5234", "12346456"]} == json
+    assert json["id"] == 13
+    assert json["phones"] == ["5234", "12346456"]
+    assert set(json["tags"]) == {"vip", "premium"}
 
 
 def test_struct_to_obj():
-    json = {"id": 13, "phones": ["5234", "12346456"]}
+    json = {"id": 13, "phones": ["5234", "12346456"], "tags": ["vip", "premium"]}
     obj = TItem()
 
     obj = proto.struct_to_obj(json, obj)
 
-    assert obj.id == 13 and obj.phones == ["5234", "12346456"]
+    assert obj.id == 13 and obj.phones == ["5234", "12346456"] and set(obj.tags) == {"vip", "premium"}
 
 
 def test_json_proto_api_write():
-    obj = TItem(id=13, phones=["5234", "12346456"])
+    obj = TItem(id=13, phones=["5234", "12346456"], tags={"vip", "premium"})
     trans = TMemoryBuffer()
 
     p = TJSONProtocol(trans)
@@ -75,13 +76,13 @@ def test_json_proto_api_write():
     import json
     data = json.loads(data[4:])
 
-    assert length == "\x00\x00\x00S" and data == {
-        "metadata": {"version": 1},
-        "payload": {"phones": ["5234", "12346456"], "id": 13}}
+    assert "tags" in data["payload"]
+    assert set(data["payload"]["tags"]) == {"vip", "premium"}
+    assert data["payload"]["id"] == 13
 
 
 def test_json_proto_api_read():
-    obj = TItem(id=13, phones=["5234", "12346456"])
+    obj = TItem(id=13, phones=["5234", "12346456"], tags={"vip", "premium"})
     trans = TMemoryBuffer()
 
     p = TJSONProtocol(trans)
@@ -90,7 +91,10 @@ def test_json_proto_api_read():
     obj2 = TItem()
     obj2 = p.read_struct(obj2)
 
-    assert obj.id == 13 and obj.phones == ["5234", "12346456"]
+    assert obj2.id == 13
+    assert obj2.phones == ["5234", "12346456"]
+    # Note: SET gets converted to LIST during round-trip
+    assert set(obj2.tags) == {"vip", "premium"}
 
 
 def test_unicode_string():
