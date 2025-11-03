@@ -76,9 +76,15 @@ def test_json_proto_api_write():
     import json
     data = json.loads(data[4:])
 
-    assert "tags" in data["payload"]
-    assert set(data["payload"]["tags"]) == {"vip", "premium"}
-    assert data["payload"]["id"] == 13
+    assert length == "\x00\x00\x00o"
+    assert set(data["payload"].pop("tags")) == {"premium", "vip"}
+    assert data == {
+        "metadata": {"version": 1},
+        "payload": {
+            "phones": ["5234", "12346456"],
+            "id": 13,
+        },
+    }
 
 
 def test_json_proto_api_read():
