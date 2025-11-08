@@ -39,9 +39,14 @@ def json_value(ttype, val, spec=None):
         TType.MAP: (map_to_json, (val, spec)),
         TType.BINARY: (encode_binary, (val, )),
     }
-    func, args = TTYPE_TO_JSONFUNC_MAP.get(ttype)
-    if func:
+    result = TTYPE_TO_JSONFUNC_MAP.get(ttype)
+    if result:
+        func, args = result
         return func(*args)
+    raise TProtocolException(
+        type=TProtocolException.INVALID_DATA,
+        message=f"Unknown TType {ttype} for JSON serialization"
+    )
 
 
 def obj_value(ttype, val, spec=None):
@@ -65,9 +70,14 @@ def obj_value(ttype, val, spec=None):
             TType.MAP: (map_to_obj, (val, spec)),
             TType.BINARY: (base64.b64decode, (val, )),
         }
-        func, args = TTYPE_TO_OBJFUNC_MAP.get(ttype)
-        if func:
+        result = TTYPE_TO_OBJFUNC_MAP.get(ttype)
+        if result:
+            func, args = result
             return func(*args)
+        raise TProtocolException(
+            type=TProtocolException.INVALID_DATA,
+            message=f"Unknown TType {ttype} for JSON deserialization"
+        )
 
 
 def map_to_obj(val, spec):
