@@ -5,10 +5,11 @@ from __future__ import absolute_import
 import binascii
 
 from .transport import TMemoryBuffer
+from .protocol.base import TProtocolFactory
 from .protocol.binary import TBinaryProtocolFactory
 
 
-def serialize(thrift_object, proto_factory=TBinaryProtocolFactory()):
+def serialize(thrift_object, proto_factory: TProtocolFactory=TBinaryProtocolFactory()):
     transport = TMemoryBuffer()
     protocol = proto_factory.get_protocol(transport)
     thrift_object.write(protocol)
@@ -16,7 +17,7 @@ def serialize(thrift_object, proto_factory=TBinaryProtocolFactory()):
     return transport.getvalue()
 
 
-def deserialize(thrift_object, buf, proto_factory=TBinaryProtocolFactory()):
+def deserialize(thrift_object, buf, proto_factory: TProtocolFactory=TBinaryProtocolFactory()):
     transport = TMemoryBuffer(buf)
     protocol = proto_factory.get_protocol(transport)
     thrift_object.read(protocol)
@@ -28,7 +29,7 @@ def hexlify(byte_array, delimeter=' '):
     return delimeter.join(a + b for a, b in zip(s[::2], s[1::2]))
 
 
-def hexprint(byte_array, delimeter=' ', count=10):
+def hexprint(byte_array, delimeter: str=' ', count: int=10) -> None:
     print("Bytes:")
     print(byte_array)
 

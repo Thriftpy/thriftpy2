@@ -3,6 +3,9 @@ import socket
 import urllib
 import warnings
 
+from thriftpy2.protocol.base import TProtocolFactory
+from thriftpy2.transport.base import TTransportFactory
+
 from .client import TAsyncClient
 from .processor import TAsyncProcessor
 from .protocol.binary import TAsyncBinaryProtocolFactory
@@ -12,8 +15,8 @@ from .transport.buffered import TAsyncBufferedTransportFactory
 
 
 async def make_client(service, host='localhost', port=9090, unix_socket=None,
-                      proto_factory=TAsyncBinaryProtocolFactory(),
-                      trans_factory=TAsyncBufferedTransportFactory(),
+                      proto_factory: TProtocolFactory=TAsyncBinaryProtocolFactory(),
+                      trans_factory: TTransportFactory=TAsyncBufferedTransportFactory(),
                       timeout=3000, connect_timeout=None,
                       cafile=None, ssl_context=None,
                       certfile=None, keyfile=None,
@@ -63,8 +66,8 @@ async def make_client(service, host='localhost', port=9090, unix_socket=None,
 
 def make_server(service, handler,
                 host="localhost", port=9090, unix_socket=None,
-                proto_factory=TAsyncBinaryProtocolFactory(),
-                trans_factory=TAsyncBufferedTransportFactory(),
+                proto_factory: TProtocolFactory=TAsyncBinaryProtocolFactory(),
+                trans_factory: TTransportFactory=TAsyncBufferedTransportFactory(),
                 client_timeout=3000, certfile=None,
                 keyfile=None, ssl_context=None, loop=None,
                 socket_family=socket.AF_INET):

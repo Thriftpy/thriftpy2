@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from thriftpy2.protocol.base import TProtocolFactory
 from thriftpy2.thrift import TMultiplexedProcessor, TMessageType
 
 
@@ -25,7 +26,7 @@ class TMultiplexedProtocol(object):
 
 
 class TMultiplexedProtocolFactory(object):
-    def __init__(self, proto_factory, service_name):
+    def __init__(self, proto_factory: TProtocolFactory, service_name):
         self._proto_factory = proto_factory
         self.service_name = service_name
 

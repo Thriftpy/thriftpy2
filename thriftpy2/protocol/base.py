@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
 
+from typing import Protocol
+
+
+class TProtocolFactory(Protocol):
+    """Protocol factory interface for type annotations."""
+
+    def get_protocol(self, trans):
+        """Return a protocol instance for the given transport."""
+        ...
+
 
 class TProtocolBase(object):
     """Base class for Thrift protocol layer."""

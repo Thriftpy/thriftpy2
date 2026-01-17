@@ -10,15 +10,17 @@ import warnings
 from thriftpy2.contrib.aio.rpc import make_client as make_aio_client  # noqa
 from thriftpy2.contrib.aio.rpc import make_server as make_aio_server  # noqa
 from thriftpy2.protocol import TBinaryProtocolFactory
+from thriftpy2.protocol.base import TProtocolFactory
 from thriftpy2.server import TThreadedServer
 from thriftpy2.thrift import TClient, TProcessor
 from thriftpy2.transport import (TBufferedTransportFactory, TServerSocket,
                                  TSocket, TSSLServerSocket, TSSLSocket)
+from thriftpy2.transport.base import TTransportFactory
 
 
 def make_client(service, host="localhost", port=9090, unix_socket=None,
-                proto_factory=TBinaryProtocolFactory(),
-                trans_factory=TBufferedTransportFactory(),
+                proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
+                trans_factory: TTransportFactory=TBufferedTransportFactory(),
                 timeout=3000, cafile=None, ssl_context=None, certfile=None,
                 keyfile=None, url="", socket_family=socket.AF_INET):
     if url:
@@ -57,8 +59,8 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
 
 def make_server(service, handler,
                 host="localhost", port=9090, unix_socket=None,
-                proto_factory=TBinaryProtocolFactory(),
-                trans_factory=TBufferedTransportFactory(),
+                proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
+                trans_factory: TTransportFactory=TBufferedTransportFactory(),
                 client_timeout=3000, certfile=None,
                 socket_family=socket.AF_INET):
     processor = TProcessor(service, handler)
@@ -87,8 +89,8 @@ def make_server(service, handler,
 
 @contextlib.contextmanager
 def client_context(service, host="localhost", port=9090, unix_socket=None,
-                   proto_factory=TBinaryProtocolFactory(),
-                   trans_factory=TBufferedTransportFactory(),
+                   proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
+                   trans_factory: TTransportFactory=TBufferedTransportFactory(),
                    timeout=None, socket_timeout=3000, connect_timeout=3000,
                    cafile=None, ssl_context=None, certfile=None, keyfile=None,
                    url="", socket_family=socket.AF_INET):
