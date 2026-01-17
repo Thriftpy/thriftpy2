@@ -2,7 +2,10 @@
 
 from __future__ import absolute_import
 
-from typing import Protocol
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol
 
 from ..thrift import TType, TException
 

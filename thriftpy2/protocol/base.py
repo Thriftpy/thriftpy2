@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from typing import Protocol
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol
 
 
 class TProtocolFactory(Protocol):
