@@ -393,7 +393,7 @@ def p_simple_field(p):
 
 def p_field(p):
     '''field : simple_field type_annotations'''
-    p[0] = p[1] + [p[2]] 
+    p[0] = p[1] + [p[2]]
 
 
 def p_field_id(p):
