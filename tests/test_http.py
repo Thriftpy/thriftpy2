@@ -3,9 +3,8 @@
 from __future__ import absolute_import
 
 import os
-import multiprocessing
+import multiprocess
 import socket
-import sys
 import time
 import uuid
 
@@ -20,10 +19,6 @@ from thriftpy2.thrift import TApplicationException  # noqa
 
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
-
-
-if sys.platform == "win32":
-    pytest.skip("requires fork", allow_module_level=True)
 
 
 class Dispatcher():
@@ -79,9 +74,12 @@ class CustomHeaderFactory(THttpHeaderFactory):
 
 @pytest.fixture(scope="module")
 def server(request):
+    import thriftpy2
+    addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
+                                          "addressbook.thrift"))
     server = make_server(addressbook.AddressBookService, Dispatcher(),
                          host="127.0.0.1", port=6080)
-    ps = multiprocessing.Process(target=server.serve)
+    ps = multiprocess.Process(target=server.serve)
     ps.start()
 
     time.sleep(0.1)

@@ -51,6 +51,7 @@ dev = [
     "pytest>=6.1.1,<8.2.0",
     "tornado>=4.0,<7.0; python_version>='3.12'",
     "tornado>=4.0,<6.0; python_version<'3.12'",
+    "multiprocess>=0.70.12.2",
 ]
 
 tornado = [

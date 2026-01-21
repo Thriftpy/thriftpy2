@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import sys
 import time
 import traceback
-from multiprocessing import Process
+from multiprocess import Process
 
 import pytest
 import six
@@ -26,8 +26,6 @@ from thriftpy2.rpc import make_server as make_rpc_server, \
 from thriftpy2.transport import TBufferedTransportFactory, TCyMemoryBuffer
 
 
-if sys.platform == "win32":
-    pytest.skip("requires fork", allow_module_level=True)
 
 # Set start method to fork for compatibility with local function pickling
 import multiprocessing
@@ -80,6 +78,11 @@ def test_protocols(proto_factory, binary, tlist, server_func):
     trans_factory = TBufferedTransportFactory
 
     def run_server():
+        import thriftpy2
+        test_thrift = thriftpy2.load(
+            "apache_json_test.thrift",
+            module_name="test_thrift"
+        )
         server = server_func[0](
             test_thrift.TestService,
             handler=Handler(),
@@ -169,11 +172,16 @@ def test_exceptions(server_func, proto_factory):
     )
     TestException = test_thrift.TestException
 
-    class Handler(object):
-        def do_error(self, arg):
-            raise TestException(message=arg)
-
     def do_server():
+        import thriftpy2
+        test_thrift = thriftpy2.load(
+            "apache_json_test.thrift",
+            module_name="test_thrift"
+        )
+        TestException = test_thrift.TestException
+        class Handler(object):
+            def do_error(self, arg):
+                raise TestException(message=arg)
         server = server_func[0](
             service=test_thrift.TestService,
             handler=Handler(),
@@ -245,6 +253,8 @@ def test_complex_binary(proto_factory):
     trans_factory = TBufferedTransportFactory
 
     def run_server():
+        import thriftpy2
+        spec = thriftpy2.load("bin_test.thrift", module_name="bin_thrift")
         server = make_rpc_server(
             spec.BinService,
             handler=Handler(),
