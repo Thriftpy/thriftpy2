@@ -31,7 +31,6 @@ from tornado import version as tornado_version
 
 # TODO need TCyTornadoStreamTransport to work with cython binary protocol
 from .protocol.binary import TBinaryProtocolFactory
-from .protocol.base import TProtocolFactory
 from .thrift import TApplicationException, TClient, TProcessor
 from .transport import TTransportBase, TTransportException
 from .transport.memory import TMemoryBuffer
@@ -237,7 +236,7 @@ class TTornadoClient(TClient):
 
 
 def make_server(
-        service, handler, proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
+        service, handler, proto_factory=TBinaryProtocolFactory(),
         io_loop=None, ssl_options=None,
         transport_read_timeout=TTornadoStreamTransport.DEFAULT_READ_TIMEOUT):
     processor = TProcessor(service, handler)
@@ -256,7 +255,7 @@ def make_server(
 def make_client(service,
                 host='localhost',
                 port=9090,
-                proto_factory: TProtocolFactory=TBinaryProtocolFactory(), io_loop=None,
+                proto_factory=TBinaryProtocolFactory(), io_loop=None,
                 ssl_options=None,
                 connect_timeout=TTornadoStreamTransport.DEFAULT_CONNECT_TIMEOUT,
                 read_timeout=TTornadoStreamTransport.DEFAULT_READ_TIMEOUT,
