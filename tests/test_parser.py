@@ -380,8 +380,68 @@ def test_doubles():
     assert isinstance(thrift.value6, float) and thrift.value6 == 0.13
 
 
-def test_annotations():
-    load('parser-cases/annotations.thrift')
+def test_struct_annotations():
+    thrift = load('parser-cases/annotations.thrift')
+    assert thrift.foo.__thrift_annotations__ == {
+        'cpp.type': 'DenseFoo',
+        'python.type': 'DenseFoo',
+        'java.final': '',
+        'annotation.without.value': None,
+    }
+    assert thrift.foo.__thrift_field_annotations__ == {
+        'bar': {'presence': 'required'},
+        'baz': {'presence': 'manual', 'cpp.use_pointer': ''},
+    }
+    # Fields without annotations should not be in the dict
+    assert 'qux' not in thrift.foo.__thrift_field_annotations__
+    assert 'bop' not in thrift.foo.__thrift_field_annotations__
+
+
+def test_exception_annotations():
+    thrift = load('parser-cases/annotations.thrift')
+    assert thrift.foo_error.__thrift_annotations__ == {'foo': 'bar'}
+    assert thrift.foo_error.__thrift_field_annotations__ == {
+        'error_code': {'foo': 'bar'},
+    }
+
+
+def test_enum_annotations():
+    thrift = load('parser-cases/annotations.thrift')
+    assert thrift.weekdays.__thrift_annotations__ == {'foo.bar': 'baz'}
+    assert thrift.weekdays.__thrift_item_annotations__ == {
+        'SUNDAY': {'weekend': 'yes'},
+        'SATURDAY': {'weekend': 'yes'},
+    }
+
+
+def test_service_annotations():
+    thrift = load('parser-cases/annotations.thrift')
+    assert thrift.foo_service.__thrift_annotations__ == {'a.b': 'c'}
+    assert thrift.foo_service.__thrift_function_annotations__ == {
+        'foo': {'foo': 'bar'},
+    }
+
+
+def test_union_annotations():
+    thrift = load('parser-cases/annotations.thrift')
+    assert thrift.foo_union.__thrift_annotations__ == {'a.b': 'c'}
+
+
+def test_typedef_annotations():
+    thrift = load('parser-cases/annotations.thrift')
+    assert thrift.__thrift_typedef_annotations__ == {
+        'non_latin_string': {'foo': 'bar'},
+    }
+
+
+def test_const_annotations():
+    thrift = load('parser-cases/annotations.thrift')
+    assert thrift.__thrift_const_annotations__ == {
+        'id': {'name': 'LANG_ID'},
+    }
+
+
+def test_annotations_issue_252():
     load('parser-cases/issue_252.thrift')
 
 
