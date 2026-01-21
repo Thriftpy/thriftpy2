@@ -68,8 +68,7 @@ def _ensure_b64_encode(val):
 
 
 class TApacheJSONProtocolFactory(object):
-    @staticmethod
-    def get_protocol(trans):
+    def get_protocol(self, trans):
         return TApacheJSONProtocol(trans)
 
 

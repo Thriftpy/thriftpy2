@@ -42,10 +42,11 @@ from contextlib import contextmanager
 from io import BytesIO
 
 from thriftpy2.protocol import TBinaryProtocolFactory
+from thriftpy2.protocol.base import TProtocolFactory
 from thriftpy2.server import TServer
 from thriftpy2.thrift import TClient, TProcessor
-from thriftpy2.transport import (TBufferedTransportFactory, TMemoryBuffer,
-                                 TTransportBase)
+from thriftpy2.transport import TBufferedTransportFactory, TMemoryBuffer
+from thriftpy2.transport.base import TTransportFactory, TTransportBase
 
 HTTP_URI = '{scheme}://{host}:{port}{path}'
 DEFAULT_HTTP_CLIENT_TIMEOUT_MS = 30000  # 30 seconds
@@ -284,8 +285,8 @@ class THttpClient(object):
 
 
 def make_client(service, host='localhost', port=9090, path='', scheme='http',
-                proto_factory=TBinaryProtocolFactory(),
-                trans_factory=TBufferedTransportFactory(),
+                proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
+                trans_factory: TTransportFactory=TBufferedTransportFactory(),
                 ssl_context_factory=None,
                 http_header_factory=None,
                 timeout=DEFAULT_HTTP_CLIENT_TIMEOUT_MS, url=''):
@@ -309,8 +310,8 @@ def make_client(service, host='localhost', port=9090, path='', scheme='http',
 
 @contextmanager
 def client_context(service, host='localhost', port=9090, path='', scheme='http',
-                   proto_factory=TBinaryProtocolFactory(),
-                   trans_factory=TBufferedTransportFactory(),
+                   proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
+                   trans_factory: TTransportFactory=TBufferedTransportFactory(),
                    ssl_context_factory=None,
                    http_header_factory=None,
                    timeout=DEFAULT_HTTP_CLIENT_TIMEOUT_MS, url=''):
@@ -336,8 +337,8 @@ def client_context(service, host='localhost', port=9090, path='', scheme='http',
 
 
 def make_server(service, handler, host, port,
-                proto_factory=TBinaryProtocolFactory(),
-                trans_factory=TBufferedTransportFactory()):
+                proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
+                trans_factory: TTransportFactory=TBufferedTransportFactory()):
     processor = TProcessor(service, handler)
     server = THttpServer(processor, (host, port),
                          itrans_factory=trans_factory,

@@ -2,6 +2,11 @@
 
 from __future__ import absolute_import
 
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol
+
 from ..thrift import TType, TException
 
 
@@ -18,6 +23,14 @@ def readall(read_fn, sz):
                                       "End of file reading from transport")
 
     return buff
+
+
+class TTransportFactory(Protocol):
+    """Transport factory interface for type annotations."""
+
+    def get_transport(self, trans):
+        """Return a transport instance wrapping the given transport."""
+        ...
 
 
 class TTransportBase(object):
