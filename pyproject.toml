@@ -51,9 +51,14 @@ dev = [
     "pytest>=6.1.1,<8.2.0",
     "tornado>=4.0,<7.0; python_version>='3.12'",
     "tornado>=4.0,<6.0; python_version<'3.12'",
+    "aiohttp>=3.8.0,<4.0.0",
 ]
 
 tornado = [
     "tornado>=4.0,<7.0; python_version>='3.12'",
     "tornado>=4.0,<6.0; python_version<'3.12'",
+]
+
+aiohttp = [
+    "aiohttp>=3.8.0,<4.0.0",
 ]
