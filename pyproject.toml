@@ -16,7 +16,6 @@ dependencies = [
     "ply>=3.4,<4.0",
     "six~=1.15",
     "typing_extensions>=3.7.4; python_version<'3.8'",
-    "aiohttp>=3.8.0,<4.0.0",
 ]
 requires-python = ">=3.7"
 readme = "README.rst"
@@ -52,9 +51,14 @@ dev = [
     "pytest>=6.1.1,<8.2.0",
     "tornado>=4.0,<7.0; python_version>='3.12'",
     "tornado>=4.0,<6.0; python_version<'3.12'",
+    "aiohttp>=3.8.0,<4.0.0",
 ]
 
 tornado = [
     "tornado>=4.0,<7.0; python_version>='3.12'",
     "tornado>=4.0,<6.0; python_version<'3.12'",
+]
+
+aiohttp = [
+    "aiohttp>=3.8.0,<4.0.0",
 ]
