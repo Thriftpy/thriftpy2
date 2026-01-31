@@ -119,7 +119,9 @@ class _TestAIO:
     @classmethod
     def teardown_class(cls):
         try:
-            asyncio.get_event_loop().run_until_complete(cls.server.close())
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(cls.server.close())
         except:  # noqa Probably already closed earlier
             pass
         del cls.server

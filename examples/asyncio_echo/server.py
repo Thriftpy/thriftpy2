@@ -15,8 +15,11 @@ class Dispatcher(object):
 
 
 def main():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     server = make_aio_server(
-        echo_thrift.EchoService, Dispatcher(), '127.0.0.1', 6000)
+        echo_thrift.EchoService, Dispatcher(), '127.0.0.1', 6000,
+        loop=loop)
     server.serve()
 
 
