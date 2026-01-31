@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import asyncio
+from typing import Optional
+
 from thriftpy2.server import TServer, logger
 from thriftpy2.transport import TTransportException
 
 
 class TAsyncServer(TServer):
 
-    def __init__(self, *args, loop=None, **kwargs):
-        self.loop = loop
+    def __init__(self, *args, loop: Optional[asyncio.AbstractEventLoop] = None, **kwargs):
+        self.loop: Optional[asyncio.AbstractEventLoop] = loop
 
         TServer.__init__(self, *args, **kwargs)
 
