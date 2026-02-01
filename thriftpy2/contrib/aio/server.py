@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import asyncio
+from typing import Optional
+
 from thriftpy2.server import TServer, logger
 from thriftpy2.transport import TTransportException
 
 
 class TAsyncServer(TServer):
 
-    def __init__(self, *args, **kwargs):
-        self.loop = kwargs.pop('loop')
+    def __init__(self, *args, loop: Optional[asyncio.AbstractEventLoop] = None, **kwargs):
+        self.loop: Optional[asyncio.AbstractEventLoop] = loop
 
         TServer.__init__(self, *args, **kwargs)
 
@@ -24,7 +26,16 @@ class TAsyncServer(TServer):
     def init_server(self):
         self.trans.listen()
         if not self.loop:
-            self.loop = asyncio.get_event_loop()
+            import warnings
+            warnings.warn(
+                "No event loop provided. Creating a new event loop automatically. "
+                "It is recommended to explicitly pass a loop parameter for better control. "
+                "Example: loop = asyncio.new_event_loop(); make_server(..., loop=loop)",
+                DeprecationWarning,
+                stacklevel=3
+            )
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
         self.server = self.loop.run_until_complete(
             self.trans.accept(self.handle)
         )
