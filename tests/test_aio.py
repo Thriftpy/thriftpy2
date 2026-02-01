@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 import asyncio
+import contextlib
 import os
 import random
 import socket
 import sys
-# import uvloop
 import threading
 import time
 from unittest.mock import patch
@@ -19,13 +18,6 @@ from thriftpy2.contrib.aio.transport import (TAsyncBufferedTransportFactory,
 from thriftpy2.rpc import make_aio_client, make_aio_server
 from thriftpy2.thrift import TApplicationException
 from thriftpy2.transport import TTransportException
-
-# asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-
-
-
-
 
 
 if sys.platform == "win32":
@@ -118,17 +110,9 @@ class _TestAIO:
 
     @classmethod
     def teardown_class(cls):
-        try:
-            loop = asyncio.new_event_loop()
+        with contextlib.closing(asyncio.new_event_loop()) as loop:
             asyncio.set_event_loop(loop)
-        try:
             loop.run_until_complete(cls.server.close())
-        finally:
-            loop.close()
-        except:  # noqa Probably already closed earlier
-            pass
-        del cls.server
-        del cls.person
 
     @classmethod
     def _start_server(cls):

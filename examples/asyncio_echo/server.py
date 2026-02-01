@@ -1,5 +1,6 @@
-# -*- coding: utf-8 -*-
 import asyncio
+import contextlib
+
 import thriftpy2
 
 from thriftpy2.rpc import make_aio_server
@@ -15,12 +16,12 @@ class Dispatcher(object):
 
 
 def main():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    server = make_aio_server(
-        echo_thrift.EchoService, Dispatcher(), '127.0.0.1', 6000,
-        loop=loop)
-    server.serve()
+    with contextlib.closing(asyncio.new_event_loop()) as loop:
+        asyncio.set_event_loop(loop)
+        server = make_aio_server(
+            echo_thrift.EchoService, Dispatcher(), '127.0.0.1', 6000,
+            loop=loop)
+        server.serve()
 
 
 if __name__ == '__main__':
