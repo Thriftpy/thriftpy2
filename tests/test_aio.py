@@ -121,7 +121,10 @@ class _TestAIO:
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+        try:
             loop.run_until_complete(cls.server.close())
+        finally:
+            loop.close()
         except:  # noqa Probably already closed earlier
             pass
         del cls.server
