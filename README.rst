@@ -1,6 +1,6 @@
-============
+=========
 ThriftPy2
-============
+=========
 
 .. image:: https://img.shields.io/codecov/c/github/Thriftpy/thriftpy2.svg
     :target: https://codecov.io/gh/Thriftpy/thriftpy2
@@ -18,20 +18,9 @@ ThriftPy2
     :target: https://pypi.org/project/thriftpy2/
 
 
-ThriftPy: https://github.com/eleme/thriftpy has been deprecated. ThriftPy2 aims to provide long-term support.
-
-
-Migrate from Thriftpy?
-======================
-
-All you need is:
-
-.. code:: python
-
-    import thriftpy2 as thriftpy
-
-
-That's it! thriftpy2 is fully compatible with thriftpy.
+ThriftPy2 is a pure Python implementation of the `Apache Thrift <https://thrift.apache.org/>`_
+protocol. It allows you to parse Thrift IDL files and create RPC clients/servers
+without code generation or compilation.
 
 
 Installation
@@ -44,13 +33,37 @@ Install with pip:
     $ pip install thriftpy2
 
 
-Code Demo
-=========
+Features
+========
 
-ThriftPy2 makes it super easy to write server/client code with Thrift. Let's
-check out this simple pingpong service demo.
+- Python 3.7+ and PyPy3.
 
-We need a `pingpong.thrift` file:
+- Pure Python implementation. No need to compile or install the ``thrift`` package.
+  All you need is thriftpy2 and a thrift file.
+
+- Dynamically load thrift files as Python modules, with code generated on the fly.
+
+- Compatible with Apache Thrift. You can use ThriftPy2 together with the
+  official implementation servers and clients.
+
+- Easy RPC server/client setup.
+
+- Supported protocols and transports:
+
+  * binary protocol (Python and Cython)
+  * compact protocol (Python and Cython)
+  * JSON protocol
+  * Apache JSON protocol
+  * buffered transport (Python and Cython)
+  * framed transport
+  * HTTP server and client
+  * asyncio support
+
+
+Quick Start
+===========
+
+Define a ``pingpong.thrift`` file:
 
 ::
 
@@ -58,45 +71,59 @@ We need a `pingpong.thrift` file:
         string ping(),
     }
 
-Then we can make a server:
+Server
+------
 
 .. code:: python
 
     import thriftpy2
+    from thriftpy2.rpc import make_server
+
     pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
 
-    from thriftpy2.rpc import make_server
 
     class Dispatcher(object):
         def ping(self):
             return "pong"
 
+
     server = make_server(pingpong_thrift.PingPong, Dispatcher(), '127.0.0.1', 6000)
     server.serve()
 
-And a client:
+Client
+------
 
 .. code:: python
 
     import thriftpy2
-    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
-
     from thriftpy2.rpc import make_client
 
+    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
+
     client = make_client(pingpong_thrift.PingPong, '127.0.0.1', 6000)
-    print(client.ping())
+    print(client.ping())  # prints "pong"
 
-And it also supports asyncio on Python 3.7 or later.
+Async Server
+------------
 
-We need an `echo.thrift` file:
+.. code:: python
 
-::
+    import thriftpy2
+    from thriftpy2.rpc import make_aio_server
 
-    service EchoService {
-        string echo(1: string param),
-    }
+    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
 
-Then we can make an async client:
+
+    class Dispatcher(object):
+        async def ping(self):
+            return "pong"
+
+
+    server = make_aio_server(pingpong_thrift.PingPong, Dispatcher(), '127.0.0.1', 6000)
+    server.serve()
+
+Async Client
+------------
 
 .. code:: python
 
@@ -104,99 +131,30 @@ Then we can make an async client:
     import thriftpy2
     from thriftpy2.rpc import make_aio_client
 
-    echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
+    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
 
 
-    async def request():
-        client = await make_aio_client(
-            echo_thrift.EchoService, '127.0.0.1', 6000)
-        print(await client.echo('hello, world'))
+    async def main():
+        client = await make_aio_client(pingpong_thrift.PingPong, '127.0.0.1', 6000)
+        print(await client.ping())  # prints "pong"
         client.close()
 
 
     if __name__ == '__main__':
-        asyncio.run(request())
+        asyncio.run(main())
 
-And an async server:
+See the ``examples`` and ``tests`` directories for more usage examples.
+
+
+Migrate from ThriftPy
+=====================
+
+ThriftPy (https://github.com/eleme/thriftpy) has been deprecated.
+ThriftPy2 is fully compatible, just change your import:
 
 .. code:: python
 
-    import asyncio
-    import thriftpy2
-    from thriftpy2.rpc import make_aio_server
-
-    echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
-
-
-    class Dispatcher(object):
-        async def echo(self, param):
-            print(param)
-            await asyncio.sleep(0.1)
-            return param
-
-
-    def main():
-        server = make_aio_server(
-            echo_thrift.EchoService, Dispatcher(), '127.0.0.1', 6000)
-        server.serve()
-
-
-    if __name__ == '__main__':
-        main()
-
-See, it's that easy!
-
-You can refer to the `examples` and `tests` directories in the source code for more
-usage examples.
-
-
-Features
-========
-
-Currently, ThriftPy2 has these features (also advantages over the upstream
-Python lib):
-
-- Python 3.7+ and PyPy3.
-
-- Pure Python implementation. You no longer need to compile and install the `thrift`
-  package. All you need is thriftpy2 and a thrift file.
-
-- Compatible with Apache Thrift. You can use ThriftPy2 together with the
-  official implementation servers and clients, such as an upstream server with
-  a thriftpy2 client or vice-versa.
-
-  Currently implemented protocols and transports:
-
-  * binary protocol (Python and Cython)
-
-  * compact protocol (Python and Cython)
-
-  * JSON protocol
-
-  * Apache JSON protocol compatible with the Apache Thrift distribution's JSON protocol.
-    Simply do ``from thriftpy2.protocol import TApacheJSONProtocolFactory`` and pass
-    this to the ``proto_factory`` argument where appropriate.
-
-  * buffered transport (Python & Cython)
-
-  * framed transport
-
-  * HTTP server and client
-
-  * asyncio support (Python 3.7 or later)
-
-- Can directly load a thrift file as a module, the client code will be generated on
-  the fly.
-
-  For example, ``pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")``
-  will load `pingpong.thrift` as the `pingpong_thrift` module.
-
-  Or, when the import hook is enabled by ``thriftpy2.install_import_hook()``, you can
-  directly use ``import pingpong_thrift`` to import the `pingpong.thrift` file
-  as a module. You may also use ``from pingpong_thrift import PingService`` to
-  import a specific object from the thrift module.
-
-- Easy RPC server/client setup.
+    import thriftpy2 as thriftpy
 
 
 Contribute
