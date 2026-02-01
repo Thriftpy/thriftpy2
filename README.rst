@@ -44,7 +44,6 @@ Install with pip:
     $ pip install thriftpy2
 
 
-
 Code Demo
 =========
 
@@ -162,7 +161,7 @@ Python lib):
 - Pure Python implementation. You no longer need to compile and install the `thrift`
   package. All you need is thriftpy2 and a thrift file.
 
-- Compatible with Apache Thrift. You can use ThriftPy together with the
+- Compatible with Apache Thrift. You can use ThriftPy2 together with the
   official implementation servers and clients, such as an upstream server with
   a thriftpy2 client or vice-versa.
 
@@ -182,8 +181,6 @@ Python lib):
 
   * framed transport
 
-  * Tornado server and client (with Tornado 4.0)
-
   * HTTP server and client
 
   * asyncio support (Python 3.7 or later)
@@ -200,7 +197,6 @@ Python lib):
   import a specific object from the thrift module.
 
 - Easy RPC server/client setup.
-
 
 
 Contribute
@@ -221,8 +217,8 @@ Contributors
 https://github.com/Thriftpy/thriftpy2/graphs/contributors
 
 
-Sponsors:
-============
+Sponsors
+========
 
 .. image:: ./docs/jetbrains.svg
     :target: https://www.jetbrains.com/?from=ThriftPy
