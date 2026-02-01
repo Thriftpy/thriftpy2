@@ -113,6 +113,7 @@ class _TestAIO:
         with contextlib.closing(asyncio.new_event_loop()) as loop:
             asyncio.set_event_loop(loop)
             loop.run_until_complete(cls.server.close())
+            time.sleep(0.3)  # FIXME
 
     @classmethod
     def _start_server(cls):
