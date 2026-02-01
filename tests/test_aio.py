@@ -110,10 +110,13 @@ class _TestAIO:
 
     @classmethod
     def teardown_class(cls):
-        with contextlib.closing(asyncio.new_event_loop()) as loop:
-            asyncio.set_event_loop(loop)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
             loop.run_until_complete(cls.server.close())
-            time.sleep(0.3)  # FIXME
+        finally:
+            loop.close()
+
 
     @classmethod
     def _start_server(cls):
