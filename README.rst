@@ -48,7 +48,7 @@ Install with pip:
 Code Demo
 =========
 
-ThriftPy makes it super easy to write server/client code with Thrift. Let's
+ThriftPy2 makes it super easy to write server/client code with Thrift. Let's
 check out this simple pingpong service demo.
 
 We need a `pingpong.thrift` file:
@@ -87,14 +87,23 @@ And a client:
     client = make_client(pingpong_thrift.PingPong, '127.0.0.1', 6000)
     print(client.ping())
 
-And it also supports asyncio on Python 3.5 or later:
+And it also supports asyncio on Python 3.7 or later.
+
+We need an `echo.thrift` file:
+
+::
+
+    service EchoService {
+        string echo(1: string param),
+    }
+
+Then we can make an async client:
 
 .. code:: python
 
-    import thriftpy2
     import asyncio
+    import thriftpy2
     from thriftpy2.rpc import make_aio_client
-
 
     echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
 
@@ -105,11 +114,16 @@ And it also supports asyncio on Python 3.5 or later:
         print(await client.echo('hello, world'))
         client.close()
 
+
+    if __name__ == '__main__':
+        asyncio.run(request())
+
+And an async server:
+
 .. code:: python
 
     import asyncio
     import thriftpy2
-
     from thriftpy2.rpc import make_aio_server
 
     echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
@@ -140,10 +154,10 @@ usage examples.
 Features
 ========
 
-Currently, ThriftPy has these features (also advantages over the upstream
+Currently, ThriftPy2 has these features (also advantages over the upstream
 Python lib):
 
-- Python 3.6+ and PyPy3.
+- Python 3.7+ and PyPy3.
 
 - Pure Python implementation. You no longer need to compile and install the `thrift`
   package. All you need is thriftpy2 and a thrift file.
@@ -172,7 +186,7 @@ Python lib):
 
   * HTTP server and client
 
-  * asyncio support (Python 3.5 or later)
+  * asyncio support (Python 3.7 or later)
 
 - Can directly load a thrift file as a module, the client code will be generated on
   the fly.
