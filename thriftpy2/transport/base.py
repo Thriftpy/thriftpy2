@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
 try:
     from typing import Protocol
@@ -28,7 +26,7 @@ def readall(read_fn, sz):
 class TTransportFactory(Protocol):
     """Transport factory interface for type annotations."""
 
-    def get_transport(self, trans):
+    def get_transport(self, trans) -> TTransportBase:
         """Return a transport instance wrapping the given transport."""
         ...
 
