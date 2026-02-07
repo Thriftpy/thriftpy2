@@ -7,22 +7,25 @@
     Thrift parser using ply
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
 import os
 import sys
 import types
+from typing import List, Optional, TextIO
 
 from .parser import parse, parse_fp, threadlocal, _cast
 from .exc import ThriftParserError, ThriftModuleNameConflict
 from ..thrift import TPayloadMeta
 
 
-def load(path,
-         module_name=None,
-         include_dirs=None,
-         include_dir=None,
-         encoding='utf-8'):
+def load(
+    path: str,
+    module_name: Optional[str] = None,
+    include_dirs: Optional[List[str]] = None,
+    include_dir: Optional[str] = None,
+    encoding: str = 'utf-8',
+) -> types.ModuleType:
     """Load thrift file as a module.
 
     The module loaded and objects inside may only be pickled if module_name
@@ -174,7 +177,7 @@ def get_definition(thrift, name, lineno):
             return ref_type
 
 
-def load_fp(source, module_name):
+def load_fp(source: TextIO, module_name: str) -> types.ModuleType:
     """Load thrift file like object as a module.
     """
     thrift = parse_fp(source, module_name)
@@ -190,7 +193,7 @@ def _import_module(import_name):
         return __import__(import_name)
 
 
-def load_module(fullname):
+def load_module(fullname: str) -> types.ModuleType:
     """Load thrift_file by fullname, fullname should have '_thrift' as
     suffix.
     The loader will replace the '_thrift' with '.thrift' and use it as

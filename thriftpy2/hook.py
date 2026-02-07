@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
 import importlib.abc
 import importlib.util
@@ -37,9 +37,9 @@ class ThriftLoader(importlib.abc.Loader):
 _imp = ThriftImporter()
 
 
-def install_import_hook():
+def install_import_hook() -> None:
     sys.meta_path[:] = [x for x in sys.meta_path if _imp is not x] + [_imp]
 
 
-def remove_import_hook():
+def remove_import_hook() -> None:
     sys.meta_path[:] = [x for x in sys.meta_path if _imp is not x]

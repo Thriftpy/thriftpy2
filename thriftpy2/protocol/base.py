@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
 
 try:
     from typing import Protocol
@@ -9,7 +9,7 @@ except ImportError:
 class TProtocolFactory(Protocol):
     """Protocol factory interface for type annotations."""
 
-    def get_protocol(self, trans):
+    def get_protocol(self, trans) -> TProtocolBase:
         """Return a protocol instance for the given transport."""
         ...
 
