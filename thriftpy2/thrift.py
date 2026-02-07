@@ -13,9 +13,15 @@ import functools
 import linecache
 import types
 from itertools import zip_longest
+from typing import (Any, Callable, Dict, List, Optional, Tuple, Type,
+                    TYPE_CHECKING)
+
+if TYPE_CHECKING:
+    from thriftpy2.protocol.base import TProtocolBase
 
 
-def args_to_kwargs(thrift_spec, *args, **kwargs):
+def args_to_kwargs(thrift_spec: Dict[int, tuple], *args: Any,
+                   **kwargs: Any) -> Dict[str, Any]:
     for item, value in zip_longest(sorted(thrift_spec.items()), args):
         arg_name = item[1][1]
         required = item[1][-1]
@@ -26,7 +32,7 @@ def args_to_kwargs(thrift_spec, *args, **kwargs):
     return kwargs
 
 
-def parse_spec(ttype, spec=None):
+def parse_spec(ttype: int, spec: Any = None) -> Optional[str]:
     name_map = TType._VALUES_TO_NAMES
 
     def _type(s):
@@ -45,7 +51,9 @@ def parse_spec(ttype, spec=None):
         return "MAP<%s, %s>" % (_type(spec[0]), _type(spec[1]))
 
 
-def init_func_generator(cls, spec):
+def init_func_generator(cls: type,
+                        spec: Optional[List[Tuple[str, Any]]]
+                        ) -> Callable[..., None]:
     """Generate `__init__` function based on TPayload.default_spec
 
     For example::
@@ -131,14 +139,16 @@ class TMessageType(object):
 
 class TPayloadMeta(type):
 
-    def __new__(cls, name, bases, attrs):
+    def __new__(cls, name: str, bases: Tuple[type, ...],
+                attrs: Dict[str, Any]) -> 'TPayloadMeta':
         if "default_spec" in attrs:
             spec = attrs.pop("default_spec")
             attrs["__init__"] = init_func_generator(cls, spec)
         return super(TPayloadMeta, cls).__new__(cls, name, bases, attrs)
 
 
-def gen_init(cls, thrift_spec=None, default_spec=None):
+def gen_init(cls: type, thrift_spec: Optional[Dict[int, tuple]] = None,
+             default_spec: Optional[List[Tuple[str, Any]]] = None) -> type:
     if thrift_spec is not None:
         cls.thrift_spec = thrift_spec
 
@@ -151,37 +161,39 @@ class TPayload(metaclass=TPayloadMeta):
 
     __hash__ = None
 
-    def read(self, iprot):
+    def read(self, iprot: 'TProtocolBase') -> None:
         iprot.read_struct(self)
 
-    def write(self, oprot):
+    def write(self, oprot: 'TProtocolBase') -> None:
         oprot.write_struct(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         l = ['%s=%r' % (key, value) for key, value in self.__dict__.items()]
         return '%s(%s)' % (self.__class__.__name__, ', '.join(l))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return repr(self)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, self.__class__) and \
             self.__dict__ == other.__dict__
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
 
 class TClient(object):
 
-    def __init__(self, service, iprot, oprot=None):
+    def __init__(self, service: types.ModuleType,
+                 iprot: 'TProtocolBase',
+                 oprot: Optional['TProtocolBase'] = None) -> None:
         self._service = service
         self._iprot = self._oprot = iprot
         if oprot is not None:
             self._oprot = oprot
         self._seqid = 0
 
-    def __getattr__(self, _api):
+    def __getattr__(self, _api: str) -> functools.partial:
         if _api in self._service.thrift_services:
             return functools.partial(self._req, _api)
 
@@ -193,10 +205,10 @@ class TClient(object):
         raise AttributeError("{} instance has no attribute '{}'".format(
             self.__class__.__name__, _api))
 
-    def __dir__(self):
+    def __dir__(self) -> List[str]:
         return self._service.thrift_services
 
-    def _req(self, _api, *args, **kwargs):
+    def _req(self, _api: str, *args: Any, **kwargs: Any) -> Any:
         try:
             service_args = getattr(self._service, _api + "_args")
             kwargs = args_to_kwargs(service_args.thrift_spec, *args, **kwargs)
@@ -213,7 +225,7 @@ class TClient(object):
         if not getattr(result_cls, "oneway"):
             return self._recv(_api)
 
-    def _send(self, _api, **kwargs):
+    def _send(self, _api: str, **kwargs: Any) -> None:
         oneway = getattr(getattr(self._service, _api + "_result"), "oneway")
         msg_type = TMessageType.ONEWAY if oneway else TMessageType.CALL
         self._oprot.write_message_begin(_api, msg_type, self._seqid)
@@ -224,7 +236,7 @@ class TClient(object):
         self._oprot.write_message_end()
         self._oprot.trans.flush()
 
-    def _recv(self, _api):
+    def _recv(self, _api: str) -> Any:
         fname, mtype, rseqid = self._iprot.read_message_begin()
         if mtype == TMessageType.EXCEPTION:
             x = TApplicationException()
@@ -251,7 +263,7 @@ class TClient(object):
         if hasattr(result, "success"):
             raise TApplicationException(TApplicationException.MISSING_RESULT)
 
-    def close(self):
+    def close(self) -> None:
         self._iprot.trans.close()
         if self._iprot != self._oprot:
             self._oprot.trans.close()
@@ -260,11 +272,12 @@ class TClient(object):
 class TProcessor(object):
     """Base class for processor, which works on two streams."""
 
-    def __init__(self, service, handler):
+    def __init__(self, service: types.ModuleType, handler: object) -> None:
         self._service = service
         self._handler = handler
 
-    def process_in(self, iprot):
+    def process_in(self, iprot: 'TProtocolBase'
+                   ) -> Tuple[str, int, Any, Optional[Callable]]:
         api, type, seqid = iprot.read_message_begin()
         if api not in self._service.thrift_services:
             iprot.skip(TType.STRUCT)
@@ -285,19 +298,21 @@ class TProcessor(object):
 
         return api, seqid, result, call
 
-    def send_exception(self, oprot, api, exc, seqid):
+    def send_exception(self, oprot: 'TProtocolBase', api: str,
+                       exc: 'TApplicationException', seqid: int) -> None:
         oprot.write_message_begin(api, TMessageType.EXCEPTION, seqid)
         exc.write(oprot)
         oprot.write_message_end()
         oprot.trans.flush()
 
-    def send_result(self, oprot, api, result, seqid):
+    def send_result(self, oprot: 'TProtocolBase', api: str,
+                    result: TPayload, seqid: int) -> None:
         oprot.write_message_begin(api, TMessageType.REPLY, seqid)
         result.write(oprot)
         oprot.write_message_end()
         oprot.trans.flush()
 
-    def handle_exception(self, e, result):
+    def handle_exception(self, e: Exception, result: TPayload) -> bool:
         for k in sorted(result.thrift_spec):
             if result.thrift_spec[k][1] == "success":
                 continue
@@ -308,7 +323,8 @@ class TProcessor(object):
                 return True
         return False
 
-    def process(self, iprot, oprot):
+    def process(self, iprot: 'TProtocolBase',
+                oprot: 'TProtocolBase') -> None:
         api, seqid, result, call = self.process_in(iprot)
 
         if isinstance(result, TApplicationException):
@@ -330,10 +346,11 @@ class TProcessor(object):
 class TMultiplexedProcessor(TProcessor):
     SEPARATOR = ":"
 
-    def __init__(self):
-        self.processors = {}
+    def __init__(self) -> None:
+        self.processors = {}  # type: Dict[str, TProcessor]
 
-    def register_processor(self, service_name, processor):
+    def register_processor(self, service_name: str,
+                           processor: 'TProcessor') -> None:
         if service_name in self.processors:
             raise TApplicationException(
                 type=TApplicationException.INTERNAL_ERROR,
@@ -341,7 +358,8 @@ class TMultiplexedProcessor(TProcessor):
                 .format(service_name))
         self.processors[service_name] = processor
 
-    def process_in(self, iprot):
+    def process_in(self, iprot: 'TProtocolBase'
+                   ) -> Tuple[str, int, Any, Optional[Callable]]:
         api, type, seqid = iprot.read_message_begin()
         if type not in (TMessageType.CALL, TMessageType.ONEWAY):
             raise TException("TMultiplexed protocol only supports CALL & ONEWAY")  # noqa
@@ -374,28 +392,30 @@ class TMultiplexedProcessor(TProcessor):
 
 class TProcessorFactory(object):
 
-    def __init__(self, processor_class, *args, **kwargs):
+    def __init__(self, processor_class: Type[TProcessor],
+                 *args: Any, **kwargs: Any) -> None:
         self.args = args
         self.kwargs = kwargs
 
         self.processor_class = processor_class
 
-    def get_processor(self):
+    def get_processor(self) -> TProcessor:
         return self.processor_class(*self.args, **self.kwargs)
 
 
 class TException(TPayload, Exception):
     """Base class for all thrift exceptions."""
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return id(self) == id(other)
 
 
 class TDecodeException(TException):
-    def __init__(self, name, fid, field, value, ttype, spec=None):
+    def __init__(self, name: str, fid: int, field: str, value: Any,
+                 ttype: int, spec: Any = None) -> None:
         self.struct_name = name
         self.fid = fid
         self.field = field
@@ -403,7 +423,7 @@ class TDecodeException(TException):
 
         self.type_repr = parse_spec(ttype, spec)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             "Field '%s(%s)' of '%s' needs type '%s', "
             "but the value is `%r`"
@@ -428,12 +448,13 @@ class TApplicationException(TException):
     INTERNAL_ERROR = 6
     PROTOCOL_ERROR = 7
 
-    def __init__(self, type=UNKNOWN, message=None):
+    def __init__(self, type: int = UNKNOWN,
+                 message: Optional[str] = None) -> None:
         super(TApplicationException, self).__init__()
         self.type = type
         self.message = message
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.message:
             return self.message
 
