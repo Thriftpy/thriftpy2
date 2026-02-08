@@ -4,8 +4,11 @@ from __future__ import absolute_import
 
 import contextlib
 import socket
+import ssl
+import types
 import urllib
 import warnings
+from typing import Generator, Optional
 
 from thriftpy2.contrib.aio.rpc import make_client as make_aio_client  # noqa
 from thriftpy2.contrib.aio.rpc import make_server as make_aio_server  # noqa
@@ -18,11 +21,17 @@ from thriftpy2.transport import (TBufferedTransportFactory, TServerSocket,
 from thriftpy2.transport.base import TTransportFactory
 
 
-def make_client(service, host="localhost", port=9090, unix_socket=None,
-                proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
-                trans_factory: TTransportFactory=TBufferedTransportFactory(),
-                timeout=3000, cafile=None, ssl_context=None, certfile=None,
-                keyfile=None, url="", socket_family=socket.AF_INET):
+def make_client(service: types.ModuleType, host: str = "localhost",
+                port: int = 9090, unix_socket: Optional[str] = None,
+                proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
+                trans_factory: TTransportFactory = TBufferedTransportFactory(),
+                timeout: int = 3000, cafile: Optional[str] = None,
+                ssl_context: Optional[ssl.SSLContext] = None,
+                certfile: Optional[str] = None,
+                keyfile: Optional[str] = None,
+                url: str = "",
+                socket_family: socket.AddressFamily = socket.AF_INET
+                ) -> TClient:
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
@@ -57,12 +66,15 @@ def make_client(service, host="localhost", port=9090, unix_socket=None,
     return TClient(service, protocol)
 
 
-def make_server(service, handler,
-                host="localhost", port=9090, unix_socket=None,
-                proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
-                trans_factory: TTransportFactory=TBufferedTransportFactory(),
-                client_timeout=3000, certfile=None,
-                socket_family=socket.AF_INET):
+def make_server(service: types.ModuleType, handler: object,
+                host: str = "localhost", port: int = 9090,
+                unix_socket: Optional[str] = None,
+                proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
+                trans_factory: TTransportFactory = TBufferedTransportFactory(),
+                client_timeout: int = 3000,
+                certfile: Optional[str] = None,
+                socket_family: socket.AddressFamily = socket.AF_INET
+                ) -> TThreadedServer:
     processor = TProcessor(service, handler)
 
     if unix_socket:
@@ -88,12 +100,20 @@ def make_server(service, handler,
 
 
 @contextlib.contextmanager
-def client_context(service, host="localhost", port=9090, unix_socket=None,
-                   proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
-                   trans_factory: TTransportFactory=TBufferedTransportFactory(),
-                   timeout=None, socket_timeout=3000, connect_timeout=3000,
-                   cafile=None, ssl_context=None, certfile=None, keyfile=None,
-                   url="", socket_family=socket.AF_INET):
+def client_context(service: types.ModuleType, host: str = "localhost",
+                   port: int = 9090, unix_socket: Optional[str] = None,
+                   proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
+                   trans_factory: TTransportFactory = TBufferedTransportFactory(),
+                   timeout: Optional[int] = None,
+                   socket_timeout: int = 3000,
+                   connect_timeout: int = 3000,
+                   cafile: Optional[str] = None,
+                   ssl_context: Optional[ssl.SSLContext] = None,
+                   certfile: Optional[str] = None,
+                   keyfile: Optional[str] = None,
+                   url: str = "",
+                   socket_family: socket.AddressFamily = socket.AF_INET
+                   ) -> Generator[TClient, None, None]:
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host

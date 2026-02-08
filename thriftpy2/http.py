@@ -36,10 +36,14 @@ import http.client as http_client
 import http.server as http_server
 import os
 import socket
+import ssl
 import sys
+import types
 import urllib
 from contextlib import contextmanager
 from io import BytesIO
+from typing import (BinaryIO, Callable, Dict, Generator, Optional,
+                    Tuple, Type)
 
 from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.protocol.base import TProtocolFactory
@@ -55,22 +59,22 @@ DEFAULT_HTTP_CLIENT_TIMEOUT_MS = 30000  # 30 seconds
 class TFileObjectTransport(TTransportBase):
     """Wraps a file-like object to make it work as a Thrift transport."""
 
-    def __init__(self, fileobj):
+    def __init__(self, fileobj: BinaryIO) -> None:
         self.fileobj = fileobj
 
-    def isOpen(self):
+    def isOpen(self) -> bool:
         return True
 
-    def close(self):
+    def close(self) -> None:
         self.fileobj.close()
 
-    def read(self, sz):
+    def read(self, sz: int) -> bytes:
         return self.fileobj.read(sz)
 
-    def write(self, buf):
+    def write(self, buf: bytes) -> None:
         self.fileobj.write(buf)
 
-    def flush(self):
+    def flush(self) -> None:
         self.fileobj.flush()
 
 
@@ -83,14 +87,14 @@ class ResponseException(Exception):
     The function passed to the constructor will be called with the
     RequestHandler as its only argument.
     """
-    def __init__(self, handler):
+    def __init__(self, handler: Callable) -> None:
         self.handler = handler
 
 
 class THttpHeaderFactory(object):
     """Default header factory return no custom headers
     """
-    def __init__(self, headers=None):
+    def __init__(self, headers: Optional[Dict[str, str]] = None) -> None:
         """Initialize a header factory
         @param headers(dict)
             A dictionary of static headers the factory generates
@@ -100,7 +104,7 @@ class THttpHeaderFactory(object):
         else:
             self.__headers = dict()
 
-    def get_headers(self):
+    def get_headers(self) -> Dict[str, str]:
         return self.__headers
 
 
@@ -110,11 +114,12 @@ class THttpServer(TServer):
     acting as a mock version of an Apache-based PHP Thrift endpoint.
     """
     def __init__(self,
-                 processor,
-                 server_address,
-                 itrans_factory,
-                 iprot_factory,
-                 server_class=http_server.HTTPServer):
+                 processor: TProcessor,
+                 server_address: Tuple[str, int],
+                 itrans_factory: TTransportFactory,
+                 iprot_factory: TProtocolFactory,
+                 server_class: Type[http_server.HTTPServer] = http_server.HTTPServer
+                 ) -> None:
         """Set up protocol factories and HTTP server.
         See http.server for server_address.
         See TServer for protocol factories.
@@ -156,7 +161,7 @@ class THttpServer(TServer):
 
         self.httpd = server_class(server_address, RequestHandler)
 
-    def serve(self):
+    def serve(self) -> None:
         self.httpd.serve_forever()
 
 
@@ -164,8 +169,10 @@ class THttpClient(object):
     """Http implementation of TTransport base.
     """
 
-    def __init__(self, uri, timeout=None, ssl_context_factory=None,
-                 http_header_factory=None):
+    def __init__(self, uri: str, timeout: Optional[int] = None,
+                 ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
+                 http_header_factory: Optional[THttpHeaderFactory] = None
+                 ) -> None:
         """Initialize a HTTP Socket.
 
         @param uri(str)    The http_scheme:://host:port/path to connect to.
@@ -190,7 +197,7 @@ class THttpClient(object):
             self.setTimeout(timeout)
         self._ssl_context_factory = ssl_context_factory
 
-    def open(self):
+    def open(self) -> None:
         if self.scheme == "https":
             ssl_context = self._ssl_context_factory() \
                 if self._ssl_context_factory else None
@@ -199,30 +206,30 @@ class THttpClient(object):
         else:
             self.__http = http_client.HTTPConnection(self.host, self.port)
 
-    def close(self):
+    def close(self) -> None:
         self.__http.close()
         self.__http = None
 
-    def isOpen(self):
+    def isOpen(self) -> bool:
         return self.__http is not None
 
-    def setTimeout(self, ms):
+    def setTimeout(self, ms: int) -> None:
         if not hasattr(socket, 'getdefaulttimeout'):
             raise NotImplementedError
 
         self.__timeout = ms / 1000.0 if (ms and ms > 0) else None
 
-    def setCustomHeaders(self, headers):
+    def setCustomHeaders(self, headers: Dict[str, str]) -> None:
         self._http_header_factory = THttpHeaderFactory(headers)
 
-    def read(self, sz):
+    def read(self, sz: int) -> bytes:
         content = self.response.read(sz)
         return content
 
-    def write(self, buf):
+    def write(self, buf: bytes) -> None:
         self.__wbuf.write(buf)
 
-    def flush(self):
+    def flush(self) -> None:
         # Pull data out of buffer
         # Do this before opening a new connection in case there isn't data
         data = self.__wbuf.getvalue()
@@ -284,12 +291,14 @@ class THttpClient(object):
         flush = __with_timeout(flush)
 
 
-def make_client(service, host='localhost', port=9090, path='', scheme='http',
-                proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
-                trans_factory: TTransportFactory=TBufferedTransportFactory(),
-                ssl_context_factory=None,
-                http_header_factory=None,
-                timeout=DEFAULT_HTTP_CLIENT_TIMEOUT_MS, url=''):
+def make_client(service: types.ModuleType, host: str = 'localhost',
+                port: int = 9090, path: str = '', scheme: str = 'http',
+                proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
+                trans_factory: TTransportFactory = TBufferedTransportFactory(),
+                ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
+                http_header_factory: Optional[THttpHeaderFactory] = None,
+                timeout: int = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
+                url: str = '') -> TClient:
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
@@ -309,12 +318,14 @@ def make_client(service, host='localhost', port=9090, path='', scheme='http',
 
 
 @contextmanager
-def client_context(service, host='localhost', port=9090, path='', scheme='http',
-                   proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
-                   trans_factory: TTransportFactory=TBufferedTransportFactory(),
-                   ssl_context_factory=None,
-                   http_header_factory=None,
-                   timeout=DEFAULT_HTTP_CLIENT_TIMEOUT_MS, url=''):
+def client_context(service: types.ModuleType, host: str = 'localhost',
+                   port: int = 9090, path: str = '', scheme: str = 'http',
+                   proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
+                   trans_factory: TTransportFactory = TBufferedTransportFactory(),
+                   ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
+                   http_header_factory: Optional[THttpHeaderFactory] = None,
+                   timeout: int = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
+                   url: str = '') -> Generator[TClient, None, None]:
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
@@ -336,9 +347,11 @@ def client_context(service, host='localhost', port=9090, path='', scheme='http',
         transport.close()
 
 
-def make_server(service, handler, host, port,
-                proto_factory: TProtocolFactory=TBinaryProtocolFactory(),
-                trans_factory: TTransportFactory=TBufferedTransportFactory()):
+def make_server(service: types.ModuleType, handler: object,
+                host: str, port: int,
+                proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
+                trans_factory: TTransportFactory = TBufferedTransportFactory()
+                ) -> THttpServer:
     processor = TProcessor(service, handler)
     server = THttpServer(processor, (host, port),
                          itrans_factory=trans_factory,
