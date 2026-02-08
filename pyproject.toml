@@ -7,7 +7,7 @@ requires = [
 
 [project]
 name = "thriftpy2"
-version = "0.6.0b2"
+version = "0.6.0"
 description = "Pure python implementation of Apache Thrift."
 authors = [
     {name = "ThriftPy Organization", email = "gotzehsing@gmail.com"},
