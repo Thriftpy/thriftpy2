@@ -6,7 +6,6 @@ import traceback
 from multiprocessing import Process
 
 import pytest
-import six
 
 from thriftpy2 import _compat
 from thriftpy2.thrift import TType, TPayloadMeta
@@ -45,10 +44,10 @@ protocols = [TApacheJSONProtocolFactory,
 
 
 def recursive_vars(obj):
-    if isinstance(obj, six.string_types):
-        return six.ensure_str(obj)
-    if isinstance(obj, six.binary_type):
-        return six.ensure_binary(obj)
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, bytes):
+        return obj
     if isinstance(obj, (int, float, bool)):
         return obj
     if isinstance(obj, dict):
@@ -299,13 +298,13 @@ type_map = {
     TType.I32: (int,),
     TType.I64: (int,),
     TType.DOUBLE: (float,),
-    TType.STRING: six.string_types,
+    TType.STRING: str,
     TType.BOOL: (bool,),
     TType.STRUCT: TPayloadMeta,
     TType.SET: (set, list),
     TType.LIST: (list,),
     TType.MAP: (dict,),
-    TType.BINARY: six.binary_type
+    TType.BINARY: bytes
 }
 
 type_names = {

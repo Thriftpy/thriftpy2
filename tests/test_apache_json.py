@@ -7,7 +7,6 @@ import time
 from multiprocessing import Process
 
 import pytest
-import six
 
 import thriftpy2
 from thriftpy2.http import make_server as make_http_server, \
@@ -21,10 +20,10 @@ from thriftpy2.transport.buffered import TBufferedTransportFactory
 
 
 def recursive_vars(obj):
-    if isinstance(obj, six.string_types):
-        return six.ensure_str(obj)
-    if isinstance(obj, six.binary_type):
-        return six.ensure_binary(obj)
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, bytes):
+        return obj
     if isinstance(obj, (int, float, bool)):
         return obj
     if isinstance(obj, dict):

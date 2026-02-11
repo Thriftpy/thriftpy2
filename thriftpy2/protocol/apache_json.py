@@ -10,7 +10,6 @@ import json
 import base64
 import sys
 
-import six
 
 from thriftpy2.protocol import TProtocolBase
 from thriftpy2.thrift import TType
@@ -62,7 +61,7 @@ def _ensure_b64_encode(val):
     Ensure that the variable is something that we can encode with b64encode
     python3 needs bytes, python2 needs string
     """
-    if sys.version_info[0] > 2 and isinstance(val, str):
+    if isinstance(val, str):
         return val.encode()
     return val
 
@@ -233,7 +232,7 @@ class TApacheJSONProtocol(TProtocolBase):
         :return:
         """
         # if the result is a python type, return it:
-        if isinstance(data, (str, int, float, bool, six.string_types, six.binary_type)) or data is None:
+        if isinstance(data, (str, int, float, bool)) or data is None:
             if base_type in (TType.I08, TType.I16, TType.I32, TType.I64):
                 return int(data)
             if base_type == TType.BINARY and TType.BINARY != TType.STRING:
