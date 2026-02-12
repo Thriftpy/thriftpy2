@@ -7,8 +7,6 @@ from libc.stdint cimport int16_t, int32_t, int64_t
 from libc.string cimport memcpy
 from cpython cimport bool
 
-import six
-
 from thriftpy2.thrift import TDecodeException
 from thriftpy2.transport.cybase cimport CyTransportBase, STACK_STRING_LEN
 
@@ -387,12 +385,12 @@ cdef c_write_val(CyTransportBase buf, TType ttype, val, spec=None):
         write_double(buf, val)
 
     elif ttype == T_BINARY:
-        if isinstance(val, six.string_types) and sys.version_info[0] > 2:
+        if isinstance(val, str):
             val = val.encode()
         write_string(buf, val)
 
     elif ttype == T_STRING:
-        if not isinstance(val, six.binary_type):
+        if not isinstance(val, bytes):
             try:
                 val = val.encode("utf-8")
             except Exception:

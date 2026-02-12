@@ -6,7 +6,6 @@ import array
 import sys
 from struct import pack, unpack
 
-import six
 
 from ..thrift import TException, TType
 from .base import TProtocolBase
@@ -437,7 +436,7 @@ class TCompactProtocol(TProtocolBase):
 
     def _write_binary(self, b):
         self._write_size(len(b))
-        if isinstance(b, six.string_types) and sys.version_info[0] > 2:
+        if isinstance(b, str):
             b = b.encode()
         self.trans.write(b)
 

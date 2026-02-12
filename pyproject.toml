@@ -14,7 +14,6 @@ authors = [
 ]
 dependencies = [
     "ply>=3.4,<4.0",
-    "six~=1.15",
     "typing_extensions>=3.7.4; python_version<'3.8'",
 ]
 requires-python = ">=3.7"
