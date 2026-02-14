@@ -132,19 +132,19 @@ def p_definition_unit(p):
 def p_const(p):
     '''const : CONST field_type IDENTIFIER '=' const_value type_annotations
              | CONST field_type IDENTIFIER '=' const_value type_annotations sep'''
-
+    _, field_type, name, _, const_value, annotations = p[1:7]
     try:
-        val = _cast(p[2], p.lineno(3))(p[5])
+        val = _cast(field_type, p.lineno(3))(const_value)
     except AssertionError:
         raise ThriftParserError('Type error for constant %s at line %d' %
-                                (p[3], p.lineno(3)))
+                                (name, p.lineno(3)))
     thrift = threadlocal.thrift_stack[-1]
-    setattr(thrift, p[3], val)
+    setattr(thrift, name, val)
     _add_thrift_meta('consts', val)
-    if p[6]:
+    if annotations:
         if not hasattr(thrift, '__thrift_const_annotations__'):
             thrift.__thrift_const_annotations__ = {}
-        thrift.__thrift_const_annotations__[p[3]] = _annotations_to_dict(p[6])
+        thrift.__thrift_const_annotations__[name] = _annotations_to_dict(annotations)
 
 
 def p_const_value(p):
@@ -216,18 +216,20 @@ def p_ttype(p):
 
 def p_typedef(p):
     '''typedef : TYPEDEF field_type IDENTIFIER type_annotations'''
+    _, field_type, name, annotations = p[1:5]
     thrift = threadlocal.thrift_stack[-1]
-    setattr(thrift, p[3], p[2])
-    if p[4]:
+    setattr(thrift, name, field_type)
+    if annotations:
         if not hasattr(thrift, '__thrift_typedef_annotations__'):
             thrift.__thrift_typedef_annotations__ = {}
-        thrift.__thrift_typedef_annotations__[p[3]] = _annotations_to_dict(p[4])
+        thrift.__thrift_typedef_annotations__[name] = _annotations_to_dict(annotations)
 
 
 def p_enum(p):  # noqa
     '''enum : ENUM IDENTIFIER '{' enum_seq '}' type_annotations'''
-    val = _make_enum(p[2], p[4], p[6])
-    setattr(threadlocal.thrift_stack[-1], p[2], val)
+    _, name, _, items, _, annotations = p[1:7]
+    val = _make_enum(name, items, annotations)
+    setattr(threadlocal.thrift_stack[-1], name, val)
     _add_thrift_meta('enums', val)
 
 
@@ -250,37 +252,42 @@ def p_enum_item(p):
 
 def p_struct(p):
     '''struct : seen_struct '{' field_seq '}' type_annotations'''
-    val = _fill_in_struct(p[1], p[3])
-    val.__thrift_annotations__ = _annotations_to_dict(p[5])
+    cls, _, fields, _, annotations = p[1:6]
+    val = _fill_in_struct(cls, fields)
+    val.__thrift_annotations__ = _annotations_to_dict(annotations)
     _add_thrift_meta('structs', val)
 
 
 def p_seen_struct(p):
     '''seen_struct : STRUCT IDENTIFIER '''
-    val = _make_empty_struct(p[2])
-    setattr(threadlocal.thrift_stack[-1], p[2], val)
+    _, name = p[1:3]
+    val = _make_empty_struct(name)
+    setattr(threadlocal.thrift_stack[-1], name, val)
     p[0] = val
 
 
 def p_union(p):
     '''union : seen_union '{' field_seq '}' type_annotations'''
-    val = _fill_in_struct(p[1], p[3])
-    val.__thrift_annotations__ = _annotations_to_dict(p[5])
+    cls, _, fields, _, annotations = p[1:6]
+    val = _fill_in_struct(cls, fields)
+    val.__thrift_annotations__ = _annotations_to_dict(annotations)
     _add_thrift_meta('unions', val)
 
 
 def p_seen_union(p):
     '''seen_union : UNION IDENTIFIER '''
-    val = _make_empty_struct(p[2])
-    setattr(threadlocal.thrift_stack[-1], p[2], val)
+    _, name = p[1:3]
+    val = _make_empty_struct(name)
+    setattr(threadlocal.thrift_stack[-1], name, val)
     p[0] = val
 
 
 def p_exception(p):
     '''exception : EXCEPTION IDENTIFIER '{' field_seq '}' type_annotations '''
-    val = _make_struct(p[2], p[4], base_cls=TException)
-    val.__thrift_annotations__ = _annotations_to_dict(p[6])
-    setattr(threadlocal.thrift_stack[-1], p[2], val)
+    _, name, _, fields, _, annotations = p[1:7]
+    val = _make_struct(name, fields, base_cls=TException)
+    val.__thrift_annotations__ = _annotations_to_dict(annotations)
+    setattr(threadlocal.thrift_stack[-1], name, val)
     _add_thrift_meta('exceptions', val)
 
 
@@ -311,9 +318,10 @@ def p_simple_service(p):
 
 def p_service(p):
     '''service : simple_service type_annotations'''
-    name, funcs, extends = p[1]
+    service_info, annotations = p[1:3]
+    name, funcs, extends = service_info
     thrift = threadlocal.thrift_stack[-1]
-    val = _make_service(name, funcs, extends, p[2])
+    val = _make_service(name, funcs, extends, annotations)
     setattr(thrift, name, val)
     _add_thrift_meta('services', val)
 
@@ -377,18 +385,19 @@ def p_simple_field(p):
     '''simple_field : field_id field_req field_type IDENTIFIER
              | field_id field_req field_type IDENTIFIER '=' const_value
              '''
+    field_id, field_req, field_type, name = p[1:5]
 
     if len(p) == 7:
         try:
-            val = _cast(p[3])(p[6])
+            default_val = _cast(field_type)(p[6])
         except AssertionError:
             raise ThriftParserError(
                 'Type error for field %s '
-                'at line %d' % (p[4], p.lineno(4)))
+                'at line %d' % (name, p.lineno(4)))
     else:
-        val = None
+        default_val = None
 
-    p[0] = [p[1], p[2], p[3], p[4], val]
+    p[0] = [field_id, field_req, field_type, name, default_val]
 
 
 def p_field(p):
