@@ -443,6 +443,31 @@ def p_ref_type(p):
     '''ref_type : IDENTIFIER'''
     ref_type = threadlocal.thrift_stack[-1]
 
+    # For qualified names (e.g., 'module.Type'), check if the prefix matches an included module
+    # This handles the case where a local struct shadows an imported module name
+    if '.' in p[1]:
+        prefix = p[1].split('.', 1)[0]
+
+        # First, check if this prefix matches any included module
+        if hasattr(ref_type, '__thrift_meta__') and 'includes' in ref_type.__thrift_meta__:
+            for included_module in ref_type.__thrift_meta__['includes']:
+                if hasattr(included_module, '__name__') and included_module.__name__ == prefix:
+                    # Found the included module, now resolve the rest of the path
+                    path_parts = p[1].split('.')[1:]
+                    current_ref = included_module
+                    for part in path_parts:
+                        current_ref = getattr(current_ref, part, None)
+                        if current_ref is None:
+                            break
+
+                    if current_ref is not None:
+                        if hasattr(current_ref, '_ttype'):
+                            p[0] = getattr(current_ref, '_ttype'), current_ref
+                        else:
+                            p[0] = current_ref
+                        return
+
+    # Original resolution logic for backward compatibility
     for attr in dir(ref_type):
         if attr in {'__doc__', '__loader__', '__name__', '__package__',
                     '__spec__', '__thrift_file__', '__thrift_meta__'}:
@@ -455,6 +480,7 @@ def p_ref_type(p):
                 ref_type = resolved_ref_type
                 break
     else:
+        # Standard resolution for unqualified names
         for index, name in enumerate(p[1].split('.')):
             ref_type = getattr(ref_type, name, None)
             if ref_type is None:

@@ -456,3 +456,40 @@ def test_nest_incomplete_type():
 
 def test_issue_121():
     load('parser-cases/issue_121.thrift')
+
+
+def test_name_collision_with_imported_module():
+    """Test that qualified names resolve correctly when a local struct
+    has the same name as an imported module."""
+    thrift = load('parser-cases/name_collision.thrift')
+
+    # The local struct 'name_collision_imported' should exist
+    assert hasattr(thrift, 'name_collision_imported')
+    local_struct = thrift.name_collision_imported
+
+    # Verify it's the local struct with the expected fields
+    assert local_struct.thrift_spec[1][1] == 'local_field1'
+    assert local_struct.thrift_spec[2][1] == 'local_field2'
+
+    # TestStruct should exist with two fields
+    test_struct = thrift.TestStruct
+    assert len(test_struct.thrift_spec) == 2
+
+    # Field 1: should reference the local struct 'name_collision_imported'
+    field1_spec = test_struct.thrift_spec[1]
+    assert field1_spec[1] == 'localStruct'
+    assert field1_spec[2] == local_struct
+
+    # Field 2: should reference UserProfile from the imported module
+    field2_spec = test_struct.thrift_spec[2]
+    assert field2_spec[1] == 'importedUserProfile'
+
+    # Critical assertions: field2 must NOT be the local struct
+    assert field2_spec[2] != local_struct
+
+    # It must be UserProfile with the correct structure
+    user_profile_type = field2_spec[2]
+    assert user_profile_type.__name__ == 'UserProfile'
+    assert user_profile_type.thrift_spec[1][1] == 'user_id'
+    assert user_profile_type.thrift_spec[2][1] == 'username'
+    assert user_profile_type.thrift_spec[3][1] == 'email'
