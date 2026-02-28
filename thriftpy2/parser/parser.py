@@ -71,10 +71,12 @@ def p_include(p):
             thrift_file_name_module = os.path.basename(thrift.__thrift_file__)
             if thrift_file_name_module.endswith(".thrift"):
                 thrift_file_name_module = thrift_file_name_module[:-7] + "_thrift"
-            module_prefix = str(thrift.__name__).rstrip(thrift_file_name_module)
+            module_prefix = str(thrift.__name__)[:-len(thrift_file_name_module)] if thrift.__name__.endswith(thrift_file_name_module) else ""
 
             child_rel_path = os.path.relpath(str(path), os.path.dirname(thrift.__thrift_file__))
-            child_module_name = str(child_rel_path).replace(os.sep, ".").replace(".thrift", "_thrift")
+            child_module_name = str(child_rel_path).replace(os.sep, ".")
+            if child_module_name.endswith(".thrift"):
+                child_module_name = child_module_name[:-7] + "_thrift"
             child_module_name = module_prefix + child_module_name
 
             child = parse(path, module_name=child_module_name)

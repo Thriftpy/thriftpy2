@@ -454,5 +454,24 @@ def test_nest_incomplete_type():
     }
 
 
+def test_thrift_in_include_path():
+    """Regression: directory named 'thrift' in include path should not be mangled.
+
+    Previously, .replace(".thrift", "_thrift") was applied greedily to the
+    entire dotted module path, so a directory literally named 'thrift/' would
+    get its dot-separator replaced (e.g. 'main.thrift.sub' -> 'main_thrift.sub').
+    The fix only replaces the final .thrift file extension suffix.
+    """
+    thrift = load(
+        'parser-cases/thrift_in_path/parent.thrift',
+        module_name='thrift_in_path_parent_thrift',
+    )
+    # 'thrift' in the directory path must be preserved as '.thrift.' not '_thrift'
+    assert sys.modules['thrift_in_path_main.thrift.sub.child_thrift'] is not None
+    assert thrift.child.ChildStruct is not None
+    # The old greedy replace would have produced this mangled key — verify it's absent
+    assert 'thrift_in_path_main_thrift.sub.child_thrift' not in sys.modules
+
+
 def test_issue_121():
     load('parser-cases/issue_121.thrift')
