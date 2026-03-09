@@ -5,6 +5,7 @@ import json
 import sys
 import time
 from multiprocessing import Process
+from io import BytesIO
 
 import pytest
 import six
@@ -17,6 +18,7 @@ from thriftpy2.rpc import make_server as make_rpc_server, \
     make_client as make_rpc_client
 from thriftpy2.thrift import TProcessor, TType
 from thriftpy2.transport import TMemoryBuffer
+from thriftpy2.transport.base import TTransportBase, TTransportException
 from thriftpy2.transport.buffered import TBufferedTransportFactory
 
 
@@ -35,11 +37,57 @@ def recursive_vars(obj):
         return recursive_vars(vars(obj))
 
 
-def test_thrift_transport():
-    test_thrift = thriftpy2.load(
+class ChunkedMemoryTransport(TTransportBase):
+    def __init__(self, value, chunk_size):
+        self._buffer = BytesIO(value)
+        self._chunk_size = chunk_size
+
+    def is_open(self):
+        return True
+
+    def open(self):
+        pass
+
+    def close(self):
+        self._buffer.close()
+
+    def _read(self, sz):
+        return self._buffer.read(min(sz, self._chunk_size))
+
+    def write(self, buf):
+        self._buffer.write(buf)
+
+    def flush(self):
+        pass
+
+
+def load_test_thrift(module_name="test_thrift"):
+    return thriftpy2.load(
         "apache_json_test.thrift",
-        module_name="test_thrift"
+        module_name=module_name
     )
+
+
+def make_request_bytes(test_thrift, obj, seqid=0):
+    args = test_thrift.TestService.test_args(test=obj)
+    buf = TMemoryBuffer()
+    oprot = TApacheJSONProtocolFactory().get_protocol(buf)
+    oprot.write_message_begin("test", 1, seqid)
+    oprot.write_struct(args)
+    return buf.getvalue()
+
+
+def read_request_args(test_thrift, data, chunk_size=4096):
+    trans = ChunkedMemoryTransport(data, chunk_size)
+    iprot = TApacheJSONProtocolFactory().get_protocol(trans)
+    assert iprot.read_message_begin() == ("test", 1, 0)
+    args = iprot.read_struct(test_thrift.TestService.test_args())
+    iprot.read_message_end()
+    return args
+
+
+def test_thrift_transport():
+    test_thrift = load_test_thrift()
     Test = test_thrift.Test
     Foo = test_thrift.Foo
     test_object = Test(
@@ -131,10 +179,7 @@ def test_thrift_transport():
 @pytest.mark.parametrize('server_func', [(make_rpc_server, make_rpc_client),
                                          (make_http_server, make_http_client)])
 def test_client(server_func):
-    test_thrift = thriftpy2.load(
-        "apache_json_test.thrift",
-        module_name="test_thrift"
-    )
+    test_thrift = load_test_thrift()
 
     class Handler:
         @staticmethod
@@ -177,3 +222,41 @@ def test_client(server_func):
     finally:
         proc.terminate()
     time.sleep(1)
+
+
+def test_load_data_handles_chunked_messages():
+    test_thrift = load_test_thrift(module_name="chunked_messages_test_thrift")
+    first = test_thrift.Test(
+        tstr='你好 \\\\ "quoted" [brackets] 😀🚀🎉',
+        tlist_of_strings=['["nested"]', 'slash\\\\quote\\"', '中文😀🎉'],
+    )
+    second = test_thrift.Test(tstr="第二条 😀🚀🎉")
+    transport = ChunkedMemoryTransport(
+        b" \n\t" + make_request_bytes(test_thrift, first) + make_request_bytes(test_thrift, second),
+        chunk_size=7,
+    )
+    iprot = TApacheJSONProtocolFactory().get_protocol(transport)
+
+    assert iprot.read_message_begin() == ("test", 1, 0)
+    first_args = iprot.read_struct(test_thrift.TestService.test_args())
+    iprot.read_message_end()
+
+    assert iprot.read_message_begin() == ("test", 1, 0)
+    second_args = iprot.read_struct(test_thrift.TestService.test_args())
+    iprot.read_message_end()
+
+    assert recursive_vars(first_args.test) == recursive_vars(first)
+    assert recursive_vars(second_args.test) == recursive_vars(second)
+
+
+def test_load_data_raises_eof_for_truncated_payload():
+    test_thrift = load_test_thrift(module_name="truncated_test_thrift")
+    request_data = make_request_bytes(test_thrift, test_thrift.Test(tstr="truncated"))[:-1]
+    iprot = TApacheJSONProtocolFactory().get_protocol(
+        ChunkedMemoryTransport(request_data, chunk_size=4)
+    )
+
+    with pytest.raises(TTransportException) as exc_info:
+        iprot.read_message_begin()
+
+    assert exc_info.value.type == TTransportException.END_OF_FILE
