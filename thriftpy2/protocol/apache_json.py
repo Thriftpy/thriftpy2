@@ -6,13 +6,16 @@ unfortunately, thriftpy2's TJSONProtocol is not compatible with apache's
 """
 
 from __future__ import absolute_import
+import codecs
 import json
 import base64
 import sys
 
 
 from thriftpy2.protocol import TProtocolBase
+from thriftpy2.protocol.exc import TProtocolException
 from thriftpy2.thrift import TType
+from thriftpy2.transport.base import TTransportException
 
 
 CTYPES = {
@@ -76,44 +79,81 @@ class TApacheJSONProtocol(TProtocolBase):
     Protocol that implements the Apache JSON Protocol
     """
 
+    READ_CHUNK_SIZE = 4096
+
     def __init__(self, trans):
         TProtocolBase.__init__(self, trans)
         self._req = None
+        self._decoder = json.JSONDecoder()
+        self._input_text = ""
+        self._utf8_decoder = codecs.getincrementaldecoder("utf-8")()
+
+    def _read_chunk(self, sz):
+        read = getattr(self.trans, "_read", None)
+        if read is None:
+            return self.trans.read(sz)
+        return read(sz)
+
+    def _decode_chunk(self, chunk, final=False):
+        try:
+            return self._utf8_decoder.decode(chunk, final=final)
+        except UnicodeDecodeError as exc:
+            raise TProtocolException(
+                type=TProtocolException.INVALID_DATA,
+                message="Bad UTF-8 data in Apache JSON payload: {}".format(exc)
+            )
+
+    def _try_parse_buffer(self):
+        stripped = self._input_text.lstrip()
+        if not stripped:
+            return False
+
+        try:
+            self._req, end = self._decoder.raw_decode(stripped)
+        except ValueError:
+            return False
+
+        self._input_text = stripped[end:]
+        return True
+
+    def _raise_parse_error(self):
+        stripped = self._input_text.lstrip()
+        if not stripped:
+            self._req = None
+            self._input_text = ""
+            return
+
+        try:
+            self._decoder.raw_decode(stripped)
+        except ValueError as exc:
+            pos = getattr(exc, "pos", None)
+            if pos is None or pos >= len(stripped):
+                raise TTransportException(
+                    TTransportException.END_OF_FILE,
+                    "End of file reading Apache JSON payload"
+                )
+            raise TProtocolException(
+                type=TProtocolException.INVALID_DATA,
+                message="Invalid Apache JSON payload: {}".format(exc)
+            )
 
     def _load_data(self):
-        data = b""
-        l_braces = 0
-        in_string = False
         while True:
-            # read(sz) will wait until it has read exactly sz bytes,
-            # so we must read until we get a balanced json list in absence of knowing
-            # how long the json string will be
-            if hasattr(self.trans, 'getvalue'):
-                try:
-                    data = self.trans.getvalue()
-                    break
-                except Exception:
-                    pass
-            new_data = self.trans.read(1)
-            data += new_data
-            if new_data == b'"' and not data.endswith(b'\\"'):
-                in_string = not in_string
-            if not in_string:
-                if new_data == b"[":
-                    l_braces += 1
-                elif new_data == b"]":
-                    l_braces -= 1
-            if l_braces == 0:
-                break
-        if data:
-            self._req = json.loads(data.decode('utf8'))
-        else:
-            self._req = None
+            if self._try_parse_buffer():
+                return
+
+            new_data = self._read_chunk(self.READ_CHUNK_SIZE)
+            if not new_data:
+                self._input_text += self._decode_chunk(b"", final=True)
+                self._raise_parse_error()
+                return
+
+            self._input_text += self._decode_chunk(new_data)
 
     def read_message_begin(self):
         if not self._req:
             self._load_data()
-        return self._req[1:4]
+        return tuple(self._req[1:4])
 
     def read_message_end(self):
         pass
@@ -315,4 +355,6 @@ class TApacheJSONProtocol(TProtocolBase):
         :param obj:
         :return:
         """
-        return self._dict_to_thrift(self._req[4], obj)
+        result = self._dict_to_thrift(self._req[4], obj)
+        self._req = None
+        return result
