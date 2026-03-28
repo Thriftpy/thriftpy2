@@ -159,7 +159,8 @@ def gen_init(cls: type, thrift_spec: Optional[Dict[int, tuple]] = None,
 
 class TPayload(metaclass=TPayloadMeta):
 
-    __hash__ = None
+    def __hash__(self):
+        return super(TPayload, self).__hash__()
 
     def read(self, iprot: 'TProtocolBase') -> None:
         iprot.read_struct(self)
