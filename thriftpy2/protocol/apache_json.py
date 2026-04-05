@@ -92,7 +92,8 @@ class TApacheJSONProtocol(TProtocolBase):
     def _read_chunk(self, sz):
         read = getattr(self.trans, "_read", None)
         if read is None:
-            return self.trans.read(sz)
+            # read(sz) may block until full on buffered transports, so only probe one byte here.
+            return self.trans.read(1)
         return read(sz)
 
     def _decode_chunk(self, chunk, final=False):
