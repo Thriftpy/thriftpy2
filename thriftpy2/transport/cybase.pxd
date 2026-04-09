@@ -20,7 +20,7 @@ cdef class CyTransportBase(object):
     cdef object trans
 
     cdef c_read(self, int sz, char* out)
-    cdef c_write(self, char* data, int sz)
+    cdef c_write(self, const char* data, int sz)
     cdef c_flush(self)
 
     cdef get_string(self, int sz)
