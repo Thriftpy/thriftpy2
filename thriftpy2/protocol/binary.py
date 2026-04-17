@@ -121,8 +121,9 @@ def write_val(outbuf, ttype, val, spec=None):
     elif ttype in BIN_TYPES:
         if isinstance(val, str):
             val = val.encode('utf-8')
-        val = bytes(val)
-        outbuf.write(pack_string(val))
+        val = memoryview(val)
+        outbuf.write(pack_i32(val.nbytes))
+        outbuf.write(val)
 
     elif ttype == TType.SET or ttype == TType.LIST:
         if isinstance(spec, tuple):

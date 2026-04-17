@@ -192,12 +192,13 @@ def test_write_memoryview():
         hexlify(b.getvalue())
 
     # not contiguous
-    b = TMemoryBuffer()
-    data = memoryview(b"0123")[::-1]
-    proto.write_val(b, TType.BINARY, data)
-    b.flush()
-    assert "00 00 00 04 33 32 31 30" == \
-        hexlify(b.getvalue())
+    with pytest.raises(BufferError, match="contiguous"):
+        b = TMemoryBuffer()
+        data = memoryview(b"0123")[::-1]
+        proto.write_val(b, TType.BINARY, data)
+        b.flush()
+        assert "00 00 00 04 33 32 31 30" == \
+            hexlify(b.getvalue())
 
 
 def test_write_bytearray():
