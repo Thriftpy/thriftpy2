@@ -174,7 +174,18 @@ def test_write_huge_struct():
     proto.TBinaryProtocol(b).write_struct(item)
 
 
-def test_write_memoryview():
+@pytest.fixture
+def buffer_supports_non_contiguous():
+    """Pypy 3.9 and 3.10 feature BytesIO supporting non-contiguous input data."""
+    b = BytesIO()
+    try:
+        b.write(memoryview(b"abcd")[::-1])
+    except BufferError:
+        return False
+    return True
+
+
+def test_write_memoryview(buffer_supports_non_contiguous):
     # contiguous 8-bit items
     b = TMemoryBuffer()
     data = memoryview(b"hello world!\x01")
@@ -192,9 +203,12 @@ def test_write_memoryview():
         hexlify(b.getvalue())
 
     # not contiguous
-    with pytest.raises(BufferError, match="contiguous"):
-        b = TMemoryBuffer()
-        data = memoryview(b"0123")[::-1]
+    b = TMemoryBuffer()
+    data = memoryview(b"0123")[::-1]
+    if not buffer_supports_non_contiguous:
+        with pytest.raises(BufferError, match="contiguous"):
+            proto.write_val(b, TType.BINARY, data)
+    else:
         proto.write_val(b, TType.BINARY, data)
         b.flush()
         assert "00 00 00 04 33 32 31 30" == \
