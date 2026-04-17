@@ -5,7 +5,7 @@ import sys
 from libc.stdlib cimport free, malloc
 from libc.stdint cimport int16_t, int32_t, int64_t
 from libc.string cimport memcpy
-from cpython cimport bool
+from cpython cimport bool, PyObject_GetBuffer, PyBuffer_Release, PyBUF_ANY_CONTIGUOUS, PyBUF_SIMPLE
 
 from thriftpy2.thrift import TDecodeException
 from thriftpy2.transport.cybase cimport CyTransportBase, STACK_STRING_LEN
@@ -133,6 +133,16 @@ cdef inline write_string(CyTransportBase buf, bytes val):
     write_i32(buf, val_len)
 
     buf.c_write(<char*>val, val_len)
+
+
+cdef inline write_buffer(CyTransportBase buf, val):
+    cdef Py_buffer in_buffer
+    PyObject_GetBuffer(val, &in_buffer, PyBUF_SIMPLE | PyBUF_ANY_CONTIGUOUS)
+    try:
+        write_i32(buf, in_buffer.len)
+        buf.c_write(<char *>in_buffer.buf, in_buffer.len)
+    finally:
+        PyBuffer_Release(&in_buffer)
 
 
 cdef inline write_dict(CyTransportBase buf, object val, spec):
@@ -387,7 +397,7 @@ cdef c_write_val(CyTransportBase buf, TType ttype, val, spec=None):
     elif ttype == T_BINARY:
         if isinstance(val, str):
             val = val.encode()
-        write_string(buf, val)
+        write_buffer(buf, val)
 
     elif ttype == T_STRING:
         if not isinstance(val, bytes):

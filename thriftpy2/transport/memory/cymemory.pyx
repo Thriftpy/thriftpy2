@@ -7,6 +7,7 @@ from thriftpy2.transport.cybase cimport (
     CyTransportBase,
     DEFAULT_BUFFER,
 )
+from cpython cimport bool, PyObject_GetBuffer, PyBuffer_Release, PyBUF_ANY_CONTIGUOUS, PyBUF_SIMPLE
 
 
 cdef class TCyMemoryBuffer(CyTransportBase):
@@ -37,6 +38,14 @@ cdef class TCyMemoryBuffer(CyTransportBase):
         if r == -1:
             raise MemoryError("Write to memory error")
 
+    def c_write_buffer(self, const unsigned char[::1] data):
+        cdef Py_buffer in_buffer
+        PyObject_GetBuffer(data, &in_buffer, PyBUF_SIMPLE | PyBUF_ANY_CONTIGUOUS)
+        try:
+            self.c_write(<char *>in_buffer.buf, in_buffer.len)
+        finally:
+            PyBuffer_Release(&in_buffer)
+
     cdef _getvalue(self):
         cdef char *out
         cdef int size = self.buf.data_size
@@ -62,8 +71,7 @@ cdef class TCyMemoryBuffer(CyTransportBase):
         if isinstance(data, unicode):
             data = (<unicode>data).encode('utf-8')
 
-        cdef int sz = len(data)
-        return self.c_write(data, sz)
+        return self.c_write_buffer(data)
 
     def is_open(self):
         return True

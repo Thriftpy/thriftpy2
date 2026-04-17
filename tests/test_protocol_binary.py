@@ -9,6 +9,7 @@ from thriftpy2 import load
 from thriftpy2.protocol import binary as proto
 from thriftpy2.thrift import TPayload, TType
 from thriftpy2.utils import hexlify, serialize
+from thriftpy2.transport.memory import TMemoryBuffer
 
 
 class TItem(TPayload):
@@ -171,6 +172,56 @@ def test_write_huge_struct():
     b = BytesIO()
     item = TItem(id=12345, phones=["1234567890"] * 100000)
     proto.TBinaryProtocol(b).write_struct(item)
+
+
+@pytest.fixture
+def buffer_supports_non_contiguous():
+    """Pypy 3.9 and 3.10 feature BytesIO supporting non-contiguous input data."""
+    b = BytesIO()
+    try:
+        b.write(memoryview(b"abcd")[::-1])
+    except BufferError:
+        return False
+    return True
+
+
+def test_write_memoryview(buffer_supports_non_contiguous):
+    # contiguous 8-bit items
+    b = TMemoryBuffer()
+    data = memoryview(b"hello world!\x01")
+    proto.write_val(b, TType.BINARY, data)
+    b.flush()
+    assert "00 00 00 0d 68 65 6c 6c 6f 20 77 6f 72 6c 64 21 01" == \
+        hexlify(b.getvalue())
+
+    # not 8-bit items
+    b = TMemoryBuffer()
+    data = memoryview(b"0000111122223333").cast("h")
+    proto.write_val(b, TType.BINARY, data)
+    b.flush()
+    assert "00 00 00 10 30 30 30 30 31 31 31 31 32 32 32 32 33 33 33 33" == \
+        hexlify(b.getvalue())
+
+    # not contiguous
+    b = TMemoryBuffer()
+    data = memoryview(b"0123")[::-1]
+    if not buffer_supports_non_contiguous:
+        with pytest.raises(BufferError, match="contiguous"):
+            proto.write_val(b, TType.BINARY, data)
+    else:
+        proto.write_val(b, TType.BINARY, data)
+        b.flush()
+        assert "00 00 00 04 33 32 31 30" == \
+            hexlify(b.getvalue())
+
+
+def test_write_bytearray():
+    b = TMemoryBuffer()
+    proto.write_val(b, TType.BINARY, bytearray("hello world!", "utf-8"))
+    b.flush()
+    assert "00 00 00 0c 68 65 6c 6c 6f 20 77 6f 72 6c 64 21" == \
+        hexlify(b.getvalue())
+
 
 
 @pytest.mark.skipif(not _compat.CYTHON, reason="cybin required")
