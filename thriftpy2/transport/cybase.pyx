@@ -108,7 +108,7 @@ cdef class CyTransportBase(object):
     cdef c_read(self, int sz, char* out):
         pass
 
-    cdef c_write(self, char* data, int sz):
+    cdef c_write(self, const char* data, int sz):
         pass
 
     cdef c_flush(self):

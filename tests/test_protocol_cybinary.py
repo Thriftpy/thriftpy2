@@ -133,6 +133,38 @@ def test_write_string():
         hexlify(b.getvalue())
 
 
+def test_write_memoryview():
+    # contiguous 8-bit items
+    b = TCyMemoryBuffer()
+    data = memoryview(b"hello world!\x01")
+    proto.write_val(b, TType.BINARY, data)
+    b.flush()
+    assert "00 00 00 0d 68 65 6c 6c 6f 20 77 6f 72 6c 64 21 01" == \
+        hexlify(b.getvalue())
+
+    # not 8-bit items
+    b = TCyMemoryBuffer()
+    data = memoryview(b"0000111122223333").cast("h")
+    proto.write_val(b, TType.BINARY, data)
+    b.flush()
+    assert "00 00 00 10 30 30 30 30 31 31 31 31 32 32 32 32 33 33 33 33" == \
+        hexlify(b.getvalue())
+
+    # not contiguous
+    with pytest.raises(BufferError, match="contiguous"):
+        b = TCyMemoryBuffer()
+        data = memoryview(b"0123")[::-1]
+        proto.write_val(b, TType.BINARY, data)
+
+
+def test_write_bytearray():
+    b = TCyMemoryBuffer()
+    proto.write_val(b, TType.BINARY, bytearray("hello world!", "utf-8"))
+    b.flush()
+    assert "00 00 00 0c 68 65 6c 6c 6f 20 77 6f 72 6c 64 21" == \
+        hexlify(b.getvalue())
+
+
 def test_read_string():
     b = TCyMemoryBuffer(b"\x00\x00\x00\x0c"
                         b"\xe4\xbd\xa0\xe5\xa5\xbd\xe4\xb8\x96\xe7\x95\x8c")
