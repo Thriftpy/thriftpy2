@@ -5,11 +5,10 @@ Transport for json protocol that apache thrift files will understand
 unfortunately, thriftpy2's TJSONProtocol is not compatible with apache's
 """
 
-from __future__ import absolute_import
 import json
 import base64
-import sys
 
+import ijson
 
 from thriftpy2.protocol import TProtocolBase
 from thriftpy2.thrift import TType
@@ -66,6 +65,25 @@ def _ensure_b64_encode(val):
     return val
 
 
+class _ListSink(object):
+    """Minimal coroutine-like sink for ijson's items_coro pipeline.
+
+    ijson's chained-coroutine API calls ``target.send(item)`` on its sink, so
+    a plain ``list.append`` won't work as a target. This wrapper exposes a
+    ``send`` (and ``close``) so a list can act as the sink directly.
+    """
+    __slots__ = ('_target',)
+
+    def __init__(self, target):
+        self._target = target
+
+    def send(self, item):
+        self._target.append(item)
+
+    def close(self):
+        pass
+
+
 class TApacheJSONProtocolFactory(object):
     def get_protocol(self, trans):
         return TApacheJSONProtocol(trans)
@@ -81,34 +99,35 @@ class TApacheJSONProtocol(TProtocolBase):
         self._req = None
 
     def _load_data(self):
-        data = b""
-        l_braces = 0
-        in_string = False
-        while True:
-            # read(sz) will wait until it has read exactly sz bytes,
-            # so we must read until we get a balanced json list in absence of knowing
-            # how long the json string will be
-            if hasattr(self.trans, 'getvalue'):
-                try:
-                    data = self.trans.getvalue()
+        # Fast path: transports that buffer the whole message expose getvalue()
+        if hasattr(self.trans, 'getvalue'):
+            try:
+                data = self.trans.getvalue()
+                self._req = json.loads(data.decode('utf8')) if data else None
+                return
+            except Exception:
+                pass
+
+        # Streaming path: feed bytes to ijson's push parser; stop the moment
+        # the top-level value is fully materialized. trans.read(n) blocks until
+        # exactly n bytes arrive and Apache JSON has no length prefix, so we
+        # must read one byte at a time to avoid consuming past the message end.
+        items = []
+        sink = _ListSink(items)
+        coro = ijson.items_coro(sink, '')
+        try:
+            while not items:
+                chunk = self.trans.read(1)
+                if not chunk:
                     break
-                except Exception:
-                    pass
-            new_data = self.trans.read(1)
-            data += new_data
-            if new_data == b'"' and not data.endswith(b'\\"'):
-                in_string = not in_string
-            if not in_string:
-                if new_data == b"[":
-                    l_braces += 1
-                elif new_data == b"]":
-                    l_braces -= 1
-            if l_braces == 0:
-                break
-        if data:
-            self._req = json.loads(data.decode('utf8'))
-        else:
-            self._req = None
+                coro.send(chunk)
+        finally:
+            try:
+                coro.close()
+            except Exception:
+                pass
+
+        self._req = items[0] if items else None
 
     def read_message_begin(self):
         if not self._req:
