@@ -44,9 +44,8 @@ def test_hashable():
     # exception is hashable
     hash(ab.PersonNotExistsError("test error"))
 
-    # container struct is not hashable
-    with pytest.raises(TypeError):
-        hash(ab.Person(name="Tom"))
+    # container struct is hashable
+    hash(ab.Person(name="Tom"))
 
 
 def test_default_value():
