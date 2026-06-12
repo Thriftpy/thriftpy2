@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 # Run server:
 >>> import thriftpy2
@@ -29,8 +27,6 @@
 ...                      ssl_context_factory=ssl_context_factory)
 >>> client.ping()
 """
-
-from __future__ import absolute_import
 
 import http.client as http_client
 import http.server as http_server

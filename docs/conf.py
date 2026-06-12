@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # ThriftPy documentation build configuration file, created by
 # sphinx-quickstart on Thu May 29 17:54:39 2014.

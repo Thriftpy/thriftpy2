@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """
     thriftpy2._compat
     ~~~~~~~~~~~~~
 
     py2/py3 compatibility support.
 """
-
-from __future__ import absolute_import
 
 import platform
 import sys

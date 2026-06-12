@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """
     thriftpy2.thrift
     ~~~~~~~~~~~~~~~~~~
 
     Thrift simplified.
 """
-
-from __future__ import absolute_import
 
 import functools
 import linecache

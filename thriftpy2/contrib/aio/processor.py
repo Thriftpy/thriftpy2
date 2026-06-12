@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from thriftpy2.thrift import TApplicationException, TType, TMessageType
 
 

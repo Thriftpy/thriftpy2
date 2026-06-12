@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-
 from thriftpy2._compat import CYTHON
 
 from .base import TTransportBase, TTransportException
