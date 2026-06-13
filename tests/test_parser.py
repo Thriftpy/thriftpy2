@@ -38,7 +38,7 @@ def test_constants():
 
 def test_include():
     thrift = load(TEST_DIR / 'parser-cases/include.thrift', include_dirs=[
-        str(TEST_DIR / 'parser-cases')], module_name='include_thrift')
+        TEST_DIR / 'parser-cases'], module_name='include_thrift')
     assert thrift.datetime == 1422009523
     assert sys.modules['include_thrift'] is not None
     assert sys.modules['included_thrift'] is not None

@@ -20,8 +20,8 @@ from ..thrift import TPayloadMeta
 def load(
     path: Union[str, os.PathLike],
     module_name: Optional[str] = None,
-    include_dirs: Optional[List[str]] = None,
-    include_dir: Optional[str] = None,
+    include_dirs: Optional[List[Union[str, os.PathLike]]] = None,
+    include_dir: Optional[Union[str, os.PathLike]] = None,
     encoding: str = 'utf-8',
 ) -> types.ModuleType:
     """Load thrift file as a module.
@@ -34,6 +34,10 @@ def load(
     `include_dirs`.
     """
     path = os.fspath(path)
+    if include_dirs is not None:
+        include_dirs = [os.fspath(d) for d in include_dirs]
+    if include_dir is not None:
+        include_dir = os.fspath(include_dir)
     real_module = bool(module_name)
     thrift = parse(path, module_name, include_dirs=include_dirs,
                    include_dir=include_dir, encoding=encoding)
