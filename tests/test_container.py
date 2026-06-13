@@ -1,8 +1,13 @@
+from pathlib import Path
+
 import thriftpy2
 
 from thriftpy2.utils import serialize, deserialize
 
+TEST_DIR = Path(__file__).parent
+
 thriftpy2.install_import_hook()
+thriftpy2.load(TEST_DIR / "container.thrift", module_name="container_thrift")
 
 import container_thrift as container  # noqa
 

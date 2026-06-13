@@ -1,4 +1,5 @@
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 
@@ -8,6 +9,8 @@ from thriftpy2.protocol import binary as proto
 from thriftpy2.thrift import TPayload, TType
 from thriftpy2.utils import hexlify, serialize
 from thriftpy2.transport.memory import TMemoryBuffer
+
+TEST_DIR = Path(__file__).parent
 
 
 class TItem(TPayload):
@@ -231,7 +234,7 @@ def test_string_binary_equivalency():
 
 
 def string_binary_equivalency(proto_factory):
-    container = load("./container.thrift")
+    container = load(TEST_DIR / "container.thrift")
     l_item = container.ListItem()
     l_item.list_string = ['foo', 'bar']
     l_item.list_list_string = [['foo', 'bar']]

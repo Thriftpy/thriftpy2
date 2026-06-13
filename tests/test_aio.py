@@ -6,6 +6,7 @@ import socket
 import sys
 import threading
 import time
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -18,6 +19,8 @@ from thriftpy2.contrib.aio.transport import (TAsyncBufferedTransportFactory,
 from thriftpy2.rpc import make_aio_client, make_aio_server
 from thriftpy2.thrift import TApplicationException
 from thriftpy2.transport import TTransportException
+
+TEST_DIR = Path(__file__).parent
 
 
 if sys.platform == "win32":
@@ -265,14 +268,14 @@ class SSLServerMixin:
         return {
             'host': 'localhost',
             'port': cls.port,
-            'certfile': "ssl/server.pem",
-            'keyfile': "ssl/server.key",
+            'certfile': TEST_DIR / "ssl/server.pem",
+            'keyfile': TEST_DIR / "ssl/server.key",
         }
 
     @classmethod
     def client_kwargs(cls):
         kw = cls.server_kwargs()
-        kw['cafile'] = "ssl/CA.pem"
+        kw['cafile'] = TEST_DIR / "ssl/CA.pem"
         return kw
 
     async def client_with_url(self, timeout: int = 3000):

@@ -1,5 +1,6 @@
 import sys
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -7,13 +8,15 @@ from thriftpy2.thrift import TType
 from thriftpy2.parser import load, load_fp
 from thriftpy2.parser.exc import ThriftParserError, ThriftGrammarError
 
+TEST_DIR = Path(__file__).parent
+
 
 def test_comments():
-    load('parser-cases/comments.thrift')
+    load(TEST_DIR / 'parser-cases/comments.thrift')
 
 
 def test_constants():
-    thrift = load('parser-cases/constants.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/constants.thrift')
     assert thrift.tbool is True
     assert thrift.tboolint is True
     assert thrift.tbyte == 3
@@ -34,8 +37,8 @@ def test_constants():
 
 
 def test_include():
-    thrift = load('parser-cases/include.thrift', include_dirs=[
-        './parser-cases'], module_name='include_thrift')
+    thrift = load(TEST_DIR / 'parser-cases/include.thrift', include_dirs=[
+        str(TEST_DIR / 'parser-cases')], module_name='include_thrift')
     assert thrift.datetime == 1422009523
     assert sys.modules['include_thrift'] is not None
     assert sys.modules['included_thrift'] is not None
@@ -44,7 +47,7 @@ def test_include():
 
 
 def test_include_with_module_name_prefix():
-    load('parser-cases/include.thrift', module_name='parser_cases.include_thrift')
+    load(TEST_DIR / 'parser-cases/include.thrift', module_name='parser_cases.include_thrift')
     assert sys.modules['parser_cases.include_thrift'] is not None
     assert sys.modules['parser_cases.included_thrift'] is not None
     assert sys.modules['parser_cases.include.included_1_thrift'] is not None
@@ -53,12 +56,12 @@ def test_include_with_module_name_prefix():
 
 def test_include_conflict():
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/foo.bar.thrift', module_name='foo.bar_thrift')
+        load(TEST_DIR / 'parser-cases/foo.bar.thrift', module_name='foo.bar_thrift')
     assert 'Module name conflict between' in str(excinfo.value)
 
 
 def test_cpp_include():
-    load('parser-cases/cpp_include.thrift')
+    load(TEST_DIR / 'parser-cases/cpp_include.thrift')
 
 
 @pytest.fixture
@@ -80,7 +83,7 @@ def reset_parser_threadlocal():
 def test_load_in_sub_thread(reraise, reset_parser_threadlocal):
     @reraise.wrap
     def f():
-        load('addressbook.thrift')
+        load(TEST_DIR / 'addressbook.thrift')
 
     t = threading.Thread(target=f)
     t.start()
@@ -90,7 +93,7 @@ def test_load_in_sub_thread(reraise, reset_parser_threadlocal):
 def test_load_fp_in_sub_thread(reraise, reset_parser_threadlocal):
     @reraise.wrap
     def f():
-        with open('container.thrift') as fp:
+        with open(TEST_DIR / 'container.thrift') as fp:
             load_fp(fp, 'container_thrift')
 
     t = threading.Thread(target=f)
@@ -99,8 +102,8 @@ def test_load_fp_in_sub_thread(reraise, reset_parser_threadlocal):
 
 
 def test_tutorial():
-    thrift = load('parser-cases/tutorial.thrift', include_dirs=[
-        './parser-cases'])
+    thrift = load(TEST_DIR / 'parser-cases/tutorial.thrift', include_dirs=[
+        str(TEST_DIR / 'parser-cases')])
     assert thrift.INT32CONSTANT == 9853
     assert thrift.MAPCONSTANT == {'hello': 'world', 'goodnight': 'moon'}
     assert thrift.Operation.ADD == 1 and thrift.Operation.SUBTRACT == 2 \
@@ -114,26 +117,26 @@ def test_tutorial():
 
 def test_e_type_error():
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_type_error_0.thrift')
+        load(TEST_DIR / 'parser-cases/e_type_error_0.thrift')
     assert 'Type error' in str(excinfo.value)
 
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_type_error_1.thrift')
+        load(TEST_DIR / 'parser-cases/e_type_error_1.thrift')
     assert 'Type error' in str(excinfo.value)
 
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_type_error_2.thrift')
+        load(TEST_DIR / 'parser-cases/e_type_error_2.thrift')
     assert 'Type error' in str(excinfo.value)
 
 
 def test_value_ref():
-    thrift = load('parser-cases/value_ref.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/value_ref.thrift')
     assert thrift.container == {'key': [1, 2, 3]}
     assert thrift.lst == [39, 899, 123]
 
 
 def test_type_ref():
-    thrift = load('parser-cases/type_ref.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/type_ref.thrift')
     assert thrift.jerry == thrift.type_ref_shared.Writer(
         name='jerry', age=26, country=thrift.type_ref_shared.Country.US)
     assert thrift.book == thrift.type_ref_shared.Book(name='Hello World',
@@ -142,21 +145,21 @@ def test_type_ref():
 
 def test_e_value_ref():
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_value_ref_0.thrift')
+        load(TEST_DIR / 'parser-cases/e_value_ref_0.thrift')
     assert excinfo.value
 
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_value_ref_1.thrift')
+        load(TEST_DIR / 'parser-cases/e_value_ref_1.thrift')
     assert str(excinfo.value) == ('Couldn\'t find a named value in enum Lang '
                                   'for value 3')
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_value_ref_2.thrift')
+        load(TEST_DIR / 'parser-cases/e_value_ref_2.thrift')
     assert str(excinfo.value) == \
         'No enum value or constant found named \'Cookbook\''
 
 
 def test_enums():
-    thrift = load('parser-cases/enums.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/enums.thrift')
     assert thrift.Lang.C == 0
     assert thrift.Lang.Go == 1
     assert thrift.Lang.Java == 2
@@ -173,7 +176,7 @@ def test_enums():
 
 
 def test_structs():
-    thrift = load('parser-cases/structs.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/structs.thrift')
     assert thrift.Person.thrift_spec == {
         1: (TType.STRING, 'name', False),
         2: (TType.STRING, 'address', False)
@@ -214,18 +217,18 @@ def test_structs():
 
 def test_e_structs():
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_structs_0.thrift')
+        load(TEST_DIR / 'parser-cases/e_structs_0.thrift')
     assert str(excinfo.value) == \
         'Field \'name\' was required to create constant for type \'User\''
 
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_structs_1.thrift')
+        load(TEST_DIR / 'parser-cases/e_structs_1.thrift')
     assert str(excinfo.value) == \
         'No field named \'avatar\' was found in struct of type \'User\''
 
 
 def test_service():
-    thrift = load('parser-cases/service.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/service.thrift')
     assert thrift.EmailService.thrift_services == ['ping', 'send', 'receive', 'empty']
     assert thrift.EmailService.ping_args.thrift_spec == {}
     assert thrift.EmailService.ping_args.default_spec == []
@@ -260,63 +263,64 @@ def test_service():
 
 
 def test_service_extends():
-    thrift = load('parser-cases/service_extends.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/service_extends.thrift')
     assert thrift.PingService.thrift_services == ['ping', 'getStruct']
 
 
 def test_e_service_extends():
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_service_extends_0.thrift')
+        load(TEST_DIR / 'parser-cases/e_service_extends_0.thrift')
     assert 'Can\'t find service' in str(excinfo.value)
 
 
 def test_e_dead_include():
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_dead_include_0.thrift')
+        load(TEST_DIR / 'parser-cases/e_dead_include_0.thrift')
     assert 'Dead including' in str(excinfo.value)
 
 
 def test_e_grammar_error_at_eof():
     with pytest.raises(ThriftGrammarError) as excinfo:
-        load('parser-cases/e_grammar_error_at_eof.thrift')
-    assert str(excinfo.value) == "Grammar error at EOF of the file 'parser-cases/e_grammar_error_at_eof.thrift'"
+        load(TEST_DIR / 'parser-cases/e_grammar_error_at_eof.thrift')
+    thrift_file = TEST_DIR / 'parser-cases/e_grammar_error_at_eof.thrift'
+    assert str(excinfo.value) == "Grammar error at EOF of the file '{}'".format(thrift_file)
 
 
 def test_e_use_thrift_reserved_keywords():
     with pytest.raises(ThriftParserError) as excinfo:
-        load('parser-cases/e_use_thrift_reserved_keywords.thrift')
+        load(TEST_DIR / 'parser-cases/e_use_thrift_reserved_keywords.thrift')
     assert 'Cannot use reserved language keyword' in str(excinfo.value)
 
 
 def test_e_duplicate_field_id_or_name():
     with pytest.raises(ThriftGrammarError) as excinfo:
-        load('parser-cases/e_duplicate_field_id.thrift')
+        load(TEST_DIR / 'parser-cases/e_duplicate_field_id.thrift')
     assert 'field identifier/name has already been used' in str(excinfo.value)
     with pytest.raises(ThriftGrammarError) as excinfo:
-        load('parser-cases/e_duplicate_field_name.thrift')
+        load(TEST_DIR / 'parser-cases/e_duplicate_field_name.thrift')
     assert 'field identifier/name has already been used' in str(excinfo.value)
 
 
 def test_e_duplicate_struct_exception_service():
     with pytest.raises(ThriftGrammarError) as excinfo:
-        load('parser-cases/e_duplicate_struct.thrift')
+        load(TEST_DIR / 'parser-cases/e_duplicate_struct.thrift')
     assert 'type is already defined in' in str(excinfo.value)
     with pytest.raises(ThriftGrammarError) as excinfo:
-        load('parser-cases/e_duplicate_exception.thrift')
+        load(TEST_DIR / 'parser-cases/e_duplicate_exception.thrift')
     assert 'type is already defined in' in str(excinfo.value)
     with pytest.raises(ThriftGrammarError) as excinfo:
-        load('parser-cases/e_duplicate_service.thrift')
+        load(TEST_DIR / 'parser-cases/e_duplicate_service.thrift')
     assert 'type is already defined in' in str(excinfo.value)
 
 
 def test_e_duplicate_function():
     with pytest.raises(ThriftGrammarError) as excinfo:
-        load('parser-cases/e_duplicate_function.thrift')
+        load(TEST_DIR / 'parser-cases/e_duplicate_function.thrift')
     assert 'function is already defined in' in str(excinfo.value)
 
 
 def test_thrift_meta():
-    thrift = load('parser-cases/tutorial.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/tutorial.thrift')
     meta = thrift.__thrift_meta__
     assert meta['consts'] == [thrift.INT32CONSTANT, thrift.MAPCONSTANT]
     assert meta['enums'] == [thrift.Operation]
@@ -331,7 +335,7 @@ def test_load_fp():
     threadlocal.__dict__.clear()
 
     thrift = None
-    with open('parser-cases/shared.thrift') as thrift_fp:
+    with open(TEST_DIR / 'parser-cases/shared.thrift') as thrift_fp:
         thrift = load_fp(thrift_fp, 'shared_thrift')
     assert thrift.__name__ == 'shared_thrift'
     assert thrift.__thrift_file__ is None
@@ -341,14 +345,14 @@ def test_load_fp():
 
 def test_e_load_fp():
     with pytest.raises(ThriftParserError) as excinfo:
-        with open('parser-cases/tutorial.thrift') as thrift_fp:
+        with open(TEST_DIR / 'parser-cases/tutorial.thrift') as thrift_fp:
             load_fp(thrift_fp, 'tutorial_thrift')
         assert ('Unexpected include statement while loading '
                 'from file like object.') == str(excinfo.value)
 
 
 def test_recursive_union():
-    thrift = load('parser-cases/recursive_union.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/recursive_union.thrift')
     assert thrift.Dynamic.thrift_spec == {
         1: (TType.BOOL, 'boolean', False),
         2: (TType.I64, 'integer', False),
@@ -361,13 +365,13 @@ def test_recursive_union():
 
 
 def test_issue_215():
-    thrift = load('parser-cases/issue_215.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/issue_215.thrift')
     assert thrift.abool is True
     assert thrift.falseValue == 123
 
 
 def test_doubles():
-    thrift = load('parser-cases/doubles.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/doubles.thrift')
     book = thrift.Book()
     assert book.price == 1
     assert isinstance(book.price, float)
@@ -380,7 +384,7 @@ def test_doubles():
 
 
 def test_struct_annotations():
-    thrift = load('parser-cases/annotations.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/annotations.thrift')
     assert thrift.foo.__thrift_annotations__ == {
         'cpp.type': 'DenseFoo',
         'python.type': 'DenseFoo',
@@ -397,7 +401,7 @@ def test_struct_annotations():
 
 
 def test_exception_annotations():
-    thrift = load('parser-cases/annotations.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/annotations.thrift')
     assert thrift.foo_error.__thrift_annotations__ == {'foo': 'bar'}
     assert thrift.foo_error.__thrift_field_annotations__ == {
         'error_code': {'foo': 'bar'},
@@ -405,7 +409,7 @@ def test_exception_annotations():
 
 
 def test_enum_annotations():
-    thrift = load('parser-cases/annotations.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/annotations.thrift')
     assert thrift.weekdays.__thrift_annotations__ == {'foo.bar': 'baz'}
     assert thrift.weekdays.__thrift_item_annotations__ == {
         'SUNDAY': {'weekend': 'yes'},
@@ -414,7 +418,7 @@ def test_enum_annotations():
 
 
 def test_service_annotations():
-    thrift = load('parser-cases/annotations.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/annotations.thrift')
     assert thrift.foo_service.__thrift_annotations__ == {'a.b': 'c'}
     assert thrift.foo_service.__thrift_function_annotations__ == {
         'foo': {'foo': 'bar'},
@@ -422,30 +426,30 @@ def test_service_annotations():
 
 
 def test_union_annotations():
-    thrift = load('parser-cases/annotations.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/annotations.thrift')
     assert thrift.foo_union.__thrift_annotations__ == {'a.b': 'c'}
 
 
 def test_typedef_annotations():
-    thrift = load('parser-cases/annotations.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/annotations.thrift')
     assert thrift.__thrift_typedef_annotations__ == {
         'non_latin_string': {'foo': 'bar'},
     }
 
 
 def test_const_annotations():
-    thrift = load('parser-cases/annotations.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/annotations.thrift')
     assert thrift.__thrift_const_annotations__ == {
         'id': {'name': 'LANG_ID'},
     }
 
 
 def test_annotations_issue_252():
-    load('parser-cases/issue_252.thrift')
+    load(TEST_DIR / 'parser-cases/issue_252.thrift')
 
 
 def test_nest_incomplete_type():
-    thrift = load('parser-cases/nest_incomplete_type.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/nest_incomplete_type.thrift')
     assert thrift.Container.thrift_spec == {
         1: (15, 'field1', (13, (11, (12, thrift.A))), False),
         2: (15, 'field2', (15, (12, thrift.A)), False),
@@ -462,7 +466,7 @@ def test_thrift_in_include_path():
     The fix only replaces the final .thrift file extension suffix.
     """
     thrift = load(
-        'parser-cases/thrift_in_path/parent.thrift',
+        TEST_DIR / 'parser-cases/thrift_in_path/parent.thrift',
         module_name='thrift_in_path_parent_thrift',
     )
     # 'thrift' in the directory path must be preserved as '.thrift.' not '_thrift'
@@ -473,4 +477,4 @@ def test_thrift_in_include_path():
 
 
 def test_issue_121():
-    load('parser-cases/issue_121.thrift')
+    load(TEST_DIR / 'parser-cases/issue_121.thrift')
