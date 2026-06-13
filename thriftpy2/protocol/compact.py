@@ -551,7 +551,7 @@ class TCompactProtocol(TProtocolBase):
             self._read_string()
 
         elif ttype == TType.STRUCT:
-            name = self._read_struct_begin()
+            self._read_struct_begin()
             while True:
                 (name, ttype, id) = self._read_field_begin()
                 if ttype == TType.STOP:
