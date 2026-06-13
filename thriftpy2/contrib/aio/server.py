@@ -1,18 +1,31 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import logging
 from typing import Optional
 
-from thriftpy2.server import TServer, logger
 from thriftpy2.transport import TTransportException
 
+from .protocol.binary import TAsyncBinaryProtocolFactory
+from .transport.buffered import TAsyncBufferedTransportFactory
 
-class TAsyncServer(TServer):
+logger = logging.getLogger(__name__)
 
-    def __init__(self, *args, loop: Optional[asyncio.AbstractEventLoop] = None, **kwargs):
+
+class TAsyncServer:
+
+    def __init__(self, processor, trans,
+                 itrans_factory=None, iprot_factory=None,
+                 otrans_factory=None, oprot_factory=None,
+                 loop: Optional[asyncio.AbstractEventLoop] = None):
+        self.processor = processor
+        self.trans = trans
+
+        self.itrans_factory = itrans_factory or TAsyncBufferedTransportFactory()
+        self.iprot_factory = iprot_factory or TAsyncBinaryProtocolFactory()
+        self.otrans_factory = otrans_factory or self.itrans_factory
+        self.oprot_factory = oprot_factory or self.iprot_factory
+
         self.loop: Optional[asyncio.AbstractEventLoop] = loop
-
-        TServer.__init__(self, *args, **kwargs)
-
         self.closed = False
         self.server = None
 
