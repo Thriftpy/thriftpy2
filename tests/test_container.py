@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import thriftpy2
 
 from thriftpy2.utils import serialize, deserialize

@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-
 from thriftpy2.thrift import TType
 
 from thriftpy2.protocol.exc import TProtocolException

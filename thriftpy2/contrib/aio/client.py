@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import functools
 from thriftpy2.thrift import args_to_kwargs
 from thriftpy2.thrift import TApplicationException, TMessageType

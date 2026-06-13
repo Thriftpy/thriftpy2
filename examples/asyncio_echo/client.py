@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import thriftpy2
 import asyncio
 from thriftpy2.rpc import make_aio_client

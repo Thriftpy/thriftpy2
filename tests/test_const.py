@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import thriftpy2
 thriftpy2.install_import_hook()
 

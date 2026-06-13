@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """
 Tracking support similar to twitter finagle-thrift.
 
 Note: When using tracking, every client should have a corresponding
 server processor.
 """
-
-from __future__ import absolute_import
 
 import os.path
 import time

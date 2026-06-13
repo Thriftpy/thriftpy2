@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from thriftpy2.protocol import TProtocolBase
 
 

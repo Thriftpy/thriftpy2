@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # flake8: disable E501
 
 '''
@@ -14,8 +13,6 @@ v2            test_tracked_client_v2_native_server test_tracked_client_v2_tracke
 v3            test_tracked_client_v3_native_server test_tracked_client_v3_tracked_server_v2 regular tests
 ============= ==================================== ======================================== ========================================
 '''  # noqa
-
-from __future__ import absolute_import
 
 import contextlib
 import multiprocessing

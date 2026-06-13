@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 >>> pingpong = thriftpy2.load("pingpong.thrift")
 >>>
@@ -14,8 +12,6 @@
 >>> ioloop.IOLoop.current().run_sync(client.ping)
 'pong'
 """
-
-from __future__ import absolute_import
 
 import logging
 import socket

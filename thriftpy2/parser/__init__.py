@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
     thriftpy2.parser
     ~~~~~~~~~~~~~~~
@@ -7,7 +5,7 @@
     Thrift parser using ply
 """
 
-from __future__ import absolute_import, annotations
+from __future__ import annotations
 
 import os
 import sys

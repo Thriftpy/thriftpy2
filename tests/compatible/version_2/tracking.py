@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-
 """
 This is for test:
 
 this version support request header not support response header
 """
-from __future__ import absolute_import
-
 import os.path
 import time
 import copy
