@@ -53,7 +53,7 @@ cdef class TCySaslClientTransport(CyTransportBase):
 
         if self.sasl is not None:
             raise TTransportException(
-                type=TTransportException.NOT_OPEN,
+                type=TTransportException.ALREADY_OPEN,
                 message="Already open!")
         self.sasl = self.sasl_client_factory()
 
@@ -81,6 +81,12 @@ cdef class TCySaslClientTransport(CyTransportBase):
             self._send_message(self.OK, response)
 
     def _send_message(self, status, body):
+        # Depending on the SASL library, the mechanism name and the initial
+        # response may come back as str or None instead of bytes.
+        if body is None:
+            body = b""
+        elif isinstance(body, str):
+            body = body.encode("utf-8")
         header = struct.pack(">BI", status, len(body))
         self.trans.write(header + body)
         self.trans.flush()
@@ -91,7 +97,7 @@ cdef class TCySaslClientTransport(CyTransportBase):
         if length > 0:
             payload = readall(self.trans.read, length)
         else:
-            payload = ""
+            payload = b""
         return status, payload
 
     def write(self, bytes data):
@@ -140,7 +146,6 @@ cdef class TCySaslClientTransport(CyTransportBase):
 
             self.trans.flush()
             self.__wbuf.clean()
-        return("DUN FLUSHING IN SASL")
 
     def _flushEncoded(self, buffer):
         # sasl.ecnode() does the encoding and adds the length header, so nothing
@@ -166,25 +171,38 @@ cdef class TCySaslClientTransport(CyTransportBase):
         return self.get_string(sz)
 
     cdef c_read(self, int sz, char* out):
-        cdef bytes ret
-
-        ret = b""
+        cdef:
+            bytes ret = b""
+            int orig_sz = sz
+            int avail
 
         if sz <= 0:
             return 0
 
-        orig_sz = sz
-        if self.__rbuf.data_size < sz:
-            # Read what remains, then get more data plz
-            ret += self.__rbuf.buf[:self.__rbuf.data_size]
-            sz -= self.__rbuf.data_size
-            self._read_frame()
-
-        ret += self.__rbuf.buf[self.__rbuf.cur:self.__rbuf.cur + sz]
-        self.__rbuf.cur += sz
-        self.__rbuf.data_size -= sz
+        # A thrift message may span multiple SASL frames, so keep reading
+        # frames until we have the requested amount of data.
+        while sz > 0:
+            avail = self.__rbuf.data_size
+            if avail == 0:
+                self._read_frame()
+                avail = self.__rbuf.data_size
+                if avail == 0:
+                    # A frame that yields no data (e.g. a zero-length frame or
+                    # an empty SASL decode result) would make this loop spin
+                    # forever without ever satisfying the request, so treat it
+                    # as EOF.
+                    raise TTransportException(
+                        type=TTransportException.END_OF_FILE,
+                        message="Received empty SASL frame while more data expected")
+            if avail > sz:
+                avail = sz
+            ret += self.__rbuf.buf[self.__rbuf.cur:self.__rbuf.cur + avail]
+            self.__rbuf.cur += avail
+            self.__rbuf.data_size -= avail
+            sz -= avail
 
         memcpy(out, <char*>ret, orig_sz)
+        return orig_sz
 
     def _read_frame(self):
         header = readall(self.trans.read, 4)
@@ -213,4 +231,8 @@ cdef class TCySaslClientTransport(CyTransportBase):
     def close(self):
         self.trans.close()
         self.sasl = None
+        self.encode_decided = False
+        self.encode = False
+        self.__rbuf.clean()
+        self.__wbuf.clean()
 

@@ -58,7 +58,7 @@ class TSaslClientTransport(TTransportBase):
 
         if self.sasl is not None:
             raise TTransportException(
-                type=TTransportException.NOT_OPEN,
+                type=TTransportException.ALREADY_OPEN,
                 message="Already open!")
         self.sasl = self.sasl_client_factory()
 
@@ -86,6 +86,12 @@ class TSaslClientTransport(TTransportBase):
             self._send_message(self.OK, response)
 
     def _send_message(self, status, body):
+        # Depending on the SASL library, the mechanism name and the initial
+        # response may come back as str or None instead of bytes.
+        if body is None:
+            body = b""
+        elif isinstance(body, str):
+            body = body.encode("utf-8")
         header = struct.pack(">BI", status, len(body))
         self._trans.write(header + body)
         self._trans.flush()
@@ -96,7 +102,7 @@ class TSaslClientTransport(TTransportBase):
         if length > 0:
             payload = readall(self._trans.read, length)
         else:
-            payload = ""
+            payload = b""
         return status, payload
 
     def write(self, data):
@@ -152,11 +158,22 @@ class TSaslClientTransport(TTransportBase):
 
     def read(self, sz):
         ret = self.__rbuf.read(sz)
-        if len(ret) == sz:
-            return ret
-
-        self._read_frame()
-        return ret + self.__rbuf.read(sz - len(ret))
+        # A thrift message may span multiple SASL frames, so keep reading
+        # frames until we have the requested amount of data. The protocol
+        # layer calls read() directly and relies on getting exactly `sz`
+        # bytes (see TTransportBase.read).
+        while len(ret) < sz:
+            self._read_frame()
+            chunk = self.__rbuf.read(sz - len(ret))
+            if not chunk:
+                # A frame that yields no data (e.g. a zero-length frame or an
+                # empty SASL decode result) would make this loop spin forever
+                # without ever satisfying the request, so treat it as EOF.
+                raise TTransportException(
+                    type=TTransportException.END_OF_FILE,
+                    message="Received empty SASL frame while more data expected")
+            ret += chunk
+        return ret
 
     def _read_frame(self):
         header = readall(self._trans.read, 4)
@@ -178,6 +195,9 @@ class TSaslClientTransport(TTransportBase):
     def close(self):
         self._trans.close()
         self.sasl = None
+        self.encode = None
+        self.__wbuf = BytesIO()
+        self.__rbuf = BytesIO(b'')
 
     # XXX: Is this actually needed?
     # Implement the CReadableTransport interface.
