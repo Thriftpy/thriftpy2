@@ -188,6 +188,19 @@ def test_read_eof(transport_cls):
     assert exc.value.type == TTransportException.END_OF_FILE
 
 
+def test_read_empty_frame_does_not_loop(transport_cls):
+    t, _, trans = open_transport(transport_cls)
+    t.write(b'x')
+    t.flush()
+
+    # A stream of zero-length frames yields no data; the read loop must not
+    # spin forever waiting to satisfy the request.
+    trans.inbuf = data_frame(b'') + data_frame(b'')
+    with pytest.raises(TTransportException) as exc:
+        t.read(4)
+    assert exc.value.type == TTransportException.END_OF_FILE
+
+
 def test_wrapped_roundtrip(transport_cls):
     sasl = FakeSaslClient(wrap=True)
     t, sasl, trans = open_transport(transport_cls, sasl)

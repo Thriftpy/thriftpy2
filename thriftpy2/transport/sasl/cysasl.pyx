@@ -186,6 +186,14 @@ cdef class TCySaslClientTransport(CyTransportBase):
             if avail == 0:
                 self._read_frame()
                 avail = self.__rbuf.data_size
+                if avail == 0:
+                    # A frame that yields no data (e.g. a zero-length frame or
+                    # an empty SASL decode result) would make this loop spin
+                    # forever without ever satisfying the request, so treat it
+                    # as EOF.
+                    raise TTransportException(
+                        type=TTransportException.END_OF_FILE,
+                        message="Received empty SASL frame while more data expected")
             if avail > sz:
                 avail = sz
             ret += self.__rbuf.buf[self.__rbuf.cur:self.__rbuf.cur + avail]
