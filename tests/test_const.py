@@ -1,5 +1,11 @@
+from pathlib import Path
+
 import thriftpy2
+
+TEST_DIR = Path(__file__).parent
+
 thriftpy2.install_import_hook()
+thriftpy2.load(TEST_DIR / "const.thrift", module_name="const_thrift")
 
 import const_thrift as const    # noqa
 

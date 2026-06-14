@@ -4,6 +4,7 @@ import socket
 import ssl
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -14,6 +15,8 @@ thriftpy2.install_import_hook()
 from thriftpy2.rpc import client_context, make_server  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
 from thriftpy2.transport import TTransportException  # noqa
+
+TEST_DIR = Path(__file__).parent
 
 if sys.platform == "win32":
     pytest.skip("requires unix domain socket", allow_module_level=True)
@@ -121,7 +124,7 @@ def ipv6_server(request):
 def ssl_server(request):
     ssl_server = make_server(addressbook.AddressBookService, Dispatcher(),
                              host='localhost', port=SSL_PORT,
-                             certfile="ssl/server.pem")
+                             certfile=TEST_DIR / "ssl/server.pem")
     ps = multiprocessing.Process(target=ssl_server.serve)
     ps.start()
 
@@ -173,8 +176,9 @@ def ssl_client(timeout=3000):
                           host='localhost', port=SSL_PORT,
                           socket_timeout=timeout,
                           connect_timeout=timeout,
-                          cafile="ssl/CA.pem", certfile="ssl/client.crt",
-                          keyfile="ssl/client.key")
+                          cafile=TEST_DIR / "ssl/CA.pem",
+                          certfile=TEST_DIR / "ssl/client.crt",
+                          keyfile=TEST_DIR / "ssl/client.key")
 
 
 def ssl_client_with_url(timeout=3000):
@@ -183,9 +187,9 @@ def ssl_client_with_url(timeout=3000):
                               port=SSL_PORT),
                           socket_timeout=timeout,
                           connect_timeout=timeout,
-                          cafile="ssl/CA.pem",
-                          certfile="ssl/client.crt",
-                          keyfile="ssl/client.key")
+                          cafile=TEST_DIR / "ssl/CA.pem",
+                          certfile=TEST_DIR / "ssl/client.crt",
+                          keyfile=TEST_DIR / "ssl/client.key")
 
 
 def test_clients(ssl_server):

@@ -1,11 +1,14 @@
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
 import multiprocessing
 import thriftpy2
 from thriftpy2.rpc import make_client, make_server
+
+TEST_DIR = Path(__file__).parent
 
 
 if sys.platform == "win32":
@@ -21,7 +24,7 @@ class Dispatcher(object):
 
 class TestOneway(object):
 
-    oneway_thrift = thriftpy2.load("oneway.thrift")
+    oneway_thrift = thriftpy2.load(TEST_DIR / "oneway.thrift")
 
     def setup_class(self):
         ctx = multiprocessing.get_context("fork")

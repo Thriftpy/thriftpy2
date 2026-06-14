@@ -1,9 +1,15 @@
+from pathlib import Path
+
 from thriftpy2 import load
 from thriftpy2.thrift import TPayload, TException, TType
 
 import thriftpy2
 
+TEST_DIR = Path(__file__).parent
+
 thriftpy2.install_import_hook()
+load(TEST_DIR / "addressbook.thrift", module_name="addressbook_thrift")
+load(TEST_DIR / "storm.thrift", module_name="storm_thrift")
 
 import addressbook as ab  # noqa
 import addressbook_thrift as ab_tt  # noqa
@@ -62,8 +68,8 @@ def test_load_service():
 
 
 def test_load_include():
-    b = load("base.thrift")
-    g = load("parent.thrift")
+    b = load(TEST_DIR / "base.thrift")
+    g = load(TEST_DIR / "parent.thrift")
 
     ts = g.Greet.thrift_spec
     assert (ts[1][2].thrift_spec == b.Hello.thrift_spec and

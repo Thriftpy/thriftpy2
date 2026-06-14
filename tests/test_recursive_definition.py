@@ -1,13 +1,17 @@
+from pathlib import Path
+
 from thriftpy2.parser import load
+
+TEST_DIR = Path(__file__).parent
 
 
 def test_recursive_definition():
-    thrift = load('./recursive_definition.thrift')
+    thrift = load(TEST_DIR / "recursive_definition.thrift")
     assert thrift.Bar.thrift_spec == {1: (12, 'test', thrift.Foo, False)}
     assert thrift.Foo.thrift_spec == {
         1: (12, 'test', thrift.Bar, False), 2: (15, 'some_int', 8, False)}
 
 
 def test_const():
-    thrift = load('./recursive_definition.thrift')
+    thrift = load(TEST_DIR / "recursive_definition.thrift")
     assert thrift.SOME_INT == [1, 2, 3]

@@ -3,6 +3,7 @@ import sys
 import time
 from io import BytesIO
 from multiprocessing import Process
+from pathlib import Path
 
 import pytest
 
@@ -16,6 +17,8 @@ from thriftpy2.rpc import make_server as make_rpc_server, \
 from thriftpy2.thrift import TProcessor, TType
 from thriftpy2.transport import TMemoryBuffer
 from thriftpy2.transport.buffered import TBufferedTransportFactory
+
+TEST_DIR = Path(__file__).parent
 
 
 def recursive_vars(obj):
@@ -35,7 +38,7 @@ def recursive_vars(obj):
 
 def test_thrift_transport():
     test_thrift = thriftpy2.load(
-        "apache_json_test.thrift",
+        TEST_DIR / "apache_json_test.thrift",
         module_name="test_thrift"
     )
     Test = test_thrift.Test
@@ -149,7 +152,7 @@ def test_streaming_parse_backslash_string():
                                          (make_http_server, make_http_client)])
 def test_client(server_func):
     test_thrift = thriftpy2.load(
-        "apache_json_test.thrift",
+        TEST_DIR / "apache_json_test.thrift",
         module_name="test_thrift"
     )
 
