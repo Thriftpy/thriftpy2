@@ -134,21 +134,21 @@ cdef class TCySaslClientTransport(CyTransportBase):
                                               message=self.sasl.getError())
                 if (len(encoded)==len(data)):
                     self.encode = False
-                    self._flushPlain(data)
+                    self._flush_plain(data)
                 else:
                     self.encode = True
                     self.trans.write(encoded)
                 self.encode_decided = True
             elif self.encode:
-                self._flushEncoded(data)
+                self._flush_encoded(data)
             else:
-                self._flushPlain(data)
+                self._flush_plain(data)
 
             self.trans.flush()
             self.__wbuf.clean()
 
-    def _flushEncoded(self, buffer):
-        # sasl.ecnode() does the encoding and adds the length header, so nothing
+    def _flush_encoded(self, buffer):
+        # sasl.encode() does the encoding and adds the length header, so nothing
         # to do but call it and write the result.
         success, encoded = self.sasl.encode(buffer)
         if not success:
@@ -156,7 +156,7 @@ cdef class TCySaslClientTransport(CyTransportBase):
                                        message=self.sasl.getError())
         self.trans.write(encoded)
 
-    def _flushPlain(self, buffer):
+    def _flush_plain(self, buffer):
         # When we have QOP of auth, sasl.encode() will pass the input to the output
         # but won't put a length header, so we have to do that.
 
@@ -235,4 +235,18 @@ cdef class TCySaslClientTransport(CyTransportBase):
         self.encode = False
         self.__rbuf.clean()
         self.__wbuf.clean()
+
+
+class TCySaslClientTransportFactory(object):
+    def __init__(self, sasl_client_factory, mechanism):
+        """
+        @param sasl_client_factory: a callable that returns a new sasl.Client object
+        @param mechanism: the SASL mechanism (e.g. "GSSAPI")
+        """
+        self.sasl_client_factory = sasl_client_factory
+        self.mechanism = mechanism
+
+    def get_transport(self, trans):
+        return TCySaslClientTransport(
+            self.sasl_client_factory, self.mechanism, trans)
 

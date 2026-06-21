@@ -121,20 +121,20 @@ class TSaslClientTransport(TTransportBase):
                                           message=self.sasl.getError())
             if (len(encoded) == len(buffer)):
                 self.encode = False
-                self._flushPlain(buffer)
+                self._flush_plain(buffer)
             else:
                 self.encode = True
                 self._trans.write(encoded)
         elif self.encode:
-            self._flushEncoded(buffer)
+            self._flush_encoded(buffer)
         else:
-            self._flushPlain(buffer)
+            self._flush_plain(buffer)
 
         self._trans.flush()
         self.__wbuf = BytesIO()
 
-    def _flushEncoded(self, buffer):
-        # sasl.ecnode() does the encoding and adds the length header, so nothing
+    def _flush_encoded(self, buffer):
+        # sasl.encode() does the encoding and adds the length header, so nothing
         # to do but call it and write the result.
         success, encoded = self.sasl.encode(buffer)
         if not success:
@@ -142,7 +142,7 @@ class TSaslClientTransport(TTransportBase):
                                       message=self.sasl.getError())
         self._trans.write(encoded)
 
-    def _flushPlain(self, buffer):
+    def _flush_plain(self, buffer):
         # When we have QOP of auth, sasl.encode() will pass the input to the output
         # but won't put a length header, so we have to do that.
 
@@ -217,5 +217,22 @@ class TSaslClientTransport(TTransportBase):
         return self.__rbuf
 
 
+class TSaslClientTransportFactory(object):
+    def __init__(self, sasl_client_factory, mechanism):
+        """
+        @param sasl_client_factory: a callable that returns a new sasl.Client object
+        @param mechanism: the SASL mechanism (e.g. "GSSAPI")
+        """
+        self.sasl_client_factory = sasl_client_factory
+        self.mechanism = mechanism
+
+    def get_transport(self, trans):
+        return TSaslClientTransport(
+            self.sasl_client_factory, self.mechanism, trans)
+
+
 if CYTHON:
-    from .cysasl import TCySaslClientTransport  # noqa
+    from .cysasl import (  # noqa
+        TCySaslClientTransport,
+        TCySaslClientTransportFactory,
+    )
