@@ -240,6 +240,7 @@ class TAsyncHttpServer:
         self._app = None
         self._runner = None
         self._site = None
+        self._stop_event = None
 
     async def _handle_request(self, request):
         """Handle incoming HTTP POST request."""
@@ -290,20 +291,29 @@ class TAsyncHttpServer:
         )
         await self._site.start()
 
-        # Keep running until closed
+        # Keep running until close() is called or the task is cancelled.
+        self._stop_event = asyncio.Event()
         try:
-            while True:
-                await asyncio.sleep(3600)
+            await self._stop_event.wait()
         except asyncio.CancelledError:
             pass
+        finally:
+            await self._cleanup()
 
     async def close(self):
         """Close the HTTP server."""
+        if self._stop_event is not None:
+            # serve() is running; signal it to stop and clean up itself.
+            self._stop_event.set()
+        else:
+            await self._cleanup()
+
+    async def _cleanup(self):
         if self._runner:
             await self._runner.cleanup()
-            self._runner = None
-            self._site = None
-            self._app = None
+        self._runner = None
+        self._site = None
+        self._app = None
 
 
 async def make_client(service, host='localhost', port=9090, path='',
