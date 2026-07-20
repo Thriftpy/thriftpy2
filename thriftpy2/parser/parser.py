@@ -226,7 +226,7 @@ def p_typedef(p):
 def p_enum(p):  # noqa
     '''enum : ENUM IDENTIFIER '{' enum_seq '}' type_annotations'''
     _, name, _, items, _, annotations = p[1:7]
-    val = _make_enum(name, items, annotations)
+    val = _make_enum(name, items, annotations, lineno=p.lineno(2))
     setattr(threadlocal.thrift_stack[-1], name, val)
     _add_thrift_meta('enums', val)
 
@@ -243,9 +243,9 @@ def p_enum_item(p):
                  | IDENTIFIER type_annotations
                  |'''
     if len(p) == 5:
-        p[0] = [p[1], p[3], p[4]]
+        p[0] = [p[1], p[3], p.lineno(1), p[4]]
     elif len(p) == 3:
-        p[0] = [p[1], None, p[2]]
+        p[0] = [p[1], None, p.lineno(1), p[2]]
 
 
 def p_struct(p):
@@ -259,7 +259,7 @@ def p_struct(p):
 def p_seen_struct(p):
     '''seen_struct : STRUCT IDENTIFIER '''
     _, name = p[1:3]
-    val = _make_empty_struct(name)
+    val = _make_empty_struct(name, lineno=p.lineno(2))
     setattr(threadlocal.thrift_stack[-1], name, val)
     p[0] = val
 
@@ -275,7 +275,7 @@ def p_union(p):
 def p_seen_union(p):
     '''seen_union : UNION IDENTIFIER '''
     _, name = p[1:3]
-    val = _make_empty_struct(name)
+    val = _make_empty_struct(name, lineno=p.lineno(2))
     setattr(threadlocal.thrift_stack[-1], name, val)
     p[0] = val
 
@@ -283,7 +283,8 @@ def p_seen_union(p):
 def p_exception(p):
     '''exception : EXCEPTION IDENTIFIER '{' field_seq '}' type_annotations '''
     _, name, _, fields, _, annotations = p[1:7]
-    val = _make_struct(name, fields, base_cls=TException)
+    val = _make_struct(name, fields, base_cls=TException,
+                       lineno=p.lineno(2))
     val.__thrift_annotations__ = _annotations_to_dict(annotations)
     setattr(threadlocal.thrift_stack[-1], name, val)
     _add_thrift_meta('exceptions', val)
@@ -311,15 +312,15 @@ def p_simple_service(p):
     else:
         extends = None
 
-    p[0] = (p[2], p[len(p) - 2], extends)
+    p[0] = (p[2], p[len(p) - 2], extends, p.lineno(2))
 
 
 def p_service(p):
     '''service : simple_service type_annotations'''
     service_info, annotations = p[1:3]
-    name, funcs, extends = service_info
+    name, funcs, extends, lineno = service_info
     thrift = threadlocal.thrift_stack[-1]
-    val = _make_service(name, funcs, extends, annotations)
+    val = _make_service(name, funcs, extends, annotations, lineno=lineno)
     setattr(thrift, name, val)
     _add_thrift_meta('services', val)
 
@@ -342,7 +343,8 @@ def p_simple_function(p):
     else:
         throws = p[len(p) - 1]
 
-    p[0] = [oneway, p[base + 1], p[base + 2], p[base + 4], throws]
+    p[0] = [oneway, p[base + 1], p[base + 2], p[base + 4], throws,
+            p.lineno(base + 2)]
 
 
 def p_function(p):
@@ -395,7 +397,8 @@ def p_simple_field(p):
     else:
         default_val = None
 
-    p[0] = [field_id, field_req, field_type, name, default_val]
+    p[0] = [field_id, field_req, field_type, name, default_val,
+            p.lineno(4)]
 
 
 def p_field(p):
@@ -885,15 +888,19 @@ def _cast_struct(t):   # struct/exception/union
     return __cast_struct
 
 
-def _make_enum(name, kvs, annotations=None):
+def _make_enum(name, kvs, annotations=None, lineno=None):
+    thrift = threadlocal.thrift_stack[-1]
     attrs = {
-        '__module__': threadlocal.thrift_stack[-1].__name__,
-        '_ttype': TType.I32
+        '__module__': thrift.__name__,
+        '_ttype': TType.I32,
+        '__thrift_lineno__': lineno,
+        '__thrift_file__': getattr(thrift, '__thrift_file__', None)
     }
     cls = type(name, (object, ), attrs)
 
     _values_to_names = {}
     _names_to_values = {}
+    item_linenos = {}
     item_annotations = {}
 
     if kvs:
@@ -904,24 +911,29 @@ def _make_enum(name, kvs, annotations=None):
             if item[1] is None:
                 item[1] = val + 1
             val = item[1]
-        for key, val, *annotation in kvs:
+        for key, val, item_lineno, annotation in kvs:
             setattr(cls, key, val)
             _values_to_names[val] = key
             _names_to_values[key] = val
-            # Store item annotations if present (index 2)
-            if annotation and annotation[0]:
-                item_annotations[key] = _annotations_to_dict(annotation[0])
+            item_linenos[key] = item_lineno
+            if annotation:
+                item_annotations[key] = _annotations_to_dict(annotation)
     setattr(cls, '_VALUES_TO_NAMES', _values_to_names)
     setattr(cls, '_NAMES_TO_VALUES', _names_to_values)
+    setattr(cls, '__thrift_item_linenos__', item_linenos)
     setattr(cls, '__thrift_annotations__', _annotations_to_dict(annotations))
     setattr(cls, '__thrift_item_annotations__', item_annotations)
     return cls
 
 
-def _make_empty_struct(name, ttype=TType.STRUCT, base_cls=TPayload):
+def _make_empty_struct(name, ttype=TType.STRUCT, base_cls=TPayload,
+                       lineno=None):
+    thrift = threadlocal.thrift_stack[-1]
     attrs = {
-        '__module__': threadlocal.thrift_stack[-1].__name__,
-        '_ttype': ttype
+        '__module__': thrift.__name__,
+        '_ttype': ttype,
+        '__thrift_lineno__': lineno,
+        '__thrift_file__': getattr(thrift, '__thrift_file__', None)
     }
     return type(name, (base_cls, ), attrs)
 
@@ -930,6 +942,7 @@ def _fill_in_struct(cls, fields, _gen_init=True):
     thrift_spec = {}
     default_spec = []
     _tspec = {}
+    field_linenos = {}
     field_annotations = {}
 
     for field in fields:
@@ -941,11 +954,13 @@ def _fill_in_struct(cls, fields, _gen_init=True):
         thrift_spec[field[0]] = _ttype_spec(ttype, field[3], field[1])
         default_spec.append((field[3], field[4]))
         _tspec[field[3]] = field[1], ttype
-        if len(field) > 5 and field[5]:
-            field_annotations[field[3]] = _annotations_to_dict(field[5])
+        field_linenos[field[3]] = field[5]
+        if len(field) > 6 and field[6]:
+            field_annotations[field[3]] = _annotations_to_dict(field[6])
     setattr(cls, 'thrift_spec', thrift_spec)
     setattr(cls, 'default_spec', default_spec)
     setattr(cls, '_tspec', _tspec)
+    setattr(cls, '__thrift_field_linenos__', field_linenos)
     setattr(cls, '__thrift_field_annotations__', field_annotations)
     if _gen_init:
         gen_init(cls, thrift_spec, default_spec)
@@ -953,18 +968,28 @@ def _fill_in_struct(cls, fields, _gen_init=True):
 
 
 def _make_struct(name, fields, ttype=TType.STRUCT, base_cls=TPayload,
-                 _gen_init=True):
-    cls = _make_empty_struct(name, ttype=ttype, base_cls=base_cls)
+                 _gen_init=True, lineno=None):
+    cls = _make_empty_struct(name, ttype=ttype, base_cls=base_cls,
+                             lineno=lineno)
     return _fill_in_struct(cls, fields, _gen_init=_gen_init)
 
 
-def _make_service(name, funcs, extends, annotations=None):
+def _make_service(name, funcs, extends, annotations=None, lineno=None):
     if extends is None:
         extends = object
 
-    attrs = {'__module__': threadlocal.thrift_stack[-1].__name__}
+    thrift = threadlocal.thrift_stack[-1]
+    attrs = {
+        '__module__': thrift.__name__,
+        '__thrift_lineno__': lineno,
+        '__thrift_file__': getattr(thrift, '__thrift_file__', None)
+    }
     cls = type(name, (extends, ), attrs)
     thrift_services = []
+    # inherited functions keep the lineno of the service that defined
+    # them, relative to that service's __thrift_file__
+    function_linenos = dict(getattr(extends, '__thrift_function_linenos__',
+                                    {}))
     function_annotations = {}
 
     for func in funcs:
@@ -992,11 +1017,13 @@ def _make_service(name, funcs, extends, annotations=None):
         gen_init(result_cls, result_cls.thrift_spec, result_cls.default_spec)
         setattr(cls, result_name, result_cls)
         thrift_services.append(func_name)
-        if len(func) > 5 and func[5]:
-            function_annotations[func_name] = _annotations_to_dict(func[5])
+        function_linenos[func_name] = func[5]
+        if len(func) > 6 and func[6]:
+            function_annotations[func_name] = _annotations_to_dict(func[6])
     if extends is not None and hasattr(extends, 'thrift_services'):
         thrift_services.extend(extends.thrift_services)
     setattr(cls, 'thrift_services', thrift_services)
+    setattr(cls, '__thrift_function_linenos__', function_linenos)
     setattr(cls, '__thrift_annotations__', _annotations_to_dict(annotations))
     setattr(cls, '__thrift_function_annotations__', function_annotations)
     return cls
