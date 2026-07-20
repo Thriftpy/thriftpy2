@@ -83,7 +83,8 @@ class ResponseException(Exception):
     The function passed to the constructor will be called with the
     RequestHandler as its only argument.
     """
-    def __init__(self, handler: Callable) -> None:
+    def __init__(self, handler: Callable[[http_server.BaseHTTPRequestHandler], None]
+                 ) -> None:
         self.handler = handler
 
 
