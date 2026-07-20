@@ -8,6 +8,7 @@ import itertools
 import os
 import threading
 import types
+from typing import Any
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
@@ -187,7 +188,7 @@ def p_const_map_item(p):
 
 def p_const_ref(p):
     '''const_ref : IDENTIFIER'''
-    child = threadlocal.thrift_stack[-1]
+    child = father = threadlocal.thrift_stack[-1]
     for name in p[1].split('.'):
         father = child
         child = getattr(child, name, None)
@@ -609,7 +610,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
     if lexer is None:
         lexer = lex.lex()
     if parser is None:
-        parser = yacc.yacc(debug=False, write_tables=0)
+        parser = yacc.yacc(debug=False, write_tables=False)
 
     if include_dirs is not None:
         threadlocal.include_dirs_ = include_dirs
@@ -696,7 +697,7 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
     if lexer is None:
         lexer = lex.lex()
     if parser is None:
-        parser = yacc.yacc(debug=False, write_tables=0)
+        parser = yacc.yacc(debug=False, write_tables=False)
 
     data = source.read()
 
@@ -737,7 +738,7 @@ def _parse_seq(p):
         p[0] = []
 
 
-def _cast(t, linno=0):  # noqa
+def _cast(t: Any, linno: int = 0) -> Any:  # noqa
     if isinstance(t, int) and t < 0:
         return _lazy_cast_const(t, linno)
     if t == TType.BOOL:
@@ -1021,7 +1022,7 @@ def _make_service(name, funcs, extends, annotations=None, lineno=None):
         if len(func) > 6 and func[6]:
             function_annotations[func_name] = _annotations_to_dict(func[6])
     if extends is not None and hasattr(extends, 'thrift_services'):
-        thrift_services.extend(extends.thrift_services)
+        thrift_services.extend(getattr(extends, 'thrift_services'))
     setattr(cls, 'thrift_services', thrift_services)
     setattr(cls, '__thrift_function_linenos__', function_linenos)
     setattr(cls, '__thrift_annotations__', _annotations_to_dict(annotations))

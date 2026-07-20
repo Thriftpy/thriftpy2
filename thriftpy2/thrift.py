@@ -9,8 +9,8 @@ import functools
 import linecache
 import types
 from itertools import zip_longest
-from typing import (Any, Callable, Dict, List, Optional, Tuple, Type,
-                    TYPE_CHECKING)
+from typing import (Any, Callable, ClassVar, Dict, List, Optional, Tuple,
+                    Type, TYPE_CHECKING)
 
 if TYPE_CHECKING:
     from thriftpy2.protocol.base import TProtocolBase
@@ -135,6 +135,11 @@ class TMessageType(object):
 
 class TPayloadMeta(type):
 
+    # Declared for type checkers: generated payload classes carry these
+    # class attributes (assigned by gen_init / the parser at runtime).
+    thrift_spec: Dict[int, tuple]
+    default_spec: List[Tuple[str, Any]]
+
     def __new__(cls, name: str, bases: Tuple[type, ...],
                 attrs: Dict[str, Any]) -> 'TPayloadMeta':
         if "default_spec" in attrs:
@@ -167,6 +172,9 @@ def _hash_value(value: Any) -> int:
 
 
 class TPayload(metaclass=TPayloadMeta):
+
+    thrift_spec: ClassVar[Dict[int, tuple]]
+    default_spec: ClassVar[List[Tuple[str, Any]]]
 
     def __hash__(self) -> int:
         # Consistent with __eq__: equal payloads hash equal, so structs

@@ -1,3 +1,5 @@
+from typing import Any
+
 from thriftpy2.thrift import TType
 
 from thriftpy2.protocol.exc import TProtocolException
@@ -66,7 +68,7 @@ async def read_map_begin(inbuf):
     return k_type, v_type, sz
 
 
-async def read_val(inbuf, ttype, spec=None, decode_response=True,
+async def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
                    strict_decode=False):
     if ttype == TType.BOOL:
         return bool(unpack_i8(await inbuf.read(1)))

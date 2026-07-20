@@ -2,6 +2,7 @@ import base64
 import json
 import struct
 import sys
+from typing import Any, Dict
 from warnings import warn
 
 
@@ -19,7 +20,7 @@ def encode_binary(data):
     return base64.b64encode(data).decode('ascii')
 
 
-def json_value(ttype, val, spec=None):
+def json_value(ttype, val, spec: Any = None):
     TTYPE_TO_JSONFUNC_MAP = {
         TType.BYTE: (int, (val,)),
         TType.I16: (int, (val,)),
@@ -44,7 +45,7 @@ def json_value(ttype, val, spec=None):
     )
 
 
-def obj_value(ttype, val, spec=None):
+def obj_value(ttype, val, spec: Any = None):
     # Special case: since `spec` needs to get called if TType is STRUCT,
     # if we initialize inside `TTYPE_TO_OBJFUNC_MAP` it will get called
     # everytime the function gets called and incur in exception as
@@ -182,7 +183,7 @@ class TJSONProtocol(TProtocolBase):
 
     def __init__(self, trans):
         TProtocolBase.__init__(self, trans)
-        self._meta = {"version": VERSION}
+        self._meta: Dict[str, Any] = {"version": VERSION}
         self._data = None
 
     def _write_len(self, x):
