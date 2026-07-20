@@ -330,6 +330,27 @@ def test_thrift_meta():
     assert meta['includes'] == [thrift.shared]
 
 
+def test_thrift_namespaces():
+    thrift = load(TEST_DIR / 'parser-cases/namespaces.thrift')
+    assert thrift.__thrift_namespaces__ == {
+        '*': 'default_ns',
+        'py': 'foo.baz',
+        'py.twisted': 'foo.bar.twisted',
+        'java': 'com.example.foo',
+    }
+
+
+def test_thrift_namespaces_empty():
+    thrift = load(TEST_DIR / 'parser-cases/comments.thrift')
+    assert thrift.__thrift_namespaces__ == {}
+
+
+def test_thrift_namespaces_load_fp():
+    with open(TEST_DIR / 'parser-cases/namespaces.thrift') as thrift_fp:
+        thrift = load_fp(thrift_fp, 'namespaces_thrift')
+    assert thrift.__thrift_namespaces__['py'] == 'foo.baz'
+
+
 def test_load_fp():
     from thriftpy2.parser import threadlocal
     threadlocal.__dict__.clear()

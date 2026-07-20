@@ -94,9 +94,9 @@ def p_cpp_include(p):
 
 def p_namespace(p):
     '''namespace : NAMESPACE namespace_scope IDENTIFIER'''
-    # namespace is useless in thriftpy2
-    # if p[2] == 'py' or p[2] == '*':
-    #     setattr(threadlocal.thrift_stack[-1], '__name__', p[3])
+    # namespaces are not used in thriftpy2, but kept for user inspection;
+    # if the same scope is declared multiple times, the last one wins
+    threadlocal.thrift_stack[-1].__thrift_namespaces__[p[2]] = p[3]
 
 
 def p_namespace_scope(p):
@@ -646,6 +646,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
 
     thrift = types.ModuleType(module_name)
     setattr(thrift, '__thrift_file__', path)
+    setattr(thrift, '__thrift_namespaces__', {})
     threadlocal.thrift_stack.append(thrift)
     lexer.lineno = 1
     parser.parse(data)
@@ -702,6 +703,7 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True):
 
     thrift = types.ModuleType(module_name)
     setattr(thrift, '__thrift_file__', None)
+    setattr(thrift, '__thrift_namespaces__', {})
     threadlocal.thrift_stack.append(thrift)
     lexer.lineno = 1
     parser.parse(data)
