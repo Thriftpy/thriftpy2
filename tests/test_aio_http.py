@@ -127,13 +127,13 @@ class _TestAsyncHttp:
 
     @classmethod
     def _stop_server(cls):
-        async def stop():
-            await cls.server.close()
-
-        cls._server_loop.call_soon_threadsafe(
-            lambda: asyncio.ensure_future(stop(), loop=cls._server_loop)
+        future = asyncio.run_coroutine_threadsafe(
+            cls.server.close(), cls._server_loop
         )
-        cls._server_loop.call_soon_threadsafe(cls._server_loop.stop)
+        try:
+            future.result(timeout=2)
+        except Exception:
+            pass
         cls._server_thread.join(timeout=2)
 
     async def client(self, timeout=30000):
@@ -251,13 +251,13 @@ class TestAsyncHttpTimeout:
 
     @classmethod
     def _stop_server(cls):
-        async def stop():
-            await cls.server.close()
-
-        cls._server_loop.call_soon_threadsafe(
-            lambda: asyncio.ensure_future(stop(), loop=cls._server_loop)
+        future = asyncio.run_coroutine_threadsafe(
+            cls.server.close(), cls._server_loop
         )
-        cls._server_loop.call_soon_threadsafe(cls._server_loop.stop)
+        try:
+            future.result(timeout=2)
+        except Exception:
+            pass
         cls._server_thread.join(timeout=2)
 
     @pytest.mark.asyncio
@@ -310,13 +310,13 @@ class TestAsyncHttpCustomHeaders:
 
     @classmethod
     def _stop_server(cls):
-        async def stop():
-            await cls.server.close()
-
-        cls._server_loop.call_soon_threadsafe(
-            lambda: asyncio.ensure_future(stop(), loop=cls._server_loop)
+        future = asyncio.run_coroutine_threadsafe(
+            cls.server.close(), cls._server_loop
         )
-        cls._server_loop.call_soon_threadsafe(cls._server_loop.stop)
+        try:
+            future.result(timeout=2)
+        except Exception:
+            pass
         cls._server_thread.join(timeout=2)
 
     @pytest.mark.asyncio
