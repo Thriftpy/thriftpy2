@@ -64,23 +64,7 @@ def test_cpp_include():
     load(TEST_DIR / 'parser-cases/cpp_include.thrift')
 
 
-@pytest.fixture
-def reset_parser_threadlocal():
-    def delattr_no_error(o, name):
-        try:
-            delattr(o, name)
-        except AttributeError:
-            pass
-
-    from thriftpy2.parser.parser import threadlocal
-    delattr_no_error(threadlocal, 'thrift_stack')
-    delattr_no_error(threadlocal, 'include_dirs_')
-    delattr_no_error(threadlocal, 'thrift_cache')
-    delattr_no_error(threadlocal, 'incomplete_type')
-    delattr_no_error(threadlocal, 'initialized')
-
-
-def test_load_in_sub_thread(reraise, reset_parser_threadlocal):
+def test_load_in_sub_thread(reraise):
     @reraise.wrap
     def f():
         load(TEST_DIR / 'addressbook.thrift')
@@ -90,7 +74,7 @@ def test_load_in_sub_thread(reraise, reset_parser_threadlocal):
     t.join()
 
 
-def test_load_fp_in_sub_thread(reraise, reset_parser_threadlocal):
+def test_load_fp_in_sub_thread(reraise):
     @reraise.wrap
     def f():
         with open(TEST_DIR / 'container.thrift') as fp:
@@ -286,6 +270,14 @@ def test_e_grammar_error_at_eof():
     assert str(excinfo.value) == "Grammar error at EOF of the file '{}'".format(thrift_file)
 
 
+def test_e_grammar_error_at_token():
+    with pytest.raises(ThriftGrammarError) as excinfo:
+        load(TEST_DIR / 'parser-cases/e_grammar_error_token.thrift')
+    thrift_file = TEST_DIR / 'parser-cases/e_grammar_error_token.thrift'
+    assert str(excinfo.value) == \
+        "Grammar error '}' at line 3 of the file '%s'" % thrift_file
+
+
 def test_e_use_thrift_reserved_keywords():
     with pytest.raises(ThriftParserError) as excinfo:
         load(TEST_DIR / 'parser-cases/e_use_thrift_reserved_keywords.thrift')
@@ -331,8 +323,11 @@ def test_thrift_meta():
 
 
 def test_load_fp():
-    from thriftpy2.parser import threadlocal
-    threadlocal.__dict__.clear()
+    # `shared.thrift` may already be cached under 'shared_thrift' (with its
+    # __name__ rewritten) from being included by another test; clear the
+    # cache so it is parsed fresh as a top-level module here.
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
 
     thrift = None
     with open(TEST_DIR / 'parser-cases/shared.thrift') as thrift_fp:
