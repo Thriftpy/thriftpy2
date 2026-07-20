@@ -16,7 +16,7 @@
 import logging
 import socket
 import struct
-import urllib
+import urllib.parse
 import warnings
 from contextlib import contextmanager
 from datetime import timedelta

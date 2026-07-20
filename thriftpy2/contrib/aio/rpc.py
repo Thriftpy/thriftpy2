@@ -1,7 +1,7 @@
 import socket
 import ssl
 import types
-import urllib
+import urllib.parse
 import warnings
 from typing import Any, Optional
 

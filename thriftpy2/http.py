@@ -35,7 +35,7 @@ import socket
 import ssl
 import sys
 import types
-import urllib
+import urllib.parse
 from contextlib import contextmanager
 from io import BytesIO
 from typing import (BinaryIO, Callable, Dict, Generator, Optional,

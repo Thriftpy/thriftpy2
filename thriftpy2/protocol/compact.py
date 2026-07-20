@@ -1,6 +1,7 @@
 import array
 import sys
 from struct import pack, unpack
+from typing import Any
 
 
 from ..thrift import TException, TType
@@ -276,7 +277,7 @@ class TCompactProtocol(TProtocolBase):
             self._read_field_end()
         self._read_struct_end()
 
-    def _read_val(self, ttype, spec=None):
+    def _read_val(self, ttype, spec: Any = None):
         if ttype == TType.BOOL:
             return self._read_bool()
 
@@ -464,7 +465,7 @@ class TCompactProtocol(TProtocolBase):
         self._write_field_stop()
         self._write_struct_end()
 
-    def _write_val(self, ttype, val, spec=None):
+    def _write_val(self, ttype, val, spec: Any = None):
 
         if ttype == TType.BOOL:
             self._write_bool(val)
