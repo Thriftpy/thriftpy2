@@ -116,9 +116,11 @@ class _TestAIO:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            loop.run_until_complete(cls.server.close())
-        except Exception:  # noqa Probably already closed earlier
-            pass
+            for server in (cls.server, cls.ipv6_server):
+                try:
+                    loop.run_until_complete(server.close())
+                except Exception:  # noqa Probably already closed earlier
+                    pass
         finally:
             loop.close()
 
@@ -139,16 +141,16 @@ class _TestAIO:
 
     @classmethod
     def _start_ipv6_server(cls):
-        cls.server = make_aio_server(
+        cls.ipv6_server = make_aio_server(
             addressbook.AddressBookService,
             Dispatcher(),
             trans_factory=cls.TRANSPORT_FACTORY,
             proto_factory=cls.PROTOCOL_FACTORY,
             loop=asyncio.new_event_loop(),
             socket_family=socket.AF_INET6,
-            **cls.server_kwargs(),
+            **cls.ipv6_server_kwargs(),
         )
-        st = threading.Thread(target=cls.server.serve)
+        st = threading.Thread(target=cls.ipv6_server.serve)
         st.daemon = True
         st.start()
         time.sleep(0.1)
@@ -159,8 +161,19 @@ class _TestAIO:
         return {'unix_socket': '/tmp/aio_thriftpy_test_{}.sock'.format(name)}
 
     @classmethod
+    def ipv6_server_kwargs(cls):
+        name = cls.__name__.lower()
+        return {
+            'unix_socket': '/tmp/aio_thriftpy_test_{}_ipv6.sock'.format(name)
+        }
+
+    @classmethod
     def client_kwargs(cls):
         return cls.server_kwargs()
+
+    @classmethod
+    def ipv6_client_kwargs(cls):
+        return cls.ipv6_server_kwargs()
 
     async def client(self, timeout: int = 3000000):
         return await make_aio_client(
@@ -178,7 +191,7 @@ class _TestAIO:
             proto_factory=self.PROTOCOL_FACTORY,
             timeout=timeout,
             socket_family=socket.AF_INET6,
-            **self.client_kwargs(),
+            **self.ipv6_client_kwargs(),
         )
 
     @pytest.mark.asyncio
@@ -261,6 +274,7 @@ class SSLServerMixin:
     @classmethod
     def setup_class(cls):
         cls.port = random.randint(55000, 56000)
+        cls.ipv6_port = random.randint(56000, 57000)
         super().setup_class()
 
     @classmethod
@@ -273,9 +287,21 @@ class SSLServerMixin:
         }
 
     @classmethod
+    def ipv6_server_kwargs(cls):
+        kw = cls.server_kwargs()
+        kw['port'] = cls.ipv6_port
+        return kw
+
+    @classmethod
     def client_kwargs(cls):
         kw = cls.server_kwargs()
         kw['cafile'] = TEST_DIR / "ssl/CA.pem"
+        return kw
+
+    @classmethod
+    def ipv6_client_kwargs(cls):
+        kw = cls.client_kwargs()
+        kw['port'] = cls.ipv6_port
         return kw
 
     async def client_with_url(self, timeout: int = 3000):
