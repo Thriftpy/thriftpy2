@@ -153,9 +153,27 @@ def gen_init(cls: type, thrift_spec: Optional[Dict[int, tuple]] = None,
     return cls
 
 
+def _hash_value(value: Any) -> int:
+    """Hash a field value, freezing mutable containers so that the
+    result is consistent with ``TPayload.__eq__``."""
+    if isinstance(value, dict):
+        return hash(frozenset(
+            (_hash_value(k), _hash_value(v)) for k, v in value.items()))
+    if isinstance(value, (list, tuple)):
+        return hash(tuple(_hash_value(v) for v in value))
+    if isinstance(value, (set, frozenset)):
+        return hash(frozenset(_hash_value(v) for v in value))
+    return hash(value)
+
+
 class TPayload(metaclass=TPayloadMeta):
 
-    __hash__ = None
+    def __hash__(self) -> int:
+        # Consistent with __eq__: equal payloads hash equal, so structs
+        # can be used as thrift map keys or set members.  Note that like
+        # any mutable object used as a key, mutating a payload after it
+        # is put in a dict or set breaks lookups.
+        return hash(self.__class__) ^ _hash_value(self.__dict__)
 
     def read(self, iprot: 'TProtocolBase') -> None:
         iprot.read_struct(self)
