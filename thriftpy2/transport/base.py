@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import sys
 from typing import Callable, Optional
 
-try:
+if sys.version_info >= (3, 8):
     from typing import Protocol
-except ImportError:
+else:
     from typing_extensions import Protocol
 
 from ..thrift import TType, TException
