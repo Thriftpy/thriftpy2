@@ -48,6 +48,7 @@ Source = "https://github.com/Thriftpy/thriftpy2"
 [project.optional-dependencies]
 dev = [
     "flake8>=4.0",
+    "mypy==1.7.1",
     "sphinx-rtd-theme>=0.1.9",
     "sphinx>=1.3",
     "pytest-asyncio",
@@ -66,3 +67,8 @@ tornado = [
 aiohttp = [
     "aiohttp>=3.8.0,<4.0.0",
 ]
+
+[tool.mypy]
+python_version = "3.7"
+files = ["thriftpy2/protocol/base.py", "thriftpy2/transport/base.py"]
+follow_imports = "skip"
