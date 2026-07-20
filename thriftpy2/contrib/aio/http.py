@@ -29,9 +29,12 @@ Async HTTP transport for thriftpy2.
 """
 
 import asyncio
+import ssl
+import types
 import urllib.parse
 from contextlib import asynccontextmanager
 from io import BytesIO
+from typing import Any, AsyncGenerator, Dict, Optional
 
 import aiohttp
 from aiohttp import web
@@ -40,6 +43,7 @@ from thriftpy2.contrib.aio.client import TAsyncClient
 from thriftpy2.contrib.aio.processor import TAsyncProcessor
 from thriftpy2.contrib.aio.protocol import TAsyncBinaryProtocolFactory
 from thriftpy2.contrib.aio.transport.base import TAsyncTransportBase
+from thriftpy2.protocol.base import TProtocolFactory
 from thriftpy2.transport import TTransportException
 
 HTTP_URI = '{scheme}://{host}:{port}{path}'
@@ -49,53 +53,54 @@ DEFAULT_HTTP_CLIENT_TIMEOUT_MS = 30000  # 30 seconds
 class TAsyncHttpHeaderFactory:
     """Default header factory that returns custom headers."""
 
-    def __init__(self, headers=None):
+    def __init__(self, headers: Optional[Dict[str, str]] = None) -> None:
         """Initialize a header factory.
 
         @param headers(dict): A dictionary of static headers the factory generates
         """
         self._headers = headers if headers else {}
 
-    def get_headers(self):
+    def get_headers(self) -> Dict[str, str]:
         return self._headers
 
 
 class TAsyncMemoryBuffer(TAsyncTransportBase):
     """Async memory buffer transport."""
 
-    def __init__(self, value=b''):
+    def __init__(self, value: bytes = b'') -> None:
         self._buffer = BytesIO(value)
 
-    def is_open(self):
+    def is_open(self) -> bool:
         return True
 
-    async def open(self):
+    async def open(self) -> None:
         pass
 
-    def close(self):
+    def close(self) -> None:
         self._buffer.close()
 
-    async def _read(self, sz):
+    async def _read(self, sz: int) -> bytes:
         return self._buffer.read(sz)
 
-    def write(self, buf):
+    def write(self, buf: bytes) -> None:
         self._buffer.write(buf)
 
-    async def flush(self):
+    async def flush(self) -> None:
         pass
 
-    def getvalue(self):
+    def getvalue(self) -> bytes:
         return self._buffer.getvalue()
 
-    def setvalue(self, value):
+    def setvalue(self, value: bytes) -> None:
         self._buffer = BytesIO(value)
 
 
 class TAsyncHttpClient(TAsyncTransportBase):
     """Async HTTP implementation of TTransport."""
 
-    def __init__(self, uri, timeout=None, ssl_context=None,
-                 http_header_factory=None):
+    def __init__(self, uri: str, timeout: Optional[int] = None,
+                 ssl_context: Optional[ssl.SSLContext] = None,
+                 http_header_factory: Optional[TAsyncHttpHeaderFactory] = None) -> None:
         """Initialize an async HTTP transport.
 
         @param uri(str): The http_scheme://host:port/path to connect to.
@@ -126,10 +131,10 @@ class TAsyncHttpClient(TAsyncTransportBase):
         if timeout:
             self.set_timeout(timeout)
 
-    def is_open(self):
+    def is_open(self) -> bool:
         return self._session is not None and not self._session.closed
 
-    async def open(self):
+    async def open(self) -> None:
         if self._session is not None and not self._session.closed:
             return
 
@@ -143,7 +148,7 @@ class TAsyncHttpClient(TAsyncTransportBase):
             connector=connector
         )
 
-    def close(self):
+    def close(self) -> None:
         """Synchronous close - marks session as closed.
 
         For proper async cleanup, use aclose() instead.
@@ -153,26 +158,26 @@ class TAsyncHttpClient(TAsyncTransportBase):
             # For proper cleanup, use aclose() or client_context
             self._session = None
 
-    async def aclose(self):
+    async def aclose(self) -> None:
         """Async close method."""
         if self._session is not None and not self._session.closed:
             await self._session.close()
             self._session = None
 
-    def set_timeout(self, ms):
+    def set_timeout(self, ms: Optional[int]) -> None:
         """Set timeout in milliseconds."""
         self._timeout = ms / 1000.0 if (ms and ms > 0) else None
 
-    def set_custom_headers(self, headers):
+    def set_custom_headers(self, headers: Dict[str, str]) -> None:
         self._http_header_factory = TAsyncHttpHeaderFactory(headers)
 
-    async def _read(self, sz):
+    async def _read(self, sz: int) -> bytes:
         return self._rbuf.read(sz)
 
-    def write(self, buf):
+    def write(self, buf: bytes) -> None:
         self._wbuf.write(buf)
 
-    async def flush(self):
+    async def flush(self) -> None:
         """Send buffered data as HTTP POST request."""
         data = self._wbuf.getvalue()
         self._wbuf = BytesIO()
@@ -316,10 +321,14 @@ class TAsyncHttpServer:
         self._app = None
 
 
-async def make_client(service, host='localhost', port=9090, path='',
-                      scheme='http', proto_factory=None,
-                      ssl_context=None, http_header_factory=None,
-                      timeout=DEFAULT_HTTP_CLIENT_TIMEOUT_MS, url=''):
+async def make_client(
+        service: types.ModuleType, host: str = 'localhost', port: int = 9090,
+        path: str = '', scheme: str = 'http',
+        proto_factory: Optional[TProtocolFactory] = None,
+        ssl_context: Optional[ssl.SSLContext] = None,
+        http_header_factory: Optional[TAsyncHttpHeaderFactory] = None,
+        timeout: Optional[int] = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
+        url: str = '') -> TAsyncClient:
     """Create an async HTTP client.
 
     @param service: The Thrift service class.
@@ -359,10 +368,14 @@ async def make_client(service, host='localhost', port=9090, path='',
 
 
 @asynccontextmanager
-async def client_context(service, host='localhost', port=9090, path='',
-                         scheme='http', proto_factory=None,
-                         ssl_context=None, http_header_factory=None,
-                         timeout=DEFAULT_HTTP_CLIENT_TIMEOUT_MS, url=''):
+async def client_context(
+        service: types.ModuleType, host: str = 'localhost', port: int = 9090,
+        path: str = '', scheme: str = 'http',
+        proto_factory: Optional[TProtocolFactory] = None,
+        ssl_context: Optional[ssl.SSLContext] = None,
+        http_header_factory: Optional[TAsyncHttpHeaderFactory] = None,
+        timeout: Optional[int] = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
+        url: str = '') -> AsyncGenerator[TAsyncClient, None]:
     """Async context manager for HTTP client.
 
     @param service: The Thrift service class.
@@ -403,8 +416,9 @@ async def client_context(service, host='localhost', port=9090, path='',
         await http_client.aclose()
 
 
-def make_server(service, handler, host, port,
-                proto_factory=None, ssl_context=None):
+def make_server(service: types.ModuleType, handler: Any, host: str, port: int,
+                proto_factory: Optional[TProtocolFactory] = None,
+                ssl_context: Optional[ssl.SSLContext] = None) -> TAsyncHttpServer:
     """Create an async HTTP server.
 
     @param service: The Thrift service class.

@@ -1,4 +1,5 @@
 include README.rst CHANGES.rst LICENSE
+include thriftpy2/py.typed
 recursive-include thriftpy2/protocol/cybin *.pyx *.c *.h
 recursive-include thriftpy2/transport *.pyx *.pxd *.c
 include thriftpy2/contrib/tracking/tracking.thrift

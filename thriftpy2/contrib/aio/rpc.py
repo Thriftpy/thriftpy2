@@ -1,6 +1,9 @@
 import socket
+import ssl
+import types
 import urllib
 import warnings
+from typing import Any, Optional
 
 from thriftpy2.protocol.base import TProtocolFactory
 from thriftpy2.transport.base import TTransportFactory
@@ -13,14 +16,16 @@ from .socket import TAsyncServerSocket, TAsyncSocket
 from .transport.buffered import TAsyncBufferedTransportFactory
 
 
-async def make_client(service, host='localhost', port=9090, unix_socket=None,
-                      proto_factory: TProtocolFactory=TAsyncBinaryProtocolFactory(),
-                      trans_factory: TTransportFactory=TAsyncBufferedTransportFactory(),
-                      timeout=3000, connect_timeout=None,
-                      cafile=None, ssl_context=None,
-                      certfile=None, keyfile=None,
-                      validate=True, url='',
-                      socket_timeout=None, socket_family=socket.AF_INET):
+async def make_client(
+        service: types.ModuleType, host: str = 'localhost', port: int = 9090,
+        unix_socket: Optional[str] = None,
+        proto_factory: TProtocolFactory = TAsyncBinaryProtocolFactory(),
+        trans_factory: TTransportFactory = TAsyncBufferedTransportFactory(),
+        timeout: Optional[int] = 3000, connect_timeout: Optional[int] = None,
+        cafile: Optional[str] = None, ssl_context: Optional[ssl.SSLContext] = None,
+        certfile: Optional[str] = None, keyfile: Optional[str] = None,
+        validate: bool = True, url: str = '', socket_timeout: Optional[int] = None,
+        socket_family: socket.AddressFamily = socket.AF_INET) -> TAsyncClient:
     if socket_timeout is not None:
         warnings.warn(
             "The 'socket_timeout' argument is deprecated. "
@@ -63,13 +68,15 @@ async def make_client(service, host='localhost', port=9090, unix_socket=None,
     return TAsyncClient(service, protocol)
 
 
-def make_server(service, handler,
-                host="localhost", port=9090, unix_socket=None,
-                proto_factory: TProtocolFactory=TAsyncBinaryProtocolFactory(),
-                trans_factory: TTransportFactory=TAsyncBufferedTransportFactory(),
-                client_timeout=3000, certfile=None,
-                keyfile=None, ssl_context=None, loop=None,
-                socket_family=socket.AF_INET):
+def make_server(
+        service: types.ModuleType, handler: Any, host: str = 'localhost',
+        port: int = 9090, unix_socket: Optional[str] = None,
+        proto_factory: TProtocolFactory = TAsyncBinaryProtocolFactory(),
+        trans_factory: TTransportFactory = TAsyncBufferedTransportFactory(),
+        client_timeout: Optional[int] = 3000, certfile: Optional[str] = None,
+        keyfile: Optional[str] = None, ssl_context: Optional[ssl.SSLContext] = None,
+        loop: Optional[Any] = None,
+        socket_family: socket.AddressFamily = socket.AF_INET) -> TAsyncServer:
     processor = TAsyncProcessor(service, handler)
 
     if unix_socket:
