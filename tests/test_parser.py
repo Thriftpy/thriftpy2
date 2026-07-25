@@ -338,6 +338,24 @@ def test_load_fp():
     assert thrift.__thrift_meta__['services'] == [thrift.SharedService]
 
 
+def test_load_fp_with_include(monkeypatch):
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
+
+    monkeypatch.chdir(TEST_DIR / 'parser-cases')
+    try:
+        with open('include.thrift') as thrift_fp:
+            thrift = load_fp(thrift_fp, 'include_fp_thrift')
+
+        assert thrift.__thrift_file__ is None
+        assert thrift.datetime == 1422009523
+        assert [t.__name__ for t in thrift.__thrift_meta__['includes']] == \
+            ['included', 'included_1']
+    finally:
+        # the includes were cached under paths relative to this directory
+        _parser._thrift_cache.clear()
+
+
 def test_e_load_fp():
     with pytest.raises(ThriftParserError) as excinfo:
         with open(TEST_DIR / 'parser-cases/tutorial.thrift') as thrift_fp:
