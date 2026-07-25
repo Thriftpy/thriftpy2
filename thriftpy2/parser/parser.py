@@ -195,7 +195,7 @@ def p_const_map_item(p):
 
 def p_const_ref(p):
     '''const_ref : IDENTIFIER'''
-    child = p.parser.context.thrift_stack[-1]
+    child = father = p.parser.context.thrift_stack[-1]
     for name in p[1].split('.'):
         father = child
         child = getattr(child, name, None)
@@ -798,6 +798,7 @@ def _fill_incomplete_ttype(tmodule, definition, incomplete_type):
                 tmodule, *incomplete_type[definition[0]],
                 incomplete_type=incomplete_type
             )
+            assert isinstance(real_type, tuple)
             return (real_type[0], definition[1], real_type[1], definition[2])
         # construct incomplete compound type
         elif isinstance(definition[1], tuple):
@@ -868,7 +869,7 @@ def _fill_incomplete_ttype(tmodule, definition, incomplete_type):
                 definition.thrift_spec[index] = (
                     value[0],
                     value[1],
-                    tuple(walk(value[2])),
+                    walk(value[2]),
                     value[3])
     # if it is a service method definition
     elif hasattr(definition, "thrift_services"):
