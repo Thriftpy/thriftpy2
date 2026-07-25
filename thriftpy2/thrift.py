@@ -9,8 +9,8 @@ import functools
 import linecache
 import types
 from itertools import zip_longest
-from typing import (Any, Callable, Dict, List, Optional, Tuple, Type,
-                    TYPE_CHECKING)
+from typing import (Any, Callable, ClassVar, Dict, List, Optional, Tuple,
+                    Type, TYPE_CHECKING)
 
 if TYPE_CHECKING:
     from thriftpy2.protocol.base import TProtocolBase
@@ -18,7 +18,9 @@ if TYPE_CHECKING:
 
 def args_to_kwargs(thrift_spec: Dict[int, tuple], *args: Any,
                    **kwargs: Any) -> Dict[str, Any]:
-    for item, value in zip_longest(sorted(thrift_spec.items()), args):
+    # Positional arguments follow the IDL declaration order (the order of
+    # thrift_spec insertion), matching Apache Thrift generated signatures.
+    for item, value in zip_longest(thrift_spec.items(), args):
         arg_name = item[1][1]
         required = item[1][-1]
         if value is not None:
@@ -135,6 +137,11 @@ class TMessageType(object):
 
 class TPayloadMeta(type):
 
+    # Declared for type checkers: generated payload classes carry these
+    # class attributes (assigned by gen_init / the parser at runtime).
+    thrift_spec: Dict[int, tuple]
+    default_spec: List[Tuple[str, Any]]
+
     def __new__(cls, name: str, bases: Tuple[type, ...],
                 attrs: Dict[str, Any]) -> 'TPayloadMeta':
         if "default_spec" in attrs:
@@ -167,6 +174,9 @@ def _hash_value(value: Any) -> int:
 
 
 class TPayload(metaclass=TPayloadMeta):
+
+    thrift_spec: ClassVar[Dict[int, tuple]]
+    default_spec: ClassVar[List[Tuple[str, Any]]]
 
     def __hash__(self) -> int:
         # Consistent with __eq__: equal payloads hash equal, so structs
@@ -303,8 +313,8 @@ class TProcessor(object):
         iprot.read_message_end()
         result = getattr(self._service, api + "_result")()
 
-        # convert kwargs to args
-        api_args = [args.thrift_spec[k][1] for k in sorted(args.thrift_spec)]
+        # convert kwargs to args, following the IDL declaration order
+        api_args = [item[1] for item in args.thrift_spec.values()]
 
         def call():
             f = getattr(self._handler, api)
@@ -394,8 +404,8 @@ class TMultiplexedProcessor(TProcessor):
         iprot.read_message_end()
         result = getattr(proc._service, api + "_result")()
 
-        # convert kwargs to args
-        api_args = [args.thrift_spec[k][1] for k in sorted(args.thrift_spec)]
+        # convert kwargs to args, following the IDL declaration order
+        api_args = [item[1] for item in args.thrift_spec.values()]
 
         def call():
             f = getattr(proc._handler, api)

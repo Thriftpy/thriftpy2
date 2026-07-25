@@ -12,9 +12,9 @@ import sys
 import types
 from typing import List, Optional, TextIO, Union
 
-from .parser import parse, parse_fp, threadlocal, _cast
-from .exc import ThriftParserError, ThriftModuleNameConflict
-from ..thrift import TPayloadMeta
+from .parser import parse, parse_fp
+from .exc import ThriftModuleNameConflict
+from .exc import ThriftParserError  # noqa: F401, re-exported for compat
 
 
 def load(
@@ -39,10 +39,9 @@ def load(
     if include_dir is not None:
         include_dir = os.fspath(include_dir)
     real_module = bool(module_name)
+    # `parse` resolves forward references and caches a fully-built module.
     thrift = parse(path, module_name, include_dirs=include_dirs,
                    include_dir=include_dir, encoding=encoding)
-    if threadlocal.incomplete_type:
-        fill_incomplete_ttype(thrift, thrift)
 
     # add sub modules to sys.modules recursively
     if real_module:
@@ -63,121 +62,6 @@ def load(
                         (registered_thrift.__thrift_file__, include_thrift.__thrift_file__)
                     )
     return thrift
-
-
-def fill_incomplete_ttype(tmodule, definition):
-    """Second pass of parser to handle out-of-order definitions.
-    """
-    # construct incomplete types' thrift_spec
-    if isinstance(definition, tuple):
-        # construct const value
-        if definition[0] == 'UNKNOWN_CONST':
-            ttype = get_definition(
-                tmodule, threadlocal.incomplete_type[definition[1]][0], definition[3])
-            return _cast(ttype)(definition[2])
-        # construct incomplete alias type
-        elif definition[1] in threadlocal.incomplete_type:
-            return (
-                definition[0],
-                get_definition(tmodule, *threadlocal.incomplete_type[definition[1]])
-            )
-        # construct incomplete type which is contained in service method's args
-        elif definition[0] in threadlocal.incomplete_type:
-            real_type = get_definition(
-                tmodule, *threadlocal.incomplete_type[definition[0]]
-            )
-            return (real_type[0], definition[1], real_type[1], definition[2])
-        # construct incomplete compound type
-        elif isinstance(definition[1], tuple):
-            return (
-                definition[0],
-                fill_incomplete_ttype(tmodule, definition[1])
-            )
-    # if type is a thrift module, search it if there are incomplete types
-    elif isinstance(definition, types.ModuleType):
-        for name, attr in definition.__dict__.items():
-            if name.startswith('__'):  # skip inner attribute
-                continue
-            setattr(definition, name, fill_incomplete_ttype(definition, attr))
-    # if type is a struct, search it if there are incomplete types
-    elif isinstance(definition, TPayloadMeta):
-        for index, value in definition.thrift_spec.items():
-            # if the ttype of the field is a single type and it is incompleted
-            if value[0] in threadlocal.incomplete_type:
-                real_type = fill_incomplete_ttype(
-                    tmodule, get_definition(
-                        tmodule, *threadlocal.incomplete_type[value[0]]
-                    )
-                )
-                # if the incomplete ttype is a compound type
-                if isinstance(real_type, tuple):
-                    definition.thrift_spec[index] = (
-                        real_type[0],
-                        value[1],
-                        real_type[1],
-                        value[2]
-                    )
-                # if the incomplete ttype is a built-in ttype
-                else:
-                    definition.thrift_spec[index] = (
-                        fill_incomplete_ttype(
-                            tmodule, get_definition(
-                                tmodule, *threadlocal.incomplete_type[value[0]]
-                            )
-                        ),
-                    ) + tuple(value[1:])
-            # if the field's ttype is a compound type
-            # and it contains incomplete types
-            elif value[2] in threadlocal.incomplete_type:
-                definition.thrift_spec[index] = (
-                    value[0],
-                    value[1],
-                    fill_incomplete_ttype(
-                        tmodule, get_definition(
-                            tmodule, *threadlocal.incomplete_type[value[2]]
-                        )
-                    ),
-                    value[3])
-            # if the field's ttype is a nest compound type
-            # and it contains incomplete type
-            elif isinstance(value[2], tuple):
-                def walk(part):
-                    if isinstance(part, tuple):
-                        return tuple(walk(x) for x in part)
-                    if part in threadlocal.incomplete_type:
-                        return get_definition(tmodule, *threadlocal.incomplete_type[part])
-                    return part
-                definition.thrift_spec[index] = (
-                    value[0],
-                    value[1],
-                    tuple(walk(value[2])),
-                    value[3])
-    # if it is a service method definition
-    elif hasattr(definition, "thrift_services"):
-        for name, attr in definition.__dict__.items():
-            if not hasattr(attr, "thrift_spec"):
-                continue
-            for index, value in attr.thrift_spec.items():
-                attr.thrift_spec[index] = fill_incomplete_ttype(tmodule, value)
-    return definition
-
-
-def get_definition(thrift, name, lineno):
-    """Get definition from thrift module and incomplete type map.
-    """
-    ref_type = thrift
-    for n in name.split('.'):
-        ref_type = getattr(thrift, n, None)
-        if ref_type is None:
-            raise ThriftParserError('No type found: %r, at line %d' %
-                                    (name, lineno))
-        if isinstance(ref_type, int) and ref_type < 0:
-            raise ThriftParserError('No type found: %r, at line %d' %
-                                    threadlocal.incomplete_type[ref_type])
-        if hasattr(ref_type, '_ttype'):
-            return (getattr(ref_type, '_ttype'), ref_type)
-        else:
-            return ref_type
 
 
 def load_fp(source: TextIO, module_name: str) -> types.ModuleType:

@@ -1,4 +1,5 @@
 import struct
+from typing import Any
 
 from ..thrift import TType
 
@@ -92,7 +93,7 @@ def write_map_begin(outbuf, ktype, vtype, size):
     outbuf.write(pack_i8(ktype) + pack_i8(vtype) + pack_i32(size))
 
 
-def write_val(outbuf, ttype, val, spec=None):
+def write_val(outbuf, ttype, val, spec: Any = None):
     if ttype == TType.BOOL:
         if val:
             outbuf.write(pack_i8(1))
@@ -213,7 +214,7 @@ def read_map_begin(inbuf):
     return k_type, v_type, sz
 
 
-def read_val(inbuf, ttype, spec=None, decode_response=True,
+def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
              strict_decode=False):
     if ttype == TType.BOOL:
         return bool(unpack_i8(inbuf.read(1)))

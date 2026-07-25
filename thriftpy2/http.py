@@ -35,7 +35,7 @@ import socket
 import ssl
 import sys
 import types
-import urllib
+import urllib.parse
 from contextlib import contextmanager
 from io import BytesIO
 from typing import (BinaryIO, Callable, Dict, Generator, Optional,
@@ -83,7 +83,8 @@ class ResponseException(Exception):
     The function passed to the constructor will be called with the
     RequestHandler as its only argument.
     """
-    def __init__(self, handler: Callable) -> None:
+    def __init__(self, handler: Callable[[http_server.BaseHTTPRequestHandler], None]
+                 ) -> None:
         self.handler = handler
 
 
