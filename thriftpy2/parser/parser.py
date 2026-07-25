@@ -193,8 +193,12 @@ def p_const_ref(p):
         father = child
         child = getattr(child, name, None)
         if child is None:
-            raise ThriftParserError('Can\'t find name %r at line %d'
-                                    % (p[1], p.lineno(1)))
+            # The referenced name may simply not have been parsed yet, e.g. an
+            # enum member used as a default value before the enum is defined.
+            # Defer it like other forward references; it is resolved by
+            # fill_incomplete_ttype() once the whole file has been parsed.
+            p[0] = ('UNKNOWN_CONST_REF', p[1], p.lineno(1))
+            return
 
     if _get_ttype(child) is None or _get_ttype(father) == TType.I32:
         # child is a constant or enum value
