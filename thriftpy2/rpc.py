@@ -2,7 +2,7 @@ import contextlib
 import socket
 import ssl
 import types
-import urllib
+import urllib.parse
 import warnings
 from typing import Generator, Optional
 
@@ -153,8 +153,8 @@ def client_context(service: types.ModuleType, host: str = "localhost",
         raise ValueError("Either host/port or unix_socket"
                          " or url must be provided.")
 
+    transport = trans_factory.get_transport(client_socket)
     try:
-        transport = trans_factory.get_transport(client_socket)
         protocol = proto_factory.get_protocol(transport)
         transport.open()
         yield TClient(service, protocol)

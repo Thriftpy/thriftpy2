@@ -5,6 +5,7 @@ import socket
 import ssl
 import struct
 import sys
+from typing import Optional
 if sys.version_info >= (3, 7, 0):
     from asyncio import get_running_loop
 else:
@@ -26,7 +27,8 @@ class TAsyncSocket(object):
 
     def __init__(self, host=None, port=None, unix_socket=None,
                  sock=None, socket_family=socket.AF_INET,
-                 socket_timeout=3000, connect_timeout=None,
+                 socket_timeout: Optional[int] = 3000,
+                 connect_timeout: Optional[int] = None,
                  ssl_context=None, validate=True,
                  cafile=None, capath=None, certfile=None, keyfile=None,
                  ciphers=DEFAULT_CIPHERS):
@@ -214,7 +216,8 @@ class TAsyncServerSocket(object):
     """Socket implementation for server side."""
 
     def __init__(self, host=None, port=None, unix_socket=None,
-                 socket_family=socket.AF_INET, client_timeout=3000,
+                 socket_family=socket.AF_INET,
+                 client_timeout: Optional[int] = 3000,
                  backlog=128, ssl_context=None, certfile=None, keyfile=None,
                  ciphers=RESTRICTED_SERVER_CIPHERS):
         """Initialize a TServerSocket
@@ -283,7 +286,7 @@ class TAsyncServerSocket(object):
             try:
                 _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             except socket.error as err:
-                if err[0] in (errno.ENOPROTOOPT, errno.EINVAL):
+                if err.errno in (errno.ENOPROTOOPT, errno.EINVAL):
                     pass
                 else:
                     raise

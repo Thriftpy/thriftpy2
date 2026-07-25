@@ -1,10 +1,14 @@
 import io
+from pathlib import Path
 
 from thriftpy2 import load, load_fp
 
 
+TEST_DIR = Path(__file__).parent
+
+
 def test_struct_linenos():
-    thrift = load('parser-cases/lineno.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/lineno.thrift')
 
     assert thrift.Person.__thrift_lineno__ == 1
     assert thrift.Person.__thrift_file__.endswith('lineno.thrift')
@@ -12,7 +16,7 @@ def test_struct_linenos():
 
 
 def test_enum_linenos():
-    thrift = load('parser-cases/lineno.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/lineno.thrift')
 
     assert thrift.Color.__thrift_lineno__ == 6
     assert thrift.Color.__thrift_file__.endswith('lineno.thrift')
@@ -20,14 +24,14 @@ def test_enum_linenos():
 
 
 def test_union_linenos():
-    thrift = load('parser-cases/lineno.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/lineno.thrift')
 
     assert thrift.Value.__thrift_lineno__ == 12
     assert thrift.Value.__thrift_field_linenos__ == {'sval': 13, 'ival': 14}
 
 
 def test_exception_linenos():
-    thrift = load('parser-cases/lineno.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/lineno.thrift')
 
     assert thrift.NetworkError.__thrift_lineno__ == 17
     assert thrift.NetworkError.__thrift_field_linenos__ == {
@@ -35,7 +39,7 @@ def test_exception_linenos():
 
 
 def test_service_linenos():
-    thrift = load('parser-cases/lineno.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/lineno.thrift')
 
     assert thrift.BaseService.__thrift_lineno__ == 22
     assert thrift.BaseService.__thrift_file__.endswith('lineno.thrift')
@@ -43,7 +47,7 @@ def test_service_linenos():
 
 
 def test_extended_service_linenos():
-    thrift = load('parser-cases/lineno.thrift')
+    thrift = load(TEST_DIR / 'parser-cases/lineno.thrift')
 
     assert thrift.ChildService.__thrift_lineno__ == 26
     # inherited functions keep the lineno where the parent defined them
@@ -65,8 +69,8 @@ def test_load_fp_linenos():
 
 
 def test_include_file_path():
-    thrift = load('parser-cases/include.thrift', include_dirs=[
-        './parser-cases'], module_name='include_thrift')
+    thrift = load(TEST_DIR / 'parser-cases/include.thrift', include_dirs=[
+        TEST_DIR / 'parser-cases'], module_name='include_thrift')
 
     assert thrift.__thrift_file__.endswith('include.thrift')
     assert thrift.included.__thrift_file__.endswith('included.thrift')

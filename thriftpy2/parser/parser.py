@@ -8,6 +8,7 @@ import itertools
 import os
 import threading
 import types
+from typing import Any
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
@@ -747,7 +748,7 @@ def _parse_data(data, thrift, context, lexer, parser, is_root):
     if lexer is None:
         lexer = lex.lex()
     if parser is None:
-        parser = yacc.yacc(debug=False, write_tables=0)
+        parser = yacc.yacc(debug=False, write_tables=False)
 
     context.thrift_stack.append(thrift)
     parser.context = context
@@ -921,7 +922,7 @@ def _parse_seq(p):
         p[0] = []
 
 
-def _cast(t, linno=0):  # noqa
+def _cast(t: Any, linno: int = 0) -> Any:  # noqa
     if isinstance(t, int) and t < 0:
         return _lazy_cast_const(t, linno)
     if t == TType.BOOL:
@@ -1202,7 +1203,7 @@ def _make_service(thrift, name, funcs, extends, annotations=None, lineno=None):
         if len(func) > 6 and func[6]:
             function_annotations[func_name] = _annotations_to_dict(func[6])
     if extends is not None and hasattr(extends, 'thrift_services'):
-        thrift_services.extend(extends.thrift_services)
+        thrift_services.extend(getattr(extends, 'thrift_services'))
     setattr(cls, 'thrift_services', thrift_services)
     setattr(cls, '__thrift_function_linenos__', function_linenos)
     setattr(cls, '__thrift_annotations__', _annotations_to_dict(annotations))

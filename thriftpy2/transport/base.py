@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-try:
+import sys
+from typing import Callable, Optional
+
+if sys.version_info >= (3, 8):
     from typing import Protocol
-except ImportError:
+else:
     from typing_extensions import Protocol
 
 from ..thrift import TType, TException
 
 
-def readall(read_fn, sz):
+def readall(read_fn: Callable[[int], bytes], sz: int) -> bytes:
     buff = b''
     have = 0
     while have < sz:
@@ -26,7 +29,7 @@ def readall(read_fn, sz):
 class TTransportFactory(Protocol):
     """Transport factory interface for type annotations."""
 
-    def get_transport(self, trans) -> TTransportBase:
+    def get_transport(self, trans: TTransportBase) -> TTransportBase:
         """Return a transport instance wrapping the given transport."""
         ...
 
@@ -34,29 +37,29 @@ class TTransportFactory(Protocol):
 class TTransportBase(object):
     """Base class for Thrift transport layer."""
 
-    def is_open(self):
+    def is_open(self) -> bool:
         """Check if this transport is open."""
         raise NotImplementedError
 
-    def open(self):
+    def open(self) -> None:
         """
         Prepare this transport for usage and allocate any necessary resources
         like sockets or sessions.
         """
         raise NotImplementedError
 
-    def close(self):
+    def close(self) -> None:
         """Clean up and deallocate any resources allocated in open()."""
         raise NotImplementedError
 
-    def _read(self, sz):
+    def _read(self, sz: int) -> bytes:
         """
         Internal read method which can read up to `sz` bytes but doesn't
         need to return them all.
         """
         raise NotImplementedError
 
-    def read(self, sz):
+    def read(self, sz: int) -> bytes:
         """
         Get exactly `sz` bytes from the underlying connection.
 
@@ -70,14 +73,14 @@ class TTransportBase(object):
         """
         return readall(self._read, sz)
 
-    def write(self, buf):
+    def write(self, buf: bytes) -> None:
         """
         Submit some data to be written to the connection. May be
         buffered until flush is called.
         """
         raise NotImplementedError
 
-    def flush(self):
+    def flush(self) -> None:
         """Ensure that all internal buffers are emptied into the connection."""
         raise NotImplementedError
 
@@ -96,7 +99,8 @@ class TTransportException(TException):
     TIMED_OUT = 3
     END_OF_FILE = 4
 
-    def __init__(self, type=UNKNOWN, message=None):
+    def __init__(self, type: int = UNKNOWN,
+                 message: Optional[str] = None) -> None:
         super(TTransportException, self).__init__()
         self.type = type
         self.message = message
