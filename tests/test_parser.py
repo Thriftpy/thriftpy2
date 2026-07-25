@@ -1,3 +1,4 @@
+import io
 import sys
 import threading
 from pathlib import Path
@@ -333,17 +334,26 @@ def test_load_fp():
     with open(TEST_DIR / 'parser-cases/shared.thrift') as thrift_fp:
         thrift = load_fp(thrift_fp, 'shared_thrift')
     assert thrift.__name__ == 'shared_thrift'
-    assert thrift.__thrift_file__ is None
     assert thrift.__thrift_meta__['structs'] == [thrift.SharedStruct]
     assert thrift.__thrift_meta__['services'] == [thrift.SharedService]
 
 
+def test_load_fp_with_include():
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
+
+    with open(TEST_DIR / 'parser-cases/tutorial.thrift') as thrift_fp:
+        thrift = load_fp(thrift_fp, 'tutorial_thrift')
+    assert thrift.__thrift_meta__['includes'] == [thrift.shared]
+    assert thrift.shared.SharedStruct is not None
+
+
 def test_e_load_fp():
+    content = (TEST_DIR / 'parser-cases/tutorial.thrift').read_text()
     with pytest.raises(ThriftParserError) as excinfo:
-        with open(TEST_DIR / 'parser-cases/tutorial.thrift') as thrift_fp:
-            load_fp(thrift_fp, 'tutorial_thrift')
-        assert ('Unexpected include statement while loading '
-                'from file like object.') == str(excinfo.value)
+        load_fp(io.StringIO(content), 'tutorial_stringio_thrift')
+    assert ('Unexpected include statement while loading '
+            'from file like object.') == str(excinfo.value)
 
 
 def test_recursive_union():

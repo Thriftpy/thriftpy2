@@ -726,8 +726,15 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True,
 
         data = source.read()
 
+        # When `source` is a real file object its `name` gives us the path the
+        # thrift text came from, so `include` statements can be resolved
+        # relative to it just like in `parse`.
+        source_path = getattr(source, 'name', None)
+        if not isinstance(source_path, str) or not os.path.isfile(source_path):
+            source_path = None
+
         thrift = types.ModuleType(module_name)
-        setattr(thrift, '__thrift_file__', None)
+        setattr(thrift, '__thrift_file__', source_path)
         _parse_data(data, thrift, context, lexer, parser,
                     is_root=_context is None)
 
