@@ -12,9 +12,9 @@ import sys
 import types
 from typing import List, Optional, TextIO, Union
 
-from .parser import parse, parse_fp, threadlocal, _cast
+from .parser import parse, parse_fp, threadlocal, _cast, _get_ttype
 from .exc import ThriftParserError, ThriftModuleNameConflict
-from ..thrift import TPayloadMeta
+from ..thrift import TPayloadMeta, TType, gen_init
 
 
 def load(
@@ -70,11 +70,16 @@ def fill_incomplete_ttype(tmodule, definition):
     """
     # construct incomplete types' thrift_spec
     if isinstance(definition, tuple):
+        # construct a constant reference that was not defined yet when it was
+        # used, e.g. an enum member used as a default value before the enum
+        # itself is declared
+        if definition[0] == 'UNKNOWN_CONST_REF':
+            return get_const_value(tmodule, definition[1], definition[2])
         # construct const value
         if definition[0] == 'UNKNOWN_CONST':
             ttype = get_definition(
                 tmodule, threadlocal.incomplete_type[definition[1]][0], definition[3])
-            return _cast(ttype)(definition[2])
+            return _cast(ttype)(fill_incomplete_ttype(tmodule, definition[2]))
         # construct incomplete alias type
         elif definition[1] in threadlocal.incomplete_type:
             return (
@@ -101,6 +106,15 @@ def fill_incomplete_ttype(tmodule, definition):
             setattr(definition, name, fill_incomplete_ttype(definition, attr))
     # if type is a struct, search it if there are incomplete types
     elif isinstance(definition, TPayloadMeta):
+        default_spec = getattr(definition, 'default_spec', None)
+        if default_spec:
+            new_default_spec = [
+                (name, fill_incomplete_ttype(tmodule, value))
+                for name, value in default_spec
+            ]
+            if new_default_spec != default_spec:
+                gen_init(definition, None, new_default_spec)
+                definition.default_spec = new_default_spec
         for index, value in definition.thrift_spec.items():
             # if the ttype of the field is a single type and it is incompleted
             if value[0] in threadlocal.incomplete_type:
@@ -160,6 +174,20 @@ def fill_incomplete_ttype(tmodule, definition):
             for index, value in attr.thrift_spec.items():
                 attr.thrift_spec[index] = fill_incomplete_ttype(tmodule, value)
     return definition
+
+
+def get_const_value(thrift, name, lineno):
+    """Resolve a constant/enum-member reference deferred during parsing."""
+    child = father = thrift
+    for part in name.split('.'):
+        father = child
+        child = getattr(child, part, None)
+        if child is None:
+            raise ThriftParserError('Can\'t find name %r at line %d'
+                                    % (name, lineno))
+    if _get_ttype(child) is None or _get_ttype(father) == TType.I32:
+        return child
+    raise ThriftParserError('No enum value or constant found named %r' % name)
 
 
 def get_definition(thrift, name, lineno):

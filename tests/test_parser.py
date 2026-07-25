@@ -478,3 +478,24 @@ def test_thrift_in_include_path():
 
 def test_issue_121():
     load(TEST_DIR / 'parser-cases/issue_121.thrift')
+
+
+def test_enum_default_value_declared_after_use(tmp_path):
+    """Regression: an enum used as a field default before it is declared.
+
+    Forward references are already supported for field *types*; a default
+    value referring to a not-yet-parsed enum member used to raise
+    ThriftParserError("Can't find name 'Type.AA'").
+    """
+    path = tmp_path / 'forward_enum_default.thrift'
+    path.write_text(
+        'struct A {\n'
+        '    1: Type t = Type.AA\n'
+        '}\n'
+        'enum Type {\n'
+        '    AA = 1\n'
+        '    BB = 2\n'
+        '}\n'
+    )
+    thrift = load(path)
+    assert thrift.A().t == 1
