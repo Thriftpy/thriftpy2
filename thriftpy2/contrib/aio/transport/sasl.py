@@ -104,20 +104,22 @@ class TAsyncSaslClientTransport(TAsyncTransportBase):
             payload = b""
         return status, payload
 
-    def write(self, data):
-        self._wbuf.write(data)
+    def write(self, buf):
+        self._wbuf.write(buf)
 
     async def flush(self):
         buffer = self._wbuf.getvalue()
+        sasl = self.sasl
+        assert sasl is not None
         # The first time we flush data, we send it to sasl.encode()
         # If the length doesn't change, then we must be using a QOP
         # of auth and we should no longer call sasl.encode(), otherwise
         # we encode every time.
         if self.encode is None:
-            success, encoded = self.sasl.encode(buffer)
+            success, encoded = sasl.encode(buffer)
             if not success:
                 raise TTransportException(type=TTransportException.UNKNOWN,
-                                          message=self.sasl.getError())
+                                          message=sasl.getError())
             if (len(encoded) == len(buffer)):
                 self.encode = False
                 self._flush_plain(buffer)
@@ -135,10 +137,12 @@ class TAsyncSaslClientTransport(TAsyncTransportBase):
     def _flush_encoded(self, buffer):
         # sasl.encode() does the encoding and adds the length header, so nothing
         # to do but call it and write the result.
-        success, encoded = self.sasl.encode(buffer)
+        sasl = self.sasl
+        assert sasl is not None
+        success, encoded = sasl.encode(buffer)
         if not success:
             raise TTransportException(type=TTransportException.UNKNOWN,
-                                      message=self.sasl.getError())
+                                      message=sasl.getError())
         self._trans.write(encoded)
 
     def _flush_plain(self, buffer):
@@ -169,14 +173,16 @@ class TAsyncSaslClientTransport(TAsyncTransportBase):
         header = await readall(self._trans.read, 4)
         (length,) = struct.unpack(">I", header)
         if self.encode:
+            sasl = self.sasl
+            assert sasl is not None
             # If the frames are encoded (i.e. you're using a QOP of auth-int or
             # auth-conf), then make sure to include the header in the bytes you send to
             # sasl.decode()
             encoded = header + await readall(self._trans.read, length)
-            success, decoded = self.sasl.decode(encoded)
+            success, decoded = sasl.decode(encoded)
             if not success:
                 raise TTransportException(type=TTransportException.UNKNOWN,
-                                          message=self.sasl.getError())
+                                          message=sasl.getError())
         else:
             # If the frames are not encoded, just pass it through
             decoded = await readall(self._trans.read, length)
