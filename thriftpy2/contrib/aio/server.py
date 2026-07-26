@@ -30,10 +30,12 @@ class TAsyncServer:
 
     def serve(self):
         self.init_server()
+        loop = self.loop
+        assert loop is not None
         try:
-            self.loop.run_forever()
+            loop.run_forever()
         finally:
-            self.loop.run_until_complete(self.close())
+            loop.run_until_complete(self.close())
 
     def init_server(self):
         self.trans.listen()
@@ -70,7 +72,9 @@ class TAsyncServer:
     async def close(self):
         if self.closed:
             return
-        self.server.close()
-        await self.server.wait_closed()
+        server = self.server
+        assert server is not None
+        server.close()
+        await server.wait_closed()
         self.closed = True
         self.server = None

@@ -187,6 +187,8 @@ class TAsyncHttpClient(TAsyncTransportBase):
 
         if not self.is_open():
             await self.open()
+        session = self._session
+        assert session is not None
 
         url = HTTP_URI.format(
             scheme=self.scheme,
@@ -207,7 +209,7 @@ class TAsyncHttpClient(TAsyncTransportBase):
         if 'User-Agent' not in headers:
             headers['User-Agent'] = 'Python/TAsyncHttpClient'
 
-        async with self._session.post(url, data=data, headers=headers) as resp:
+        async with session.post(url, data=data, headers=headers) as resp:
             self.code = resp.status
             self.message = resp.reason
             self.headers = resp.headers
