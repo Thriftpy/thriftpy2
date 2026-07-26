@@ -142,7 +142,10 @@ class TAsyncHttpClient(TAsyncTransportBase):
             total=self._timeout
         ) if self._timeout else None
 
-        connector = aiohttp.TCPConnector(ssl=self._ssl_context)
+        if self._ssl_context is None:
+            connector = aiohttp.TCPConnector()
+        else:
+            connector = aiohttp.TCPConnector(ssl=self._ssl_context)
         self._session = aiohttp.ClientSession(
             timeout=timeout,
             connector=connector

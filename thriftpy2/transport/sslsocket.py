@@ -105,7 +105,9 @@ class TSSLServerSocket(TServerSocket):
             self.ssl_context.load_cert_chain(certfile=certfile)
 
     def accept(self):
-        sock, _ = self.sock.accept()
+        server_sock = self.sock
+        assert server_sock is not None
+        sock, _ = server_sock.accept()
         try:
             ssl_sock = self.ssl_context.wrap_socket(sock, server_side=True)
         except ssl.SSLError:

@@ -1,15 +1,5 @@
 {
     "files": {
-        "./thriftpy2/contrib/aio/http.py": [
-            {
-                "code": "reportArgumentType",
-                "range": {
-                    "startColumn": 45,
-                    "endColumn": 62,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./thriftpy2/contrib/aio/protocol/base.py": [
             {
                 "code": "reportIncompatibleMethodOverride",
@@ -218,16 +208,6 @@
                 }
             }
         ],
-        "./thriftpy2/contrib/tracking/__init__.py": [
-            {
-                "code": "reportAssignmentType",
-                "range": {
-                    "startColumn": 27,
-                    "endColumn": 55,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./thriftpy2/hook.py": [
             {
                 "code": "reportIncompatibleMethodOverride",
@@ -414,16 +394,6 @@
                 }
             }
         ],
-        "./thriftpy2/thrift.py": [
-            {
-                "code": "reportOptionalCall",
-                "range": {
-                    "startColumn": 29,
-                    "endColumn": 35,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./thriftpy2/tornado.py": [
             {
                 "code": "reportMissingImports",
@@ -541,16 +511,6 @@
                 "code": "reportAttributeAccessIssue",
                 "range": {
                     "startColumn": 26,
-                    "endColumn": 34,
-                    "lineCount": 1
-                }
-            }
-        ],
-        "./thriftpy2/transport/sslsocket.py": [
-            {
-                "code": "reportOptionalMemberAccess",
-                "range": {
-                    "startColumn": 28,
                     "endColumn": 34,
                     "lineCount": 1
                 }
