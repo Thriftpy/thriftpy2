@@ -7,6 +7,7 @@ server processor.
 
 import os.path
 import time
+from typing import Callable, Optional
 
 from ...thrift import TClient, TApplicationException, TMessageType, \
     TProcessor, TType
@@ -151,6 +152,7 @@ class TTrackedProcessor(TProcessor, VersionMixin):
 
     def _try_upgrade(self, iprot):
         api, msg_type, seqid = iprot.read_message_begin()
+        call: Optional[Callable] = None
         if msg_type == TMessageType.CALL and api == track_method:
             self.during_handshake = True
 
@@ -167,8 +169,9 @@ class TTrackedProcessor(TProcessor, VersionMixin):
 
             result.oneway = False
 
-            def call():
+            def handshake_call():
                 pass
+            call = handshake_call
 
             iprot.read_message_end()
         else:

@@ -354,6 +354,7 @@ class TProcessor(object):
         if isinstance(result, TApplicationException):
             return self.send_exception(oprot, api, result, seqid)
 
+        assert call is not None
         try:
             result.success = call()
         except TApplicationException as e:
