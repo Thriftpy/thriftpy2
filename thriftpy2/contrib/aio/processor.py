@@ -57,6 +57,7 @@ class TAsyncProcessor(object):
         if isinstance(result, TApplicationException):
             return (await self.send_exception(oprot, api, result, seqid))
 
+        assert call is not None
         try:
             result.success = await call()
         except Exception as e:

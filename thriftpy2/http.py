@@ -162,7 +162,7 @@ class THttpServer(TServer):
         self.httpd.serve_forever()
 
 
-class THttpClient(object):
+class THttpClient(TTransportBase):
     """Http implementation of TTransport base.
     """
 
@@ -182,7 +182,9 @@ class THttpClient(object):
             self.port = parsed.port or http_client.HTTP_PORT
         elif self.scheme == 'https':
             self.port = parsed.port or http_client.HTTPS_PORT
-        self.host = parsed.hostname
+        host = parsed.hostname
+        assert host is not None
+        self.host: str = host
         self.path = parsed.path
         if parsed.query:
             self.path += '?%s' % parsed.query
@@ -204,17 +206,24 @@ class THttpClient(object):
             self.__http = http_client.HTTPConnection(self.host, self.port)
 
     def close(self) -> None:
-        self.__http.close()
+        if self.__http is not None:
+            self.__http.close()
         self.__http = None
 
     def isOpen(self) -> bool:
         return self.__http is not None
+
+    def is_open(self) -> bool:
+        return self.isOpen()
 
     def setTimeout(self, ms: int) -> None:
         if not hasattr(socket, 'getdefaulttimeout'):
             raise NotImplementedError
 
         self.__timeout = ms / 1000.0 if (ms and ms > 0) else None
+
+    def set_timeout(self, ms: int) -> None:
+        self.setTimeout(ms)
 
     def setCustomHeaders(self, headers: Dict[str, str]) -> None:
         self._http_header_factory = THttpHeaderFactory(headers)
@@ -237,14 +246,16 @@ class THttpClient(object):
         if self.isOpen():
             self.close()
         self.open()
+        http = self.__http
+        assert http is not None
 
         # HTTP request
-        self.__http.putrequest('POST', self.path, skip_host=True)
+        http.putrequest('POST', self.path, skip_host=True)
 
         # Write headers
-        self.__http.putheader('Host', self.host)
-        self.__http.putheader('Content-Type', 'application/x-thrift')
-        self.__http.putheader('Content-Length', str(len(data)))
+        http.putheader('Host', self.host)
+        http.putheader('Content-Type', 'application/x-thrift')
+        http.putheader('Content-Length', str(len(data)))
         custom_headers = self._http_header_factory.get_headers()
         if (not custom_headers
                 or 'User-Agent' not in custom_headers):
@@ -253,23 +264,24 @@ class THttpClient(object):
             if script:
                 user_agent = '%s (%s)' % (
                     user_agent, urllib.parse.quote(script))
-                self.__http.putheader('User-Agent', user_agent)
+                http.putheader('User-Agent', user_agent)
 
         if custom_headers:
             for key, val in self._http_header_factory.get_headers().items():
-                self.__http.putheader(key, val)
+                http.putheader(key, val)
 
-        self.__http.endheaders()
+        http.endheaders()
 
         # Write payload
-        self.__http.send(data)
+        http.send(data)
 
         # Get reply to flush the request
-        response = self.__http.getresponse()
+        response = http.getresponse()
         self.code, self.message, self.headers = (
             response.status, response.msg, response.getheaders())
         self.response = response
 
+    @staticmethod
     def __with_timeout(f):
 
         def _f(*args, **kwargs):
@@ -285,7 +297,7 @@ class THttpClient(object):
 
     # Decorate if we know how to timeout
     if hasattr(socket, 'getdefaulttimeout'):
-        flush = __with_timeout(flush)
+        flush = __with_timeout.__get__(None, object)(flush)
 
 
 def make_client(service: types.ModuleType, host: str = 'localhost',
