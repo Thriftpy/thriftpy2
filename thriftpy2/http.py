@@ -297,7 +297,7 @@ class THttpClient(TTransportBase):
 
     # Decorate if we know how to timeout
     if hasattr(socket, 'getdefaulttimeout'):
-        flush = __with_timeout(flush)
+        flush = __with_timeout.__get__(None, object)(flush)
 
 
 def make_client(service: types.ModuleType, host: str = 'localhost',
