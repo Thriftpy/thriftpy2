@@ -4,12 +4,12 @@ import socket
 import struct
 import sys
 
-from . import TTransportException
+from .base import TTransportBase, TTransportException
 
 MAC_OR_BSD = sys.platform == 'darwin' or sys.platform.startswith('freebsd')
 
 
-class TSocket(object):
+class TSocket(TTransportBase):
     """Socket implementation for client side."""
 
     def __init__(self, host=None, port=None, unix_socket=None,
@@ -84,17 +84,19 @@ class TSocket(object):
 
     def open(self):
         self._init_sock()
+        sock = self.sock
+        assert sock is not None
 
         addr = self.unix_socket or (self.host, self.port)
 
         try:
             if self.connect_timeout:
-                self.sock.settimeout(self.connect_timeout)
+                sock.settimeout(self.connect_timeout)
 
-            self.sock.connect(addr)
+            sock.connect(addr)
 
             if self.socket_timeout:
-                self.sock.settimeout(self.socket_timeout)
+                sock.settimeout(self.socket_timeout)
 
         except (socket.error, OSError):
             self.close()
@@ -103,9 +105,11 @@ class TSocket(object):
                 message="Could not connect to %s" % str(addr))
 
     def read(self, sz):
+        sock = self.sock
+        assert sock is not None
         while True:
             try:
-                buff = self.sock.recv(sz)
+                buff = sock.recv(sz)
             except socket.error as e:
                 if e.errno == errno.EINTR:
                     continue
@@ -116,7 +120,7 @@ class TSocket(object):
                     # in lib/cpp/src/transport/TSocket.cpp.
                     self.close()
                     # Trigger the check to raise the END_OF_FILE exception.
-                    buff = ''
+                    buff = b''
                     break
                 else:
                     raise
@@ -128,8 +132,10 @@ class TSocket(object):
                                       message='TSocket read 0 bytes')
         return buff
 
-    def write(self, buff):
-        self.sock.sendall(buff)
+    def write(self, buf):
+        sock = self.sock
+        assert sock is not None
+        sock.sendall(buf)
 
     def flush(self):
         pass
@@ -183,6 +189,7 @@ class TServerSocket(object):
         self.socket_family = socket_family
         self.client_timeout = client_timeout / 1000 if client_timeout else None
         self.backlog = backlog
+        self.sock = None
 
     def _init_sock(self):
         if self.unix_socket:
@@ -212,13 +219,17 @@ class TServerSocket(object):
 
     def listen(self):
         self._init_sock()
+        sock = self.sock
+        assert sock is not None
 
         addr = self.unix_socket or (self.host, self.port)
-        self.sock.bind(addr)
-        self.sock.listen(self.backlog)
+        sock.bind(addr)
+        sock.listen(self.backlog)
 
     def accept(self):
-        client, _ = self.sock.accept()
+        sock = self.sock
+        assert sock is not None
+        client, _ = sock.accept()
         if self.client_timeout:
             client.settimeout(self.client_timeout)
         return TSocket(sock=client)

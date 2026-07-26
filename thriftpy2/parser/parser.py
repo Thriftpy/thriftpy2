@@ -942,6 +942,7 @@ def _cast(t: Any, linno: int = 0) -> Any:  # noqa
         return _cast_string
     if t == TType.BINARY:
         return _cast_binary
+    assert not isinstance(t, int), "unsupported primitive type: %s" % t
     if t[0] == TType.LIST:
         return _cast_list(t)
     if t[0] == TType.SET:

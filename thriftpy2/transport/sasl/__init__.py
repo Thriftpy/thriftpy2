@@ -105,8 +105,8 @@ class TSaslClientTransport(TTransportBase):
             payload = b""
         return status, payload
 
-    def write(self, data):
-        self.__wbuf.write(data)
+    def write(self, buf):
+        self.__wbuf.write(buf)
 
     def flush(self):
         buffer = self.__wbuf.getvalue()

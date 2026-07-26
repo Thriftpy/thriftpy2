@@ -360,9 +360,9 @@ class TCompactProtocol(TProtocolBase):
             self._write_i16(fid)
         self._last_fid = fid
 
-    def write_message_begin(self, name, type, seqid):
+    def write_message_begin(self, name, ttype, seqid):
         self._write_ubyte(self.PROTOCOL_ID)
-        self._write_ubyte(self.VERSION | (type << self.TYPE_SHIFT_AMOUNT))
+        self._write_ubyte(self.VERSION | (ttype << self.TYPE_SHIFT_AMOUNT))
         write_varint(self.trans, seqid)
         self._write_string(name)
 
