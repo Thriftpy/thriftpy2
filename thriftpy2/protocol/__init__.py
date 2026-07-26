@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from .base import TProtocolBase
 from .binary import TBinaryProtocol, TBinaryProtocolFactory
 from .json import TJSONProtocol, TJSONProtocolFactory
@@ -9,7 +11,11 @@ from thriftpy2._compat import PYPY, CYTHON
 if not PYPY:
     # enable cython binary by default for CPython.
     if CYTHON:
-        from .cybin import TCyBinaryProtocol, TCyBinaryProtocolFactory
+        if TYPE_CHECKING:
+            TCyBinaryProtocol = TBinaryProtocol
+            TCyBinaryProtocolFactory = TBinaryProtocolFactory
+        else:
+            from .cybin import TCyBinaryProtocol, TCyBinaryProtocolFactory
         TBinaryProtocol = TCyBinaryProtocol  # noqa
         TBinaryProtocolFactory = TCyBinaryProtocolFactory  # noqa
 else:
