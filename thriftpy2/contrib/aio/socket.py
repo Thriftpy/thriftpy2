@@ -141,23 +141,25 @@ class TAsyncSocket(object):
 
     async def open(self):
         self._init_sock()
+        raw_sock = self.raw_sock
+        assert raw_sock is not None
 
         addr = self.unix_socket or (self.host, self.port)
 
         try:
             if self.connect_timeout:
-                self.raw_sock.settimeout(self.connect_timeout)
+                raw_sock.settimeout(self.connect_timeout)
 
             loop = get_running_loop()
             # The raw_sock.connect may block the event loop if the target
             # server is slow or unreachable. Using a thread pool to solve it
             # as a quick and dirty way. See #270.
-            await loop.run_in_executor(None, lambda: self.raw_sock.connect(addr))
+            await loop.run_in_executor(None, lambda: raw_sock.connect(addr))
 
             if self.socket_timeout:
-                self.raw_sock.settimeout(self.socket_timeout)
+                raw_sock.settimeout(self.socket_timeout)
 
-            kwargs = {'sock': self.raw_sock, 'ssl': self.ssl_context}
+            kwargs = {'sock': raw_sock, 'ssl': self.ssl_context}
             if self.server_hostname:
                 kwargs['server_hostname'] = self.server_hostname
 
