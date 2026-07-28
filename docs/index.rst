@@ -93,7 +93,6 @@ python lib):
 
   * framed transport
 
-  * tornado server and client (with tornado 4.0)
 - Can directly load thrift file as module, the sdk code will be generated on
   the fly.
 
