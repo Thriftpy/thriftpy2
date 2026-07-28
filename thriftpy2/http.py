@@ -168,12 +168,16 @@ class THttpClient(TTransportBase):
 
     def __init__(self, uri: str, timeout: Optional[int] = None,
                  ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
-                 http_header_factory: Optional[THttpHeaderFactory] = None
+                 http_header_factory: Optional[THttpHeaderFactory] = None,
+                 keep_alive: bool = False
                  ) -> None:
         """Initialize a HTTP Socket.
 
         @param uri(str)    The http_scheme:://host:port/path to connect to.
         @param timeout   timeout in ms
+        @param keep_alive(bool)
+            Reuse the underlying connection between requests instead of
+            resetting it before each request.
         """
         parsed = urllib.parse.urlparse(uri)
         self.scheme = parsed.scheme
@@ -195,6 +199,7 @@ class THttpClient(TTransportBase):
         if timeout:
             self.setTimeout(timeout)
         self._ssl_context_factory = ssl_context_factory
+        self._keep_alive = keep_alive
 
     def open(self) -> None:
         if self.scheme == "https":
@@ -243,9 +248,26 @@ class THttpClient(TTransportBase):
         if not data:  # No data to flush, ignore
             return
 
-        if self.isOpen():
+        if not self.isOpen():
+            self.open()
+        elif not self._keep_alive:
             self.close()
-        self.open()
+            self.open()
+
+        try:
+            self.__send_request(data)
+        except (http_client.CannotSendRequest,
+                http_client.RemoteDisconnected,
+                BrokenPipeError, ConnectionResetError):
+            if not self._keep_alive:
+                raise
+            # The server may have closed the kept-alive connection while
+            # it was idle; reconnect and retry once.
+            self.close()
+            self.open()
+            self.__send_request(data)
+
+    def __send_request(self, data: bytes) -> None:
         http = self.__http
         assert http is not None
 
@@ -279,7 +301,12 @@ class THttpClient(TTransportBase):
         response = http.getresponse()
         self.code, self.message, self.headers = (
             response.status, response.msg, response.getheaders())
-        self.response = response
+        if self._keep_alive:
+            # The connection can only be reused after the previous
+            # response has been read completely, so drain it here.
+            self.response = BytesIO(response.read())
+        else:
+            self.response = response
 
     @staticmethod
     def __with_timeout(f):
@@ -307,7 +334,7 @@ def make_client(service: types.ModuleType, host: str = 'localhost',
                 ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
                 http_header_factory: Optional[THttpHeaderFactory] = None,
                 timeout: int = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
-                url: str = '') -> TClient:
+                url: str = '', keep_alive: bool = False) -> TClient:
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
@@ -319,7 +346,7 @@ def make_client(service: types.ModuleType, host: str = 'localhost',
         path = "/" + path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
     http_socket = THttpClient(uri, timeout, ssl_context_factory,
-                              http_header_factory)
+                              http_header_factory, keep_alive)
     transport = trans_factory.get_transport(http_socket)
     iprot = proto_factory.get_protocol(transport)
     transport.open()
@@ -334,7 +361,8 @@ def client_context(service: types.ModuleType, host: str = 'localhost',
                    ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
                    http_header_factory: Optional[THttpHeaderFactory] = None,
                    timeout: int = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
-                   url: str = '') -> Generator[TClient, None, None]:
+                   url: str = '', keep_alive: bool = False
+                   ) -> Generator[TClient, None, None]:
     if url:
         parsed_url = urllib.parse.urlparse(url)
         host = parsed_url.hostname or host
@@ -346,7 +374,7 @@ def client_context(service: types.ModuleType, host: str = 'localhost',
         path = "/" + path
     uri = HTTP_URI.format(scheme=scheme, host=host, port=port, path=path)
     http_socket = THttpClient(uri, timeout, ssl_context_factory,
-                              http_header_factory)
+                              http_header_factory, keep_alive)
     transport = trans_factory.get_transport(http_socket)
     try:
         iprot = proto_factory.get_protocol(transport)
