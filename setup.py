@@ -15,16 +15,6 @@ with open(join(dirname(__file__), 'pyproject.toml'), "rb") as f:
     meta = tomllib.load(f)
     install_requires = meta["project"]["dependencies"]
     dev_requires = meta["project"]["optional-dependencies"]["dev"]
-    tornado_requires = meta["project"]["optional-dependencies"]["tornado"]
-
-try:
-    from tornado import version as tornado_version
-    if tornado_version < '5.0':
-        tornado_requires.append("toro>=0.6")
-        dev_requires.append("toro>=0.6")
-except ImportError:
-    # tornado will now only get installed and we'll get the newer one
-    pass
 
 ext_modules = []
 
@@ -65,8 +55,7 @@ setup(
       long_description=open("README.rst").read(),
       install_requires=install_requires,
       extras_require={
-          "dev": dev_requires,
-          "tornado": tornado_requires
+          "dev": dev_requires
       },
       ext_modules=ext_modules,
       include_package_data=True,
