@@ -63,20 +63,27 @@ def p_header_unit(p):
 def p_include(p):
     '''include : INCLUDE LITERAL'''
     thrift = p.parser.context.thrift_stack[-1]
+    # A module parsed from a file-like object has no path of its own, so
+    # includes are resolved against `include_dirs` only (default: ['.']).
     if thrift.__thrift_file__ is None:
-        raise ThriftParserError('Unexpected include statement while loading '
-                                'from file like object.')
-    replace_include_dirs = [os.path.dirname(thrift.__thrift_file__)] \
-        + p.parser.context.include_dirs
+        base_dir = None
+        replace_include_dirs = list(p.parser.context.include_dirs)
+    else:
+        base_dir = os.path.dirname(thrift.__thrift_file__)
+        replace_include_dirs = [base_dir] + p.parser.context.include_dirs
     for include_dir in replace_include_dirs:
         path = os.path.join(include_dir, p[2])
         if os.path.exists(path):
-            thrift_file_name_module = os.path.basename(thrift.__thrift_file__)
-            if thrift_file_name_module.endswith(".thrift"):
-                thrift_file_name_module = thrift_file_name_module[:-7] + "_thrift"
-            module_prefix = str(thrift.__name__)[:-len(thrift_file_name_module)] if thrift.__name__.endswith(thrift_file_name_module) else ""
+            if base_dir is None:
+                module_prefix = ""
+                child_rel_path = os.path.basename(path)
+            else:
+                thrift_file_name_module = os.path.basename(thrift.__thrift_file__)
+                if thrift_file_name_module.endswith(".thrift"):
+                    thrift_file_name_module = thrift_file_name_module[:-7] + "_thrift"
+                module_prefix = str(thrift.__name__)[:-len(thrift_file_name_module)] if thrift.__name__.endswith(thrift_file_name_module) else ""
 
-            child_rel_path = os.path.relpath(str(path), os.path.dirname(thrift.__thrift_file__))
+                child_rel_path = os.path.relpath(str(path), base_dir)
             child_module_name = str(child_rel_path).replace(os.sep, ".")
             if child_module_name.endswith(".thrift"):
                 child_module_name = child_module_name[:-7] + "_thrift"
