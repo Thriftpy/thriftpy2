@@ -2,19 +2,9 @@
 
 import sys
 import platform
-if sys.version_info < (3, 11):
-    import tomli as tomllib
-else:
-    import tomllib
 
-from os.path import join, dirname
 from setuptools import setup, find_packages, Extension
 
-
-with open(join(dirname(__file__), 'pyproject.toml'), "rb") as f:
-    meta = tomllib.load(f)
-    install_requires = meta["project"]["dependencies"]
-    dev_requires = meta["project"]["optional-dependencies"]["dev"]
 
 ext_modules = []
 
@@ -52,11 +42,6 @@ if not PYPY:
 setup(
       packages=find_packages(exclude=['benchmark', 'docs', 'tests']),
       zip_safe=False,
-      long_description=open("README.rst").read(),
-      install_requires=install_requires,
-      extras_require={
-          "dev": dev_requires
-      },
       ext_modules=ext_modules,
       include_package_data=True,
       package_data={"thriftpy2": ["py.typed"]},
