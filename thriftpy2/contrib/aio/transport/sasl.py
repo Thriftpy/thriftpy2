@@ -64,7 +64,7 @@ class TAsyncSaslClientTransport(TAsyncTransportBase):
         ret, chosen_mech, initial_response = self.sasl.start(self.mechanism)
         if not ret:
             raise TTransportException(type=TTransportException.NOT_OPEN,
-                                      message=("Could not start SASL: %s" % self.sasl.getError()))
+                                      message=f"Could not start SASL: {self.sasl.getError()}")
 
         # Send initial response
         await self._send_message(self.START, chosen_mech)
@@ -75,13 +75,13 @@ class TAsyncSaslClientTransport(TAsyncTransportBase):
             status, payload = await self._recv_sasl_message()
             if status not in (self.OK, self.COMPLETE):
                 raise TTransportException(type=TTransportException.NOT_OPEN,
-                                          message=("Bad status: %d (%s)" % (status, payload)))
+                                          message=f"Bad status: {status} ({payload})")
             if status == self.COMPLETE:
                 break
             ret, response = self.sasl.step(payload)
             if not ret:
                 raise TTransportException(type=TTransportException.NOT_OPEN,
-                                          message=("Bad SASL result: %s" % (self.sasl.getError())))
+                                          message=f"Bad SASL result: {self.sasl.getError()}")
             await self._send_message(self.OK, response)
 
     async def _send_message(self, status, body):
@@ -196,7 +196,7 @@ class TAsyncSaslClientTransport(TAsyncTransportBase):
         self._rbuf = BytesIO(b'')
 
 
-class TAsyncSaslClientTransportFactory(object):
+class TAsyncSaslClientTransportFactory:
     def __init__(self, sasl_client_factory, mechanism):
         """
         @param sasl_client_factory: a callable that returns a new sasl.Client object

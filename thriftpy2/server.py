@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import logging
 import threading
-from typing import Optional
 
 from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.protocol.base import TProtocolFactory
@@ -16,12 +17,12 @@ from thriftpy2.transport.base import TTransportBase, TTransportFactory
 logger = logging.getLogger(__name__)
 
 
-class TServer(object):
+class TServer:
     def __init__(self, processor: TProcessor, trans: TServerSocket,
-                 itrans_factory: Optional[TTransportFactory] = None,
-                 iprot_factory: Optional[TProtocolFactory] = None,
-                 otrans_factory: Optional[TTransportFactory] = None,
-                 oprot_factory: Optional[TProtocolFactory] = None) -> None:
+                 itrans_factory: TTransportFactory | None = None,
+                 iprot_factory: TProtocolFactory | None = None,
+                 otrans_factory: TTransportFactory | None = None,
+                 oprot_factory: TProtocolFactory | None = None) -> None:
         self.processor = processor
         self.trans = trans
 

@@ -41,7 +41,7 @@ class TSSLSocket(TSocket):
 
         The `host` must be the same with server if validate enabled.
         """
-        super(TSSLSocket, self).__init__(
+        super().__init__(
             host=host, port=port, socket_family=socket_family,
             connect_timeout=connect_timeout, socket_timeout=socket_timeout)
 
@@ -90,7 +90,7 @@ class TSSLServerSocket(TServerSocket):
             to persist SSLContext object. Caution it's easy to get wrong, only
             use if you know what you're doing.
         """
-        super(TSSLServerSocket, self).__init__(
+        super().__init__(
             host=host, port=port, socket_family=socket_family,
             client_timeout=client_timeout, backlog=backlog)
 
@@ -98,7 +98,7 @@ class TSSLServerSocket(TServerSocket):
             self.ssl_context = ssl_context
         else:
             if not os.access(certfile, os.R_OK):
-                raise IOError('No such certfile found: %s' % certfile)
+                raise OSError(f'No such certfile found: {certfile}')
 
             self.ssl_context = create_thriftpy_context(server_side=True,
                                                        ciphers=ciphers)

@@ -16,8 +16,8 @@ class TAsyncClient:
         if _api in self._service.thrift_services:
             return functools.partial(self._req, _api)
 
-        raise AttributeError("{} instance has no attribute '{}'".format(
-            self.__class__.__name__, _api))
+        raise AttributeError(
+            f"{self.__class__.__name__} instance has no attribute '{_api}'")
 
     def __dir__(self):
         return self._service.thrift_services
@@ -29,8 +29,8 @@ class TAsyncClient:
         except ValueError as e:
             raise TApplicationException(
                 TApplicationException.UNKNOWN_METHOD,
-                'missing required argument {arg} for {service}.{api}'.format(
-                    arg=e.args[0], service=self._service.__name__, api=_api))
+                f'missing required argument {e.args[0]} for '
+                f'{self._service.__name__}.{_api}')
         result_cls = getattr(self._service, _api + "_result")
 
         await self._send(_api, **kwargs)

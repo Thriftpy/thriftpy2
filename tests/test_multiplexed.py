@@ -25,12 +25,12 @@ mux = thriftpy2.load(os.path.join(os.path.dirname(__file__),
 sock_path = "/tmp/thriftpy_test.sock"
 
 
-class DispatcherOne(object):
+class DispatcherOne:
     def doThingOne(self):
         return True
 
 
-class DispatcherTwo(object):
+class DispatcherTwo:
     def doThingTwo(self):
         return True
 

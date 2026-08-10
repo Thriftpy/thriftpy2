@@ -72,7 +72,7 @@ def test_protocols(proto_factory, binary, tlist, server_func):
     )
     Foo = test_thrift.Foo
 
-    class Handler(object):
+    class Handler:
         @staticmethod
         def test(t):
             return t
@@ -169,7 +169,7 @@ def test_exceptions(server_func, proto_factory):
     )
     TestException = test_thrift.TestException
 
-    class Handler(object):
+    class Handler:
         def do_error(self, arg):
             raise TestException(message=arg)
 
@@ -237,7 +237,7 @@ def test_complex_binary(proto_factory):
         ]
     )
 
-    class Handler(object):
+    class Handler:
         @staticmethod
         def test(t):
             return t

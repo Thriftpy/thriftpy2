@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 import sys
 import types
-from typing import List, Optional, TextIO, Union
+from typing import TextIO
 
 from .parser import parse, parse_fp
 from .exc import ThriftModuleNameConflict
@@ -18,10 +18,10 @@ from .exc import ThriftParserError  # noqa: F401, re-exported for compat
 
 
 def load(
-    path: Union[str, os.PathLike],
-    module_name: Optional[str] = None,
-    include_dirs: Optional[List[Union[str, os.PathLike]]] = None,
-    include_dir: Optional[Union[str, os.PathLike]] = None,
+    path: str | os.PathLike,
+    module_name: str | None = None,
+    include_dirs: list[str | os.PathLike] | None = None,
+    include_dir: str | os.PathLike | None = None,
     encoding: str = 'utf-8',
 ) -> types.ModuleType:
     """Load thrift file as a module.
@@ -58,8 +58,9 @@ def load(
             else:
                 if registered_thrift.__thrift_file__ != include_thrift.__thrift_file__:
                     raise ThriftModuleNameConflict(
-                        'Module name conflict between "%s" and "%s"' %
-                        (registered_thrift.__thrift_file__, include_thrift.__thrift_file__)
+                        'Module name conflict between '
+                        f'"{registered_thrift.__thrift_file__}" and '
+                        f'"{include_thrift.__thrift_file__}"'
                     )
     return thrift
 
@@ -100,7 +101,7 @@ def load_module(fullname: str) -> types.ModuleType:
         path = os.path.join(path_prefix, thrift_module_name)
     else:
         path = fullname
-    thrift_file = "{}.thrift".format(path[:-7])
+    thrift_file = f"{path[:-7]}.thrift"
 
     module = load(thrift_file, module_name=fullname)
     sys.modules[fullname] = module

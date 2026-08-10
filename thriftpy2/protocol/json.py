@@ -2,7 +2,7 @@ import base64
 import json
 import struct
 import sys
-from typing import Any, Dict
+from typing import Any
 from warnings import warn
 
 
@@ -183,7 +183,7 @@ class TJSONProtocol(TProtocolBase):
 
     def __init__(self, trans):
         TProtocolBase.__init__(self, trans)
-        self._meta: Dict[str, Any] = {"version": VERSION}
+        self._meta: dict[str, Any] = {"version": VERSION}
         self._data = None
 
     def _write_len(self, x):
@@ -202,7 +202,7 @@ class TJSONProtocol(TProtocolBase):
         if version != VERSION:
             raise TProtocolException(
                 type=TProtocolException.BAD_VERSION,
-                message="Bad version in read_message_begin:{}".format(version))
+                message=f"Bad version in read_message_begin:{version}")
 
         return metadata["name"], metadata["ttype"], metadata["seqid"]
 
@@ -237,6 +237,6 @@ class TJSONProtocol(TProtocolBase):
         warn("TJsonProtocol doesn't support skipping. Ignoring.")
 
 
-class TJSONProtocolFactory(object):
+class TJSONProtocolFactory:
     def get_protocol(self, trans):
         return TJSONProtocol(trans)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import errno
 import os
@@ -5,11 +7,7 @@ import socket
 import ssl
 import struct
 import sys
-from typing import Optional
-if sys.version_info >= (3, 7, 0):
-    from asyncio import get_running_loop
-else:
-    from asyncio import _get_running_loop as get_running_loop
+from asyncio import get_running_loop
 
 from thriftpy2.transport import TTransportException
 from thriftpy2.transport._ssl import (
@@ -22,13 +20,13 @@ from thriftpy2.transport._ssl import (
 MAC_OR_BSD = sys.platform == 'darwin' or sys.platform.startswith('freebsd')
 
 
-class TAsyncSocket(object):
+class TAsyncSocket:
     """Socket implementation for client side."""
 
     def __init__(self, host=None, port=None, unix_socket=None,
                  sock=None, socket_family=socket.AF_INET,
-                 socket_timeout: Optional[int] = 3000,
-                 connect_timeout: Optional[int] = None,
+                 socket_timeout: int | None = 3000,
+                 connect_timeout: int | None = None,
                  ssl_context=None, validate=True,
                  cafile=None, capath=None, certfile=None, keyfile=None,
                  ciphers=DEFAULT_CIPHERS):
@@ -171,7 +169,7 @@ class TAsyncSocket(object):
         except (socket.error, OSError):
             raise TTransportException(
                 type=TTransportException.NOT_OPEN,
-                message="Could not connect to %s" % str(addr))
+                message=f"Could not connect to {addr}")
 
     async def read(self, sz):
         try:
@@ -214,12 +212,12 @@ class TAsyncSocket(object):
             pass
 
 
-class TAsyncServerSocket(object):
+class TAsyncServerSocket:
     """Socket implementation for server side."""
 
     def __init__(self, host=None, port=None, unix_socket=None,
                  socket_family=socket.AF_INET,
-                 client_timeout: Optional[int] = 3000,
+                 client_timeout: int | None = 3000,
                  backlog=128, ssl_context=None, certfile=None, keyfile=None,
                  ciphers=RESTRICTED_SERVER_CIPHERS):
         """Initialize a TServerSocket
@@ -261,7 +259,7 @@ class TAsyncServerSocket(object):
             self.ssl_context = ssl_context
         elif certfile:
             if not os.access(certfile, os.R_OK):
-                raise IOError('No such certfile found: %s' % certfile)
+                raise OSError(f'No such certfile found: {certfile}')
 
             self.ssl_context = create_thriftpy_context(server_side=True,
                                                        ciphers=ciphers)
@@ -334,7 +332,7 @@ class TAsyncServerSocket(object):
             pass
 
 
-class StreamHandler(object):
+class StreamHandler:
     def __init__(self, reader, writer):
         self.reader, self.writer = reader, writer
 

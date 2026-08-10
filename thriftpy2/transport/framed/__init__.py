@@ -61,7 +61,7 @@ class TFramedTransport(TTransportBase):
         return self._trans.getvalue()
 
 
-class TFramedTransportFactory(object):
+class TFramedTransportFactory:
     def get_transport(self, trans):
         return TBufferedTransport(TFramedTransport(trans))
 

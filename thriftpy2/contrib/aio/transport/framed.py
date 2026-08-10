@@ -60,6 +60,6 @@ class TAsyncFramedTransport(TAsyncTransportBase):
         return self._trans.getvalue()
 
 
-class TAsyncFramedTransportFactory(object):
+class TAsyncFramedTransportFactory:
     def get_transport(self, trans):
         return TAsyncBufferedTransport(TAsyncFramedTransport(trans))

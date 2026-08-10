@@ -28,7 +28,7 @@ unix_sock = "/tmp/thriftpy_test.sock"
 SSL_PORT = 50441
 
 
-class Dispatcher(object):
+class Dispatcher:
     def __init__(self):
         self.ab = addressbook.AddressBook()
         self.ab.people = {}

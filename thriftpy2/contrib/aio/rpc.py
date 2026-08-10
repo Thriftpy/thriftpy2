@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import socket
 import ssl
 import types
 import urllib.parse
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 from thriftpy2.protocol.base import TProtocolFactory
 from thriftpy2.transport.base import TTransportFactory
@@ -18,13 +20,13 @@ from .transport.buffered import TAsyncBufferedTransportFactory
 
 async def make_client(
         service: types.ModuleType, host: str = 'localhost', port: int = 9090,
-        unix_socket: Optional[str] = None,
+        unix_socket: str | None = None,
         proto_factory: TProtocolFactory = TAsyncBinaryProtocolFactory(),
         trans_factory: TTransportFactory = TAsyncBufferedTransportFactory(),
-        timeout: Optional[int] = 3000, connect_timeout: Optional[int] = None,
-        cafile: Optional[str] = None, ssl_context: Optional[ssl.SSLContext] = None,
-        certfile: Optional[str] = None, keyfile: Optional[str] = None,
-        validate: bool = True, url: str = '', socket_timeout: Optional[int] = None,
+        timeout: int | None = 3000, connect_timeout: int | None = None,
+        cafile: str | None = None, ssl_context: ssl.SSLContext | None = None,
+        certfile: str | None = None, keyfile: str | None = None,
+        validate: bool = True, url: str = '', socket_timeout: int | None = None,
         socket_family: socket.AddressFamily = socket.AF_INET) -> TAsyncClient:
     if socket_timeout is not None:
         warnings.warn(
@@ -70,12 +72,12 @@ async def make_client(
 
 def make_server(
         service: types.ModuleType, handler: Any, host: str = 'localhost',
-        port: int = 9090, unix_socket: Optional[str] = None,
+        port: int = 9090, unix_socket: str | None = None,
         proto_factory: TProtocolFactory = TAsyncBinaryProtocolFactory(),
         trans_factory: TTransportFactory = TAsyncBufferedTransportFactory(),
-        client_timeout: Optional[int] = 3000, certfile: Optional[str] = None,
-        keyfile: Optional[str] = None, ssl_context: Optional[ssl.SSLContext] = None,
-        loop: Optional[Any] = None,
+        client_timeout: int | None = 3000, certfile: str | None = None,
+        keyfile: str | None = None, ssl_context: ssl.SSLContext | None = None,
+        loop: Any | None = None,
         socket_family: socket.AddressFamily = socket.AF_INET) -> TAsyncServer:
     processor = TAsyncProcessor(service, handler)
 

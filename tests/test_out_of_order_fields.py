@@ -32,11 +32,11 @@ def test_args_to_kwargs_declaration_order():
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="requires fork")
-class TestOutOfOrderFieldsRPC(object):
+class TestOutOfOrderFieldsRPC:
 
     hello_thrift = thriftpy2.load(TEST_DIR / "out_of_order_fields.thrift")
 
-    class Dispatcher(object):
+    class Dispatcher:
         def say_hello(self, a, b, c):
             return "%s %s %s" % (a, b, c)
 

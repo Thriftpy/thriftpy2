@@ -4,7 +4,7 @@
 >>> from thriftpy2.http import make_server
 >>> pingpong = thriftpy2.load("pingpong.thrift")
 >>>
->>> class Dispatcher(object):
+>>> class Dispatcher:
 >>>     def ping(self):
 >>>         return "pong"
 
@@ -28,6 +28,8 @@
 >>> client.ping()
 """
 
+from __future__ import annotations
+
 import http.client as http_client
 import http.server as http_server
 import os
@@ -36,10 +38,10 @@ import ssl
 import sys
 import types
 import urllib.parse
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from io import BytesIO
-from typing import (BinaryIO, Callable, Dict, Generator, Optional,
-                    Tuple, Type)
+from typing import BinaryIO
 
 from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.protocol.base import TProtocolFactory
@@ -88,10 +90,10 @@ class ResponseException(Exception):
         self.handler = handler
 
 
-class THttpHeaderFactory(object):
+class THttpHeaderFactory:
     """Default header factory return no custom headers
     """
-    def __init__(self, headers: Optional[Dict[str, str]] = None) -> None:
+    def __init__(self, headers: dict[str, str] | None = None) -> None:
         """Initialize a header factory
         @param headers(dict)
             A dictionary of static headers the factory generates
@@ -101,7 +103,7 @@ class THttpHeaderFactory(object):
         else:
             self.__headers = dict()
 
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self) -> dict[str, str]:
         return self.__headers
 
 
@@ -112,10 +114,10 @@ class THttpServer(TServer):
     """
     def __init__(self,
                  processor: TProcessor,
-                 server_address: Tuple[str, int],
+                 server_address: tuple[str, int],
                  itrans_factory: TTransportFactory,
                  iprot_factory: TProtocolFactory,
-                 server_class: Type[http_server.HTTPServer] = http_server.HTTPServer
+                 server_class: type[http_server.HTTPServer] = http_server.HTTPServer
                  ) -> None:
         """Set up protocol factories and HTTP server.
         See http.server for server_address.
@@ -166,9 +168,9 @@ class THttpClient(TTransportBase):
     """Http implementation of TTransport base.
     """
 
-    def __init__(self, uri: str, timeout: Optional[int] = None,
-                 ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
-                 http_header_factory: Optional[THttpHeaderFactory] = None,
+    def __init__(self, uri: str, timeout: int | None = None,
+                 ssl_context_factory: Callable[[], ssl.SSLContext] | None = None,
+                 http_header_factory: THttpHeaderFactory | None = None,
                  keep_alive: bool = False
                  ) -> None:
         """Initialize a HTTP Socket.
@@ -191,7 +193,7 @@ class THttpClient(TTransportBase):
         self.host: str = host
         self.path = parsed.path
         if parsed.query:
-            self.path += '?%s' % parsed.query
+            self.path += f'?{parsed.query}'
         self.__wbuf = BytesIO()
         self.__http = None
         self._http_header_factory = http_header_factory or THttpHeaderFactory()
@@ -230,7 +232,7 @@ class THttpClient(TTransportBase):
     def set_timeout(self, ms: int) -> None:
         self.setTimeout(ms)
 
-    def setCustomHeaders(self, headers: Dict[str, str]) -> None:
+    def setCustomHeaders(self, headers: dict[str, str]) -> None:
         self._http_header_factory = THttpHeaderFactory(headers)
 
     def read(self, sz: int) -> bytes:
@@ -284,8 +286,8 @@ class THttpClient(TTransportBase):
             user_agent = 'Python/THttpClient'
             script = os.path.basename(sys.argv[0])
             if script:
-                user_agent = '%s (%s)' % (
-                    user_agent, urllib.parse.quote(script))
+                user_agent = (f'{user_agent} '
+                              f'({urllib.parse.quote(script)})')
                 http.putheader('User-Agent', user_agent)
 
         if custom_headers:
@@ -331,8 +333,8 @@ def make_client(service: types.ModuleType, host: str = 'localhost',
                 port: int = 9090, path: str = '', scheme: str = 'http',
                 proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
                 trans_factory: TTransportFactory = TBufferedTransportFactory(),
-                ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
-                http_header_factory: Optional[THttpHeaderFactory] = None,
+                ssl_context_factory: Callable[[], ssl.SSLContext] | None = None,
+                http_header_factory: THttpHeaderFactory | None = None,
                 timeout: int = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
                 url: str = '', keep_alive: bool = False) -> TClient:
     if url:
@@ -358,8 +360,8 @@ def client_context(service: types.ModuleType, host: str = 'localhost',
                    port: int = 9090, path: str = '', scheme: str = 'http',
                    proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
                    trans_factory: TTransportFactory = TBufferedTransportFactory(),
-                   ssl_context_factory: Optional[Callable[[], ssl.SSLContext]] = None,
-                   http_header_factory: Optional[THttpHeaderFactory] = None,
+                   ssl_context_factory: Callable[[], ssl.SSLContext] | None = None,
+                   http_header_factory: THttpHeaderFactory | None = None,
                    timeout: int = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
                    url: str = '', keep_alive: bool = False
                    ) -> Generator[TClient, None, None]:

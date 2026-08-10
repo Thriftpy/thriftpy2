@@ -13,7 +13,7 @@ from container import MixItem
 DEFAULT_LIST_SIZE = 10
 
 
-class PhoneType(object):
+class PhoneType:
     MOBILE = 0
     HOME = 1
     WORK = 2
@@ -52,7 +52,7 @@ class PersonNotExistsError(TException):
     default_spec = [("message", None)]
 
 
-class AddressBookService(object):
+class AddressBookService:
     thrift_services = [
         "ping",
         "hello",

@@ -2,7 +2,7 @@ from thriftpy2.protocol.base import TProtocolFactory
 from thriftpy2.thrift import TMultiplexedProcessor, TMessageType
 
 
-class TMultiplexedProtocol(object):
+class TMultiplexedProtocol:
     """Multiplex the protocol by prepend service name to api for every api call.
     Can be used together with all original protocols.
     """
@@ -23,7 +23,7 @@ class TMultiplexedProtocol(object):
             self._proto.write_message_begin(name, ttype, seqid)
 
 
-class TMultiplexedProtocolFactory(object):
+class TMultiplexedProtocolFactory:
     def __init__(self, proto_factory: TProtocolFactory, service_name):
         self._proto_factory = proto_factory
         self.service_name = service_name

@@ -6,7 +6,7 @@ import uuid
 ctx = threading.local()
 
 
-class VersionMixin(object):
+class VersionMixin:
     """Mixin class to handle version compatibilities"""
     DEFAULT_VERSION = 0  # support only request header
     VERSION_SUPPORT_REQUEST_HEADER = 1  # add request header
@@ -27,7 +27,7 @@ class VersionMixin(object):
             self.current_version = target_version
 
 
-class TrackerBase(object):
+class TrackerBase:
     def __init__(self, client=None, server=None):
         self.client = client
         self.server = server
@@ -48,8 +48,7 @@ class TrackerBase(object):
         ctx.counter += 1
 
         if hasattr(ctx, "header"):
-            header.seq = "{prev_seq}.{cur_counter}".format(
-                prev_seq=ctx.header.seq, cur_counter=ctx.counter)
+            header.seq = f"{ctx.header.seq}.{ctx.counter}"
             header.meta = ctx.header.meta
         else:
             header.meta = {}

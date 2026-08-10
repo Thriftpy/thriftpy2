@@ -1,7 +1,7 @@
 from thriftpy2.thrift import TApplicationException, TType, TMessageType
 
 
-class TAsyncProcessor(object):
+class TAsyncProcessor:
 
     def __init__(self, service, handler):
         self._service = service

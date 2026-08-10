@@ -28,13 +28,16 @@ Async HTTP transport for thriftpy2.
 >>> asyncio.run(main())
 """
 
+from __future__ import annotations
+
 import asyncio
 import ssl
 import types
 import urllib.parse
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any
 
 import aiohttp
 from aiohttp import web
@@ -53,14 +56,14 @@ DEFAULT_HTTP_CLIENT_TIMEOUT_MS = 30000  # 30 seconds
 class TAsyncHttpHeaderFactory:
     """Default header factory that returns custom headers."""
 
-    def __init__(self, headers: Optional[Dict[str, str]] = None) -> None:
+    def __init__(self, headers: dict[str, str] | None = None) -> None:
         """Initialize a header factory.
 
         @param headers(dict): A dictionary of static headers the factory generates
         """
         self._headers = headers if headers else {}
 
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self) -> dict[str, str]:
         return self._headers
 
 
@@ -98,9 +101,9 @@ class TAsyncMemoryBuffer(TAsyncTransportBase):
 class TAsyncHttpClient(TAsyncTransportBase):
     """Async HTTP implementation of TTransport."""
 
-    def __init__(self, uri: str, timeout: Optional[int] = None,
-                 ssl_context: Optional[ssl.SSLContext] = None,
-                 http_header_factory: Optional[TAsyncHttpHeaderFactory] = None) -> None:
+    def __init__(self, uri: str, timeout: int | None = None,
+                 ssl_context: ssl.SSLContext | None = None,
+                 http_header_factory: TAsyncHttpHeaderFactory | None = None) -> None:
         """Initialize an async HTTP transport.
 
         @param uri(str): The http_scheme://host:port/path to connect to.
@@ -120,7 +123,7 @@ class TAsyncHttpClient(TAsyncTransportBase):
         self.host = parsed.hostname
         self.path = parsed.path or '/'
         if parsed.query:
-            self.path += '?%s' % parsed.query
+            self.path += f'?{parsed.query}'
 
         self._wbuf = BytesIO()
         self._rbuf = BytesIO()
@@ -167,11 +170,11 @@ class TAsyncHttpClient(TAsyncTransportBase):
             await self._session.close()
             self._session = None
 
-    def set_timeout(self, ms: Optional[int]) -> None:
+    def set_timeout(self, ms: int | None) -> None:
         """Set timeout in milliseconds."""
         self._timeout = ms / 1000.0 if (ms and ms > 0) else None
 
-    def set_custom_headers(self, headers: Dict[str, str]) -> None:
+    def set_custom_headers(self, headers: dict[str, str]) -> None:
         self._http_header_factory = TAsyncHttpHeaderFactory(headers)
 
     async def _read(self, sz: int) -> bytes:
@@ -220,9 +223,8 @@ class TAsyncHttpClient(TAsyncTransportBase):
             if resp.status != 200:
                 raise TTransportException(
                     type=TTransportException.UNKNOWN,
-                    message='HTTP request failed with status %d: %s' % (
-                        resp.status, resp.reason
-                    )
+                    message='HTTP request failed with status '
+                            f'{resp.status}: {resp.reason}'
                 )
 
             response_data = await resp.read()
@@ -281,7 +283,7 @@ class TAsyncHttpServer:
         except Exception as e:
             return web.Response(
                 status=500,
-                text='Internal Server Error: %s' % str(e)
+                text=f'Internal Server Error: {e}'
             )
 
     async def serve(self):
@@ -329,10 +331,10 @@ class TAsyncHttpServer:
 async def make_client(
         service: types.ModuleType, host: str = 'localhost', port: int = 9090,
         path: str = '', scheme: str = 'http',
-        proto_factory: Optional[TProtocolFactory] = None,
-        ssl_context: Optional[ssl.SSLContext] = None,
-        http_header_factory: Optional[TAsyncHttpHeaderFactory] = None,
-        timeout: Optional[int] = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
+        proto_factory: TProtocolFactory | None = None,
+        ssl_context: ssl.SSLContext | None = None,
+        http_header_factory: TAsyncHttpHeaderFactory | None = None,
+        timeout: int | None = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
         url: str = '') -> TAsyncClient:
     """Create an async HTTP client.
 
@@ -376,10 +378,10 @@ async def make_client(
 async def client_context(
         service: types.ModuleType, host: str = 'localhost', port: int = 9090,
         path: str = '', scheme: str = 'http',
-        proto_factory: Optional[TProtocolFactory] = None,
-        ssl_context: Optional[ssl.SSLContext] = None,
-        http_header_factory: Optional[TAsyncHttpHeaderFactory] = None,
-        timeout: Optional[int] = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
+        proto_factory: TProtocolFactory | None = None,
+        ssl_context: ssl.SSLContext | None = None,
+        http_header_factory: TAsyncHttpHeaderFactory | None = None,
+        timeout: int | None = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
         url: str = '') -> AsyncGenerator[TAsyncClient, None]:
     """Async context manager for HTTP client.
 
@@ -422,8 +424,8 @@ async def client_context(
 
 
 def make_server(service: types.ModuleType, handler: Any, host: str, port: int,
-                proto_factory: Optional[TProtocolFactory] = None,
-                ssl_context: Optional[ssl.SSLContext] = None) -> TAsyncHttpServer:
+                proto_factory: TProtocolFactory | None = None,
+                ssl_context: ssl.SSLContext | None = None) -> TAsyncHttpServer:
     """Create an async HTTP server.
 
     @param service: The Thrift service class.

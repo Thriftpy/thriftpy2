@@ -157,8 +157,8 @@ t_ignore = ' \t\r'   # whitespace
 
 
 def t_error(t):
-    raise ThriftLexerError('Illegal character %r at line %d' %
-                           (t.value[0], t.lineno))
+    raise ThriftLexerError(
+        f'Illegal character {t.value[0]!r} at line {t.lineno}')
 
 
 def t_newline(t):
@@ -234,8 +234,8 @@ def t_LITERAL(t):
             if s[i] in maps:
                 val += maps[s[i]]
             else:
-                msg = 'Unexpected escaping character: %s' % s[i]
-                raise ThriftLexerError(msg)
+                raise ThriftLexerError(
+                    f'Unexpected escaping character: {s[i]}')
         else:
             val += s[i]
 
@@ -252,6 +252,7 @@ def t_IDENTIFIER(t):
         t.type = t.value.upper()
         return t
     if t.value in thrift_reserved_keywords:
-        raise ThriftLexerError('Cannot use reserved language keyword: %r'
-                               ' at line %d' % (t.value, t.lineno))
+        raise ThriftLexerError(
+            f'Cannot use reserved language keyword: {t.value!r}'
+            f' at line {t.lineno}')
     return t

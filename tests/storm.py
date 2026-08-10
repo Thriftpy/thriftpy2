@@ -226,7 +226,7 @@ class RebalanceOptions(TPayload):
                    3: (TType.MAP, 'num_executors', (TType.STRING, TType.I32))}
 
 
-class TopologyInitialStatus(object):
+class TopologyInitialStatus:
     ACTIVE = 1
     INACTIVE = 2
 
@@ -235,7 +235,7 @@ class SubmitOptions(TPayload):
     thrift_spec = {1: (TType.I32, 'initial_status')}
 
 
-class Nimbus(object):
+class Nimbus:
     ''' Nimbus service '''
     class submitTopology_args(TPayload):
         thrift_spec = {1: (TType.STRING, 'name'),
@@ -372,7 +372,7 @@ class DRPCExecutionException(TException):
     thrift_spec = {1: (TType.STRING, 'msg')}
 
 
-class DistributedRPC(object):
+class DistributedRPC:
     ''' DistributedRPC service '''
     class execute_args(TPayload):
         thrift_spec = {1: (TType.STRING, 'functionName'),
@@ -383,7 +383,7 @@ class DistributedRPC(object):
                        1: (TType.STRUCT, 'e', DRPCExecutionException)}
 
 
-class DistributedRPCInvocations(object):
+class DistributedRPCInvocations:
     ''' DistributedRPCInvocations service '''
     class result_args(TPayload):
         thrift_spec = {1: (TType.STRING, 'id'),

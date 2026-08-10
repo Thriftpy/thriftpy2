@@ -8,7 +8,7 @@ from thriftpy2.rpc import make_aio_server
 echo_thrift = thriftpy2.load("echo.thrift", module_name="echo_thrift")
 
 
-class Dispatcher(object):
+class Dispatcher:
     async def echo(self, param):
         print(param)
         await asyncio.sleep(0.1)

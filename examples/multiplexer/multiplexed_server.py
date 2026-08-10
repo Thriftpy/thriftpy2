@@ -12,13 +12,13 @@ DD_SERVICE_NAME = "dd_thrift"
 PP_SERVICE_NAME = "pp_thrift"
 
 
-class DingDispatcher(object):
+class DingDispatcher:
     def ding(self):
         print("ding dong!")
         return 'dong'
 
 
-class PingDispatcher(object):
+class PingDispatcher:
     def ping(self):
         print("ping pong!")
         return 'pong'

@@ -19,7 +19,7 @@ addressbook = thriftpy2.load(path.join(path.dirname(__file__),
                                        "addressbook.thrift"))
 
 
-class Dispatcher(object):
+class Dispatcher:
     def __init__(self):
         self.registry = {}
 

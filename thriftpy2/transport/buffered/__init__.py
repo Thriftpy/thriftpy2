@@ -55,7 +55,7 @@ class TBufferedTransport(TTransportBase):
         return self._trans.getvalue()
 
 
-class TBufferedTransportFactory(object):
+class TBufferedTransportFactory:
     def get_transport(self, trans):
         return TBufferedTransport(trans)
 

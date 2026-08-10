@@ -3,6 +3,8 @@ IDL Ref:
     https://thrift.apache.org/docs/idl
 """
 
+from __future__ import annotations
+
 import collections
 import itertools
 import os
@@ -29,7 +31,7 @@ class _GrammarError(ThriftGrammarError):
     catches it to add the file name to the message."""
 
     def __init__(self, value=None, lineno=None):
-        super(_GrammarError, self).__init__()
+        super().__init__()
         self.value = value
         self.lineno = lineno
 
@@ -92,8 +94,8 @@ def p_include(p):
             setattr(thrift, child.__name__, child)
             _add_thrift_meta(thrift, 'includes', child)
             return
-    raise ThriftParserError(('Couldn\'t include thrift %s in any '
-                             'directories provided') % p[2])
+    raise ThriftParserError(f"Couldn't include thrift {p[2]} in any "
+                            "directories provided")
 
 
 def p_cpp_include(p):
@@ -142,8 +144,8 @@ def p_const(p):
     try:
         val = _cast(field_type, p.lineno(3))(const_value)
     except AssertionError:
-        raise ThriftParserError('Type error for constant %s at line %d' %
-                                (name, p.lineno(3)))
+        raise ThriftParserError(
+            f'Type error for constant {name} at line {p.lineno(3)}')
     thrift = p.parser.context.thrift_stack[-1]
     setattr(thrift, name, val)
     _add_thrift_meta(thrift, 'consts', val)
@@ -200,15 +202,15 @@ def p_const_ref(p):
         father = child
         child = getattr(child, name, None)
         if child is None:
-            raise ThriftParserError('Can\'t find name %r at line %d'
-                                    % (p[1], p.lineno(1)))
+            raise ThriftParserError(
+                f"Can't find name {p[1]!r} at line {p.lineno(1)}")
 
     if _get_ttype(child) is None or _get_ttype(father) == TType.I32:
         # child is a constant or enum value
         p[0] = child
     else:
         raise ThriftParserError('No enum value or constant found '
-                                'named %r' % p[1])
+                                f'named {p[1]!r}')
 
 
 def p_ttype(p):
@@ -313,13 +315,13 @@ def p_simple_service(p):
         for name in p[4].split('.'):
             extends = getattr(extends, name, None)
             if extends is None:
-                raise ThriftParserError('Can\'t find service %r for '
-                                        'service %r to extend' %
-                                        (p[4], p[2]))
+                raise ThriftParserError(
+                    f"Can't find service {p[4]!r} for "
+                    f"service {p[2]!r} to extend")
 
         if not hasattr(extends, 'thrift_services'):
-            raise ThriftParserError('Can\'t extends %r, not a service'
-                                    % p[4])
+            raise ThriftParserError(
+                f"Can't extends {p[4]!r}, not a service")
 
     else:
         extends = None
@@ -406,8 +408,7 @@ def p_simple_field(p):
             default_val = _cast(field_type)(p[6])
         except AssertionError:
             raise ThriftParserError(
-                'Type error for field %s '
-                'at line %d' % (name, p.lineno(4)))
+                f'Type error for field {name} at line {p.lineno(4)}')
     else:
         default_val = None
 
@@ -469,7 +470,7 @@ _thrift_cache = {}
 _parse_lock = threading.RLock()
 
 
-class ParseContext(object):
+class ParseContext:
     """Per parse-tree state, shared across recursive `include` parsing.
 
     Grammar rule callbacks reach the current context through ``p.parser.context``
@@ -507,8 +508,8 @@ def p_ref_type(p):
             ref_type = getattr(ref_type, name, None)
             if ref_type is None:
                 if index != len(p[1].split('.')) - 1:
-                    raise ThriftParserError('No type found: %r, at line %d' %
-                                            (p[1], p.lineno(1)))
+                    raise ThriftParserError(
+                        f'No type found: {p[1]!r}, at line {p.lineno(1)}')
                 p[0] = p.parser.context.incomplete_type.set_info(
                     (p[1], p.lineno(1)))
                 return
@@ -642,7 +643,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
     for thrift in context.thrift_stack:
         if thrift.__thrift_file__ is not None and \
                 os.path.samefile(path, thrift.__thrift_file__):
-            raise ThriftParserError('Dead including on %s' % path)
+            raise ThriftParserError(f'Dead including on {path}')
 
     cache_key = module_name or os.path.normpath(path)
 
@@ -668,9 +669,9 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
         elif url_scheme in ('http', 'https'):
             data = urlopen(path).read()
         else:
-            raise ThriftParserError('thriftpy2 does not support generating '
-                                    'module with path in protocol \'{}\''
-                                    .format(url_scheme))
+            raise ThriftParserError(
+                'thriftpy2 does not support generating module with path in '
+                f"protocol '{url_scheme}'")
 
         if isinstance(data, bytes):
             data = data.decode(encoding)
@@ -760,11 +761,11 @@ def _parse_data(data, thrift, context, lexer, parser, is_root):
     except _GrammarError as e:
         if e.value is None:
             raise ThriftGrammarError(
-                "Grammar error at EOF of the file '%s'"
-                % thrift.__thrift_file__) from None
+                "Grammar error at EOF of the file "
+                f"'{thrift.__thrift_file__}'") from None
         raise ThriftGrammarError(
-            "Grammar error %r at line %d of the file '%s'"
-            % (e.value, e.lineno, thrift.__thrift_file__)) from None
+            f"Grammar error {e.value!r} at line {e.lineno} of the file "
+            f"'{thrift.__thrift_file__}'") from None
     context.thrift_stack.pop()
 
     if is_root and context.incomplete_type:
@@ -891,11 +892,12 @@ def _get_definition(thrift, name, lineno, incomplete_type):
     for n in name.split('.'):
         ref_type = getattr(thrift, n, None)
         if ref_type is None:
-            raise ThriftParserError('No type found: %r, at line %d' %
-                                    (name, lineno))
+            raise ThriftParserError(
+                f'No type found: {name!r}, at line {lineno}')
         if isinstance(ref_type, int) and ref_type < 0:
-            raise ThriftParserError('No type found: %r, at line %d' %
-                                    incomplete_type[ref_type])
+            raise ThriftParserError(
+                'No type found: %r, at line %d' %
+                incomplete_type[ref_type])
         if hasattr(ref_type, '_ttype'):
             return (getattr(ref_type, '_ttype'), ref_type)
         else:
@@ -910,8 +912,8 @@ def _add_thrift_meta(thrift, key, val):
         meta = getattr(thrift, '__thrift_meta__')
 
     if key != 'consts' and val.__name__ in [x.__name__ for x in meta[key]]:
-        raise ThriftGrammarError(('\'%s\' type is already defined in '
-                                  '\'%s\'') % (val.__name__, key))
+        raise ThriftGrammarError(
+            f"'{val.__name__}' type is already defined in '{key}'")
 
     meta[key].append(val)
 
@@ -926,35 +928,39 @@ def _parse_seq(p):
 
 
 def _cast(t: Any, linno: int = 0) -> Any:  # noqa
-    if isinstance(t, int) and t < 0:
-        return _lazy_cast_const(t, linno)
-    if t == TType.BOOL:
-        return _cast_bool
-    if t == TType.BYTE:
-        return _cast_byte
-    if t == TType.I16:
-        return _cast_i16
-    if t == TType.I32:
-        return _cast_i32
-    if t == TType.I64:
-        return _cast_i64
-    if t == TType.DOUBLE:
-        return _cast_double
-    if t == TType.STRING:
-        return _cast_string
-    if t == TType.BINARY:
-        return _cast_binary
-    assert not isinstance(t, int), "unsupported primitive type: %s" % t
-    if t[0] == TType.LIST:
-        return _cast_list(t)
-    if t[0] == TType.SET:
-        return _cast_set(t)
-    if t[0] == TType.MAP:
-        return _cast_map(t)
-    if t[0] == TType.I32:
-        return _cast_enum(t)
-    if t[0] == TType.STRUCT:
-        return _cast_struct(t)
+    match t:
+        case int() if t < 0:
+            return _lazy_cast_const(t, linno)
+        case TType.BOOL:
+            return _cast_bool
+        case TType.BYTE:
+            return _cast_byte
+        case TType.I16:
+            return _cast_i16
+        case TType.I32:
+            return _cast_i32
+        case TType.I64:
+            return _cast_i64
+        case TType.DOUBLE:
+            return _cast_double
+        case TType.STRING:
+            return _cast_string
+        case TType.BINARY:
+            return _cast_binary
+
+    assert not isinstance(t, int), f"unsupported primitive type: {t}"
+
+    match t[0]:
+        case TType.LIST:
+            return _cast_list(t)
+        case TType.SET:
+            return _cast_set(t)
+        case TType.MAP:
+            return _cast_map(t)
+        case TType.I32:
+            return _cast_enum(t)
+        case TType.STRUCT:
+            return _cast_struct(t)
 
 
 def _lazy_cast_const(t, linno):
@@ -1046,8 +1052,9 @@ def _cast_enum(t):
         assert isinstance(v, int)
         if v in t[1]._VALUES_TO_NAMES:
             return v
-        raise ThriftParserError('Couldn\'t find a named value in enum '
-                                '%s for value %d' % (t[1].__name__, v))
+        raise ThriftParserError(
+            "Couldn't find a named value in enum "
+            f"{t[1].__name__} for value {v}")
     return __cast_enum
 
 
@@ -1063,15 +1070,15 @@ def _cast_struct(t):   # struct/exception/union
 
         for key in tspec:  # requirement check
             if tspec[key][0] and key not in v:
-                raise ThriftParserError('Field %r was required to create '
-                                        'constant for type %r' %
-                                        (key, t[1].__name__))
+                raise ThriftParserError(
+                    f'Field {key!r} was required to create '
+                    f'constant for type {t[1].__name__!r}')
 
         for key in v:  # cast values
             if key not in tspec:
-                raise ThriftParserError('No field named %r was '
-                                        'found in struct of type %r' %
-                                        (key, t[1].__name__))
+                raise ThriftParserError(
+                    f'No field named {key!r} was '
+                    f'found in struct of type {t[1].__name__!r}')
             v[key] = _cast(tspec[key][1])(v[key])
         return t[1](**v)
     return __cast_struct
@@ -1134,9 +1141,9 @@ def _fill_in_struct(cls, fields, _gen_init=True):
 
     for field in fields:
         if field[0] in thrift_spec or field[3] in _tspec:
-            raise ThriftGrammarError(('\'%d:%s\' field identifier/name has '
-                                      'already been used') % (field[0],
-                                                              field[3]))
+            raise ThriftGrammarError(
+                f"'{field[0]}:{field[3]}' field identifier/name has "
+                "already been used")
         ttype = field[2]
         thrift_spec[field[0]] = _ttype_spec(ttype, field[3], field[1])
         default_spec.append((field[3], field[4]))
@@ -1181,16 +1188,16 @@ def _make_service(thrift, name, funcs, extends, annotations=None, lineno=None):
     for func in funcs:
         func_name = func[2]
         if func_name in thrift_services:
-            raise ThriftGrammarError(('\'%s\' function is already defined in '
-                                      'service \'%s\'') % (func_name,
-                                                           name))
+            raise ThriftGrammarError(
+                f"'{func_name}' function is already defined in "
+                f"service '{name}'")
         # args payload cls
-        args_name = '%s_args' % func_name
+        args_name = f'{func_name}_args'
         args_fields = func[3]
         args_cls = _make_struct(thrift, args_name, args_fields)
         setattr(cls, args_name, args_cls)
         # result payload cls
-        result_name = '%s_result' % func_name
+        result_name = f'{func_name}_result'
         result_type = func[1]
         result_throws = func[4]
         result_oneway = func[0]

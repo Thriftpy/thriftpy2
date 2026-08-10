@@ -25,7 +25,7 @@ def deserialize(thrift_object: Any, buf: bytes,
 
 def hexlify(byte_array: bytes, delimeter: str = ' ') -> str:
     s = binascii.hexlify(byte_array).decode('utf-8')
-    return delimeter.join(a + b for a, b in zip(s[::2], s[1::2]))
+    return delimeter.join(a + b for a, b in zip(s[::2], s[1::2], strict=True))
 
 
 def hexprint(byte_array: bytes, delimeter: str = ' ', count: int = 10) -> None:

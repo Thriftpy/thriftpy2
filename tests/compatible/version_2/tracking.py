@@ -19,7 +19,7 @@ track_thrift = load(os.path.join(os.path.dirname(__file__), "tracking.thrift"))
 ctx = threading.local()
 
 
-class RequestInfo(object):
+class RequestInfo:
     def __init__(self, request_id, api, seq, client, server, status, start,
                  end, annotation, meta):
         """Used to store call info.
@@ -48,7 +48,7 @@ class RequestInfo(object):
 
 class TTrackedClient(TClient):
     def __init__(self, tracker_handler, *args, **kwargs):
-        super(TTrackedClient, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.tracker = tracker_handler
         self._upgraded = False
@@ -87,17 +87,17 @@ class TTrackedClient(TClient):
             self._header.write(self._oprot)
 
         self.send_start = int(time.time() * 1000)
-        super(TTrackedClient, self)._send(_api, **kwargs)
+        super()._send(_api, **kwargs)
 
     def _req(self, _api, *args, **kwargs):
         if not self._upgraded:
-            return super(TTrackedClient, self)._req(_api, *args, **kwargs)
+            return super()._req(_api, *args, **kwargs)
 
         exception = None
         status = False
 
         try:
-            res = super(TTrackedClient, self)._req(_api, *args, **kwargs)
+            res = super()._req(_api, *args, **kwargs)
             status = True
             return res
         except BaseException as e:
@@ -121,7 +121,7 @@ class TTrackedClient(TClient):
 
 class TTrackedProcessor(TProcessor):
     def __init__(self, tracker_handler, *args, **kwargs):
-        super(TTrackedProcessor, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.tracker = tracker_handler
         self._upgraded = False
@@ -133,7 +133,7 @@ class TTrackedProcessor(TProcessor):
             request_header = track_thrift.RequestHeader()
             request_header.read(iprot)
             self.tracker.handle(request_header)
-            res = super(TTrackedProcessor, self).process_in(iprot)
+            res = super().process_in(iprot)
 
         self._do_process(iprot, oprot, *res)
 
@@ -195,7 +195,7 @@ class TTrackedProcessor(TProcessor):
             self.send_result(oprot, api, result, seqid)
 
 
-class TrackerBase(object):
+class TrackerBase:
     def __init__(self, client=None, server=None):
         self.client = client
         self.server = server

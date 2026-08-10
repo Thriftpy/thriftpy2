@@ -29,7 +29,7 @@ jobs:
           # Disable building PyPy wheels on all platforms because it's pure-python.
           CIBW_SKIP: pp*
           # Only build supported versions of Python for wheels.
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
           # Enable freethreading wheels.
           CIBW_ENABLE: cpython-freethreading
 

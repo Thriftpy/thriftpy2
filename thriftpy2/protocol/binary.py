@@ -35,7 +35,7 @@ def pack_double(dub):
 
 
 def pack_string(string):
-    return struct.pack("!i%ds" % len(string), len(string), string)
+    return struct.pack(f"!i{len(string)}s", len(string), string)
 
 
 def unpack_i8(buf):
@@ -176,7 +176,7 @@ def read_message_begin(inbuf, strict=True):
         if version != VERSION_1:
             raise TProtocolException(
                 type=TProtocolException.BAD_VERSION,
-                message='Bad version in read_message_begin: %d' % (sz))
+                message=f'Bad version in read_message_begin: {sz}')
         name_sz = unpack_i32(inbuf.read(4))
         name = inbuf.read(name_sz).decode('utf-8')
 
@@ -418,7 +418,7 @@ class TBinaryProtocol(TProtocolBase):
         write_val(self.trans, TType.STRUCT, obj)
 
 
-class TBinaryProtocolFactory(object):
+class TBinaryProtocolFactory:
     def __init__(self, strict_read=True, strict_write=True,
                  decode_response=True, strict_decode=False):
         self.strict_read = strict_read

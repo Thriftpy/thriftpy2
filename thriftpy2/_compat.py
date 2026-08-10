@@ -1,8 +1,8 @@
 """
     thriftpy2._compat
-    ~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~
 
-    py2/py3 compatibility support.
+    Interpreter feature detection.
 """
 
 import platform

@@ -102,7 +102,7 @@ class TSocket(TTransportBase):
             self.close()
             raise TTransportException(
                 type=TTransportException.NOT_OPEN,
-                message="Could not connect to %s" % str(addr))
+                message=f"Could not connect to {addr}")
 
     def read(self, sz):
         sock = self.sock
@@ -156,7 +156,7 @@ class TSocket(TTransportBase):
         self.sock = None
 
 
-class TServerSocket(object):
+class TServerSocket:
     """Socket implementation for server side."""
 
     def __init__(self, host=None, port=None, unix_socket=None,

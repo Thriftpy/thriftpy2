@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import contextlib
 import socket
 import ssl
 import types
 import urllib.parse
 import warnings
-from typing import Generator, Optional
+from collections.abc import Generator
 
 from thriftpy2.contrib.aio.rpc import make_client as make_aio_client  # noqa
 from thriftpy2.contrib.aio.rpc import make_server as make_aio_server  # noqa
@@ -18,13 +20,13 @@ from thriftpy2.transport.base import TTransportFactory
 
 
 def make_client(service: types.ModuleType, host: str = "localhost",
-                port: int = 9090, unix_socket: Optional[str] = None,
+                port: int = 9090, unix_socket: str | None = None,
                 proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
                 trans_factory: TTransportFactory = TBufferedTransportFactory(),
-                timeout: int = 3000, cafile: Optional[str] = None,
-                ssl_context: Optional[ssl.SSLContext] = None,
-                certfile: Optional[str] = None,
-                keyfile: Optional[str] = None,
+                timeout: int = 3000, cafile: str | None = None,
+                ssl_context: ssl.SSLContext | None = None,
+                certfile: str | None = None,
+                keyfile: str | None = None,
                 url: str = "",
                 socket_family: socket.AddressFamily = socket.AF_INET
                 ) -> TClient:
@@ -64,11 +66,11 @@ def make_client(service: types.ModuleType, host: str = "localhost",
 
 def make_server(service: types.ModuleType, handler: object,
                 host: str = "localhost", port: int = 9090,
-                unix_socket: Optional[str] = None,
+                unix_socket: str | None = None,
                 proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
                 trans_factory: TTransportFactory = TBufferedTransportFactory(),
                 client_timeout: int = 3000,
-                certfile: Optional[str] = None,
+                certfile: str | None = None,
                 socket_family: socket.AddressFamily = socket.AF_INET
                 ) -> TThreadedServer:
     processor = TProcessor(service, handler)
@@ -97,16 +99,16 @@ def make_server(service: types.ModuleType, handler: object,
 
 @contextlib.contextmanager
 def client_context(service: types.ModuleType, host: str = "localhost",
-                   port: int = 9090, unix_socket: Optional[str] = None,
+                   port: int = 9090, unix_socket: str | None = None,
                    proto_factory: TProtocolFactory = TBinaryProtocolFactory(),
                    trans_factory: TTransportFactory = TBufferedTransportFactory(),
-                   timeout: Optional[int] = None,
+                   timeout: int | None = None,
                    socket_timeout: int = 3000,
                    connect_timeout: int = 3000,
-                   cafile: Optional[str] = None,
-                   ssl_context: Optional[ssl.SSLContext] = None,
-                   certfile: Optional[str] = None,
-                   keyfile: Optional[str] = None,
+                   cafile: str | None = None,
+                   ssl_context: ssl.SSLContext | None = None,
+                   certfile: str | None = None,
+                   keyfile: str | None = None,
                    url: str = "",
                    socket_family: socket.AddressFamily = socket.AF_INET
                    ) -> Generator[TClient, None, None]:

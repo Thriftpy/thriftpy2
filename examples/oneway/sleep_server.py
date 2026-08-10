@@ -6,7 +6,7 @@ from thriftpy2.rpc import make_server
 sleep_thrift = thriftpy2.load("sleep.thrift", module_name="sleep_thrift")
 
 
-class Dispatcher(object):
+class Dispatcher:
     def sleep(self, seconds):
         print("I'm going to sleep %d seconds" % seconds)
         time.sleep(seconds)

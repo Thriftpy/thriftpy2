@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-import sys
-from typing import Callable, Optional
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
+from typing import Callable, Protocol
 
 from ..thrift import TType, TException
 
@@ -34,7 +28,7 @@ class TTransportFactory(Protocol):
         ...
 
 
-class TTransportBase(object):
+class TTransportBase:
     """Base class for Thrift transport layer."""
 
     def is_open(self) -> bool:
@@ -100,7 +94,7 @@ class TTransportException(TException):
     END_OF_FILE = 4
 
     def __init__(self, type: int = UNKNOWN,
-                 message: Optional[str] = None) -> None:
-        super(TTransportException, self).__init__()
+                 message: str | None = None) -> None:
+        super().__init__()
         self.type = type
         self.message = message

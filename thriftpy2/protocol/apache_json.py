@@ -64,7 +64,7 @@ def _ensure_b64_encode(val):
     return val
 
 
-class _ListSink(object):
+class _ListSink:
     """Minimal coroutine-like sink for ijson's items_coro pipeline.
 
     ijson's chained-coroutine API calls ``target.send(item)`` on its sink, so
@@ -83,7 +83,7 @@ class _ListSink(object):
         pass
 
 
-class TApacheJSONProtocolFactory(object):
+class TApacheJSONProtocolFactory:
     def get_protocol(self, trans):
         return TApacheJSONProtocol(trans)
 
@@ -286,7 +286,7 @@ class TApacheJSONProtocol(TProtocolBase):
                     self._dict_to_thrift(k, item_type[0]):
                         self._dict_to_thrift(v, item_type[1]) for k, v in data[3].items()
                 }
-            raise ValueError("Unsupported container type: %s" % container_type)
+            raise ValueError(f"Unsupported container type: {container_type}")
         result = {}
         base_spec = base_type.thrift_spec
         for field_idx, val in data.items():

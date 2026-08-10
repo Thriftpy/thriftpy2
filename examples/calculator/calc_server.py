@@ -7,7 +7,7 @@ from thriftpy2.rpc import make_server
 calc_thrift = thriftpy2.load("calc.thrift", module_name="calc_thrift")
 
 
-class Dispatcher(object):
+class Dispatcher:
     def add(self, a, b):
         print("add -> %s + %s" % (a, b))
         return a + b

@@ -4,7 +4,7 @@ from thriftpy2.thrift import TProcessor
 pingpong = thriftpy2.load("pingpong.thrift")
 
 
-class Dispatcher(object):
+class Dispatcher:
     def ping(self):
         print("ping pong!")
         return 'pong'

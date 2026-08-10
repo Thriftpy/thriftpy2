@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Optional
 
 from thriftpy2.transport import TTransportException
 
@@ -15,7 +16,7 @@ class TAsyncServer:
     def __init__(self, processor, trans,
                  itrans_factory=None, iprot_factory=None,
                  otrans_factory=None, oprot_factory=None,
-                 loop: Optional[asyncio.AbstractEventLoop] = None):
+                 loop: asyncio.AbstractEventLoop | None = None):
         self.processor = processor
         self.trans = trans
 
@@ -24,7 +25,7 @@ class TAsyncServer:
         self.otrans_factory = otrans_factory or self.itrans_factory
         self.oprot_factory = oprot_factory or self.iprot_factory
 
-        self.loop: Optional[asyncio.AbstractEventLoop] = loop
+        self.loop: asyncio.AbstractEventLoop | None = loop
         self.closed = False
         self.server = None
 

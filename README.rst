@@ -36,7 +36,7 @@ Install with pip:
 Features
 ========
 
-- Python 3.7+ and PyPy3.
+- Python 3.10+ and PyPy3.
 
 - Pure Python implementation. No need to compile or install the ``thrift`` package.
   All you need is thriftpy2 and a thrift file.

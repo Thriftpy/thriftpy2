@@ -75,7 +75,7 @@ def read_varint(trans):
         shift += 7
 
 
-class CompactType(object):
+class CompactType:
     STOP = 0x00
     TRUE = 0x01
     FALSE = 0x02
@@ -140,17 +140,17 @@ class TCompactProtocol(TProtocolBase):
     def read_message_begin(self):
         proto_id = self._read_ubyte()
         if proto_id != self.PROTOCOL_ID:
-            raise TProtocolException(TProtocolException.BAD_VERSION,
-                                     'Bad protocol id in the message: %d'
-                                     % proto_id)
+            raise TProtocolException(
+                TProtocolException.BAD_VERSION,
+                f'Bad protocol id in the message: {proto_id}')
 
         ver_type = self._read_ubyte()
         type = (ver_type >> self.TYPE_SHIFT_AMOUNT) & self.TYPE_BITS
         version = ver_type & self.VERSION_MASK
         if version != self.VERSION:
-            raise TProtocolException(TProtocolException.BAD_VERSION,
-                                     'Bad version: %d (expect %d)'
-                                     % (version, self.VERSION))
+            raise TProtocolException(
+                TProtocolException.BAD_VERSION,
+                f'Bad version: {version} (expect {self.VERSION})')
         seqid = read_varint(self.trans)
         name = self._read_string()
         return name, type, seqid
@@ -577,7 +577,7 @@ class TCompactProtocol(TProtocolBase):
             self._read_collection_end()
 
 
-class TCompactProtocolFactory(object):
+class TCompactProtocolFactory:
     def __init__(self, decode_response=True, strict_decode=False):
         self.decode_response = decode_response
         self.strict_decode = strict_decode

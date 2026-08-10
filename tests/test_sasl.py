@@ -13,7 +13,7 @@ ERROR = 4
 COMPLETE = 5
 
 
-class FakeSaslClient(object):
+class FakeSaslClient:
     """Mimics the interface of sasl.Client.
 
     With wrap=False it behaves like a QOP=auth negotiation where
@@ -49,7 +49,7 @@ class FakeSaslClient(object):
         return 'fake sasl error'
 
 
-class LoopbackTransport(object):
+class LoopbackTransport:
     """In-memory transport with scripted input and recorded output."""
 
     def __init__(self, inbuf=b''):

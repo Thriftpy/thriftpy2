@@ -5,7 +5,7 @@ from thriftpy2.rpc import make_server
 pp_thrift = thriftpy2.load("pingpong.thrift", module_name="pp_thrift")
 
 
-class Dispatcher(object):
+class Dispatcher:
     def ping(self):
         print("ping pong!")
         return 'pong'

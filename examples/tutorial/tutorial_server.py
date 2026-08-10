@@ -6,7 +6,7 @@ tutorial_thrift = thriftpy2.load("tutorial.thrift",
                                  module_name="tutorial_thrift")
 
 
-class CalculatorHandler(object):
+class CalculatorHandler:
     def __init__(self):
         self.log = {}
 

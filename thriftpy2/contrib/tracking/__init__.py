@@ -5,9 +5,13 @@ Note: When using tracking, every client should have a corresponding
 server processor.
 """
 
+from __future__ import annotations
+
 import os.path
 import time
-from typing import Callable, Optional
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 from ...thrift import TClient, TApplicationException, TMessageType, \
     TProcessor, TType
@@ -21,36 +25,36 @@ __all__ = ["TTrackedClient", "TTrackedProcessor", "TrackerBase",
            "ConsoleTracker"]
 
 
-class RequestInfo(object):
-    def __init__(self, request_id, api, seq, client, server, status, start,
-                 end, annotation, meta):
-        """Used to store call info.
+@dataclass
+class RequestInfo:
+    """Used to store call info.
 
-        :request_id: used to identity a request
-        :api: api name
-        :seq: sequence number
-        :client: client name
-        :server: server name
-        :status: request status
-        :start: start timestamp
-        :end: end timestamp
-        :annotation: application-level key-value data
-        """
-        self.request_id = request_id
-        self.api = api
-        self.seq = seq
-        self.client = client
-        self.server = server
-        self.status = status
-        self.start = start
-        self.end = end
-        self.annotation = annotation
-        self.meta = meta
+    :request_id: used to identity a request
+    :api: api name
+    :seq: sequence number
+    :client: client name
+    :server: server name
+    :status: request status
+    :start: start timestamp
+    :end: end timestamp
+    :annotation: application-level key-value data
+    """
+
+    request_id: str
+    api: str
+    seq: str
+    client: str
+    server: str
+    status: bool
+    start: int
+    end: int
+    annotation: dict[str, Any] | None
+    meta: dict[str, Any] | None
 
 
 class TTrackedClient(TClient, VersionMixin):
     def __init__(self, tracker_handler, *args, **kwargs):
-        super(TTrackedClient, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.init_version_mixin()
         self.tracker = tracker_handler
@@ -93,7 +97,7 @@ class TTrackedClient(TClient, VersionMixin):
             self._header.write(self._oprot)
 
         self.send_start = int(time.time() * 1000)
-        super(TTrackedClient, self)._send(_api, **kwargs)
+        super()._send(_api, **kwargs)
 
     def _recv(self, _api):
         if self.check_version(VersionMixin.VERSION_SUPPORT_RESPONSE_HEADER):
@@ -101,16 +105,16 @@ class TTrackedClient(TClient, VersionMixin):
             response_header.read(self._iprot)
             self.tracker.handle_response_header(response_header)
 
-        return super(TTrackedClient, self)._recv(_api)
+        return super()._recv(_api)
 
     def _req(self, _api, *args, **kwargs):
         if not self.check_version(VersionMixin.VERSION_SUPPORT_REQUEST_HEADER):
-            return super(TTrackedClient, self)._req(_api, *args, **kwargs)
+            return super()._req(_api, *args, **kwargs)
 
         exception = None
         status = False
         try:
-            res = super(TTrackedClient, self)._req(_api, *args, **kwargs)
+            res = super()._req(_api, *args, **kwargs)
             status = True
             return res
         except BaseException as e:
@@ -134,7 +138,7 @@ class TTrackedClient(TClient, VersionMixin):
 
 class TTrackedProcessor(TProcessor, VersionMixin):
     def __init__(self, tracker_handler, *args, **kwargs):
-        super(TTrackedProcessor, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.init_version_mixin()
         self.tracker = tracker_handler
         self.during_handshake = False
@@ -146,13 +150,13 @@ class TTrackedProcessor(TProcessor, VersionMixin):
             request_header = track_thrift.RequestHeader()
             request_header.read(iprot)
             self.tracker.handle(request_header)
-            res = super(TTrackedProcessor, self).process_in(iprot)
+            res = super().process_in(iprot)
 
         self._do_process(iprot, oprot, *res)
 
     def _try_upgrade(self, iprot):
         api, msg_type, seqid = iprot.read_message_begin()
-        call: Optional[Callable] = None
+        call: Callable | None = None
         if msg_type == TMessageType.CALL and api == track_method:
             self.during_handshake = True
 

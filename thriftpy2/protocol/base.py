@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-import sys
-from typing import TYPE_CHECKING, Any, Tuple
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from ..thrift import TPayload
@@ -21,7 +15,7 @@ class TProtocolFactory(Protocol):
         ...
 
 
-class TProtocolBase(object):
+class TProtocolBase:
     """Base class for Thrift protocol layer."""
 
     def __init__(self, trans: TTransportBase) -> None:
@@ -30,7 +24,7 @@ class TProtocolBase(object):
     def skip(self, ttype: int) -> None:
         raise NotImplementedError
 
-    def read_message_begin(self) -> Tuple[str, int, int]:
+    def read_message_begin(self) -> tuple[str, int, int]:
         raise NotImplementedError
 
     def read_message_end(self) -> None:

@@ -55,6 +55,6 @@ class TAsyncBufferedTransport(TAsyncTransportBase):
         return self._trans.getvalue()
 
 
-class TAsyncBufferedTransportFactory(object):
+class TAsyncBufferedTransportFactory:
     def get_transport(self, trans):
         return TAsyncBufferedTransport(trans)

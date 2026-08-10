@@ -15,14 +15,14 @@ if sys.platform == "win32":
     pytest.skip("requires fork", allow_module_level=True)
 
 
-class Dispatcher(object):
+class Dispatcher:
     def Test(self, req):
         print("Get req msg: %s" % req)
 
         assert req == "Hello!"
 
 
-class TestOneway(object):
+class TestOneway:
 
     oneway_thrift = thriftpy2.load(TEST_DIR / "oneway.thrift")
 

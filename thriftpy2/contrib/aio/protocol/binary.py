@@ -28,7 +28,7 @@ async def read_message_begin(inbuf, strict=True):
         if version != VERSION_1:
             raise TProtocolException(
                 type=TProtocolException.BAD_VERSION,
-                message='Bad version in read_message_begin: %d' % (sz))
+                message=f'Bad version in read_message_begin: {sz}')
         name_sz = unpack_i32(await inbuf.read(4))
         name = await inbuf.read(name_sz)
         name = name.decode('utf-8')
@@ -277,7 +277,7 @@ class TAsyncBinaryProtocol(TAsyncProtocolBase):
         write_val(self.trans, TType.STRUCT, obj)
 
 
-class TAsyncBinaryProtocolFactory(object):
+class TAsyncBinaryProtocolFactory:
     def __init__(self, strict_read=True, strict_write=True,
                  decode_response=True, strict_decode=False):
         self.strict_read = strict_read

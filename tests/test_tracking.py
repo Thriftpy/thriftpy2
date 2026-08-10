@@ -106,7 +106,7 @@ tracker = SampleTracker("test_client", "test_server")
 tracker_v2 = Tracker_V2("test_client", "test_server")
 
 
-class Dispatcher(object):
+class Dispatcher:
     def __init__(self):
         self.ab = addressbook.AddressBook()
         self.ab.people = {}
