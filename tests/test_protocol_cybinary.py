@@ -93,6 +93,18 @@ def test_read_i32():
     assert 1234567890 == proto.read_val(b, TType.I32)
 
 
+def test_read_truncated_memory_buffer():
+    from thriftpy2.transport import TTransportException
+
+    b = TCyMemoryBuffer(b"I\x96")
+    with pytest.raises(TTransportException):
+        proto.read_val(b, TType.I32)
+
+    b = TCyMemoryBuffer(b"\x0b\x00\x01\x00\x00\x00\x05hel")
+    with pytest.raises(TTransportException):
+        proto.TCyBinaryProtocol(b).read_struct(TItem())
+
+
 def test_write_i64():
     b = TCyMemoryBuffer()
     proto.write_val(b, TType.I64, 1234567890123456789)

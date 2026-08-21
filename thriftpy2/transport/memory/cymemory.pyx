@@ -9,6 +9,8 @@ from thriftpy2.transport.cybase cimport (
 )
 from cpython cimport bool, PyObject_GetBuffer, PyBuffer_Release, PyBUF_ANY_CONTIGUOUS, PyBUF_SIMPLE
 
+from .. import TTransportException
+
 
 cdef class TCyMemoryBuffer(CyTransportBase):
     cdef TCyBuffer buf
@@ -22,7 +24,8 @@ cdef class TCyMemoryBuffer(CyTransportBase):
 
     cdef c_read(self, int sz, char* out):
         if self.buf.data_size < sz:
-            sz = self.buf.data_size
+            raise TTransportException(TTransportException.END_OF_FILE,
+                                      "End of file reading from transport")
 
         if sz <= 0:
             out[0] = '\0'
@@ -65,6 +68,10 @@ cdef class TCyMemoryBuffer(CyTransportBase):
         self.buf.write(sz, value)
 
     def read(self, sz):
+        # short reads are allowed here so this buffer can sit underneath a
+        # buffered transport, c_read used by the protocols is exact
+        if sz > self.buf.data_size:
+            sz = self.buf.data_size
         return self.get_string(sz)
 
     def write(self, data):
