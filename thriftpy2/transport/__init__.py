@@ -8,6 +8,7 @@ from .buffered import TBufferedTransport, TBufferedTransportFactory
 from .framed import TFramedTransport, TFramedTransportFactory
 from .memory import TMemoryBuffer
 from .sasl import TSaslClientTransport, TSaslClientTransportFactory
+from .header import THeaderTransport, THeaderTransportFactory
 
 if CYTHON:
     from .buffered import TCyBufferedTransport, TCyBufferedTransportFactory
@@ -43,4 +44,5 @@ __all__ = [
     "TCyFramedTransport", "TCyFramedTransportFactory",
     "TSaslClientTransport", "TCySaslClientTransport",
     "TSaslClientTransportFactory", "TCySaslClientTransportFactory",
+    "THeaderTransport", "THeaderTransportFactory",
 ]

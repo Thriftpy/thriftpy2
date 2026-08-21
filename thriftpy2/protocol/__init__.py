@@ -6,6 +6,7 @@ from .json import TJSONProtocol, TJSONProtocolFactory
 from .apache_json import TApacheJSONProtocol, TApacheJSONProtocolFactory
 from .compact import TCompactProtocol, TCompactProtocolFactory
 from .multiplex import TMultiplexedProtocol, TMultiplexedProtocolFactory
+from .header import THeaderProtocol, THeaderProtocolFactory
 
 from thriftpy2._compat import PYPY, CYTHON
 if not PYPY:
@@ -28,4 +29,5 @@ __all__ = ['TProtocolBase', 'TBinaryProtocol', 'TBinaryProtocolFactory',
            'TJSONProtocol', 'TJSONProtocolFactory',
            'TApacheJSONProtocol', 'TApacheJSONProtocolFactory',
            'TMultiplexedProtocol', 'TMultiplexedProtocolFactory',
-           'TCompactProtocol', 'TCompactProtocolFactory']
+           'TCompactProtocol', 'TCompactProtocolFactory',
+           'THeaderProtocol', 'THeaderProtocolFactory']

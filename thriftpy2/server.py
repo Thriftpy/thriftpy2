@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import threading
 
-from thriftpy2.protocol import TBinaryProtocolFactory
-from thriftpy2.protocol.base import TProtocolFactory
+from thriftpy2.protocol import TBinaryProtocolFactory, THeaderProtocolFactory
+from thriftpy2.protocol.base import TProtocolBase, TProtocolFactory
 from thriftpy2.thrift import TProcessor
 from thriftpy2.transport import (
     TBufferedTransportFactory,
@@ -31,6 +31,27 @@ class TServer:
         self.otrans_factory = otrans_factory or self.itrans_factory
         self.oprot_factory = oprot_factory or self.iprot_factory
 
+        input_is_header = isinstance(self.iprot_factory,
+                                     THeaderProtocolFactory)
+        output_is_header = isinstance(self.oprot_factory,
+                                      THeaderProtocolFactory)
+        if input_is_header != output_is_header:
+            raise ValueError("THeaderProtocol servers require that both the "
+                             "input and output protocols are THeaderProtocol.")
+
+    def _make_protocols(self, client: TTransportBase) -> tuple[
+            TTransportBase, TTransportBase, TProtocolBase, TProtocolBase]:
+        itrans = self.itrans_factory.get_transport(client)
+        iprot = self.iprot_factory.get_protocol(itrans)
+        if isinstance(self.iprot_factory, THeaderProtocolFactory):
+            # THeaderProtocol detects the client dialect while reading and
+            # must answer with the same one, so a single protocol instance
+            # has to serve both directions
+            return itrans, itrans, iprot, iprot
+        otrans = self.otrans_factory.get_transport(client)
+        oprot = self.oprot_factory.get_protocol(otrans)
+        return itrans, otrans, iprot, oprot
+
     def serve(self) -> None:
         pass
 
@@ -49,10 +70,7 @@ class TSimpleServer(TServer):
         self.trans.listen()
         while not self.closed:
             client = self.trans.accept()
-            itrans = self.itrans_factory.get_transport(client)
-            otrans = self.otrans_factory.get_transport(client)
-            iprot = self.iprot_factory.get_protocol(itrans)
-            oprot = self.oprot_factory.get_protocol(otrans)
+            itrans, otrans, iprot, oprot = self._make_protocols(client)
             try:
                 while not self.closed:
                     self.processor.process(iprot, oprot)
@@ -90,10 +108,7 @@ class TThreadedServer(TServer):
                 logger.exception(x)
 
     def handle(self, client: TTransportBase) -> None:
-        itrans = self.itrans_factory.get_transport(client)
-        otrans = self.otrans_factory.get_transport(client)
-        iprot = self.iprot_factory.get_protocol(itrans)
-        oprot = self.oprot_factory.get_protocol(otrans)
+        itrans, otrans, iprot, oprot = self._make_protocols(client)
         try:
             while True:
                 self.processor.process(iprot, oprot)
