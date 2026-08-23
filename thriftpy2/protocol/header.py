@@ -107,8 +107,17 @@ class THeaderProtocol(TProtocolBase):
         self._oprot = self._make_write_protocol(protocol_id)
         self._protocols_key = key
 
+    def _guarded_read(self, method, *args):
+        try:
+            return method(*args)
+        except Exception:
+            # a failed read can leave dirty parse state in the sub
+            # protocol, force a rebuild before the next message
+            self._protocols_key = None
+            raise
+
     def skip(self, ttype):
-        self._iprot.skip(ttype)
+        self._guarded_read(self._iprot.skip, ttype)
 
     def read_message_begin(self):
         if self._is_server is None:
@@ -118,13 +127,16 @@ class THeaderProtocol(TProtocolBase):
             self.trans.read_frame()
             self._set_protocols()
         except TApplicationException as exc:
+            # the failed frame may have switched the write dialect, restore
+            # the one the peer spoke before it
+            self.trans.reset_protocol_id(prev_protocol_id)
+            self._protocols_key = None
             if not self._is_server:
                 # only a server answers frames it cannot decode, a client
                 # must never write an exception into the request stream
                 raise
             # reply in the protocol the peer spoke before this frame, the
             # header may have asked for one we cannot provide
-            self.trans.reset_protocol_id(prev_protocol_id)
             oprot = self._make_write_protocol(prev_protocol_id)
             oprot.write_message_begin(
                 "", TMessageType.EXCEPTION, self.trans.sequence_id)
@@ -132,10 +144,10 @@ class THeaderProtocol(TProtocolBase):
             oprot.write_message_end()
             self.trans.flush()
             raise
-        return self._iprot.read_message_begin()
+        return self._guarded_read(self._iprot.read_message_begin)
 
     def read_message_end(self):
-        self._iprot.read_message_end()
+        self._guarded_read(self._iprot.read_message_end)
 
     def write_message_begin(self, name, ttype, seqid):
         if self._is_server is None:
@@ -147,7 +159,7 @@ class THeaderProtocol(TProtocolBase):
         self._oprot.write_message_end()
 
     def read_struct(self, obj):
-        return self._iprot.read_struct(obj)
+        return self._guarded_read(self._iprot.read_struct, obj)
 
     def write_struct(self, obj):
         self._oprot.write_struct(obj)

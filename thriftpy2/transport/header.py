@@ -109,19 +109,32 @@ def _write_string(buf, value):
     buf.write(value)
 
 
+# filled on first use, a module level import of the protocol modules would
+# be a cycle through thriftpy2.protocol
+_binary_markers = None
+_compact_markers = None
+
+
 def _is_binary_header(word):
-    # imported lazily, a module level import would be a cycle through
-    # thriftpy2.protocol
-    from ..protocol.binary import VERSION_1, VERSION_MASK
+    global _binary_markers
+    if _binary_markers is None:
+        from ..protocol.binary import VERSION_1, VERSION_MASK
+        _binary_markers = (VERSION_MASK, VERSION_1)
+    version_mask, version_1 = _binary_markers
     value, = I32.unpack(word)
-    return value & VERSION_MASK == VERSION_1
+    return value & version_mask == version_1
 
 
 def _is_compact_header(word):
-    from ..protocol.compact import TCompactProtocol
-    return (word[0] == TCompactProtocol.PROTOCOL_ID
-            and word[1] & TCompactProtocol.VERSION_MASK
-            == TCompactProtocol.VERSION)
+    global _compact_markers
+    if _compact_markers is None:
+        from ..protocol.compact import TCompactProtocol
+        _compact_markers = (TCompactProtocol.PROTOCOL_ID,
+                            TCompactProtocol.VERSION_MASK,
+                            TCompactProtocol.VERSION)
+    protocol_id, version_mask, version = _compact_markers
+    return (word[0] == protocol_id
+            and word[1] & version_mask == version)
 
 
 class _FrameBuffer(TMemoryBuffer):
@@ -130,6 +143,12 @@ class _FrameBuffer(TMemoryBuffer):
     Reading past the end of the frame raises END_OF_FILE instead of
     returning short data, so the sub protocols surface truncated or corrupt
     frames as a clean transport error rather than a struct.error.
+
+    ``remaining`` only tracks reads through this Python level ``read``; the
+    Cython protocols consume frames through ``c_read``, which bypasses it.
+    That is fine because ``remaining`` is only consulted by
+    ``THeaderTransport._read``, and transport level reads are never mixed
+    with Cython protocol consumption on one connection.
     """
 
     def __init__(self):

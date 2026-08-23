@@ -356,6 +356,34 @@ def test_client_does_not_answer_undecodable_reply():
     # a client must never write an exception frame back towards the server
     assert written == []
 
+    # a reply asking for an unknown protocol must not corrupt the
+    # negotiated protocol id of later requests
+    trans.setvalue(header_frame(b"\x03\x00", b""))
+    with pytest.raises(TApplicationException):
+        proto.read_message_begin()
+    assert written == []
+    assert proto.trans.protocol_id == THeaderSubprotocolID.BINARY
+
+
+def test_failed_read_does_not_poison_next_message():
+    # compact keeps parse state on the protocol instance, a failed read
+    # must not leak it into the next message via the protocol cache
+    proto = THeaderProtocol(TMemoryBuffer(),
+                            default_protocol=THeaderSubprotocolID.COMPACT)
+    payload = encode_message(proto)[18:]
+    truncated = header_frame(b"\x02\x00", payload[:-1])
+    good = header_frame(b"\x02\x00", payload)
+
+    back = THeaderProtocol(TMemoryBuffer(truncated + good),
+                           default_protocol=THeaderSubprotocolID.COMPACT)
+    assert back.read_message_begin() == ("ping", TMessageType.CALL, 7)
+    with pytest.raises(TTransportException):
+        back.read_struct(Empty())
+
+    assert back.read_message_begin() == ("ping", TMessageType.CALL, 7)
+    back.read_struct(Empty())
+    back.read_message_end()
+
 
 def test_oversized_headers_rejected():
     proto = THeaderProtocol(TMemoryBuffer())
