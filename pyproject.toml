@@ -47,6 +47,7 @@ dev = [
     "pytest-reraise",
     "pytest>=6.1.1,<8.2.0",
     "aiohttp>=3.8.0,<4.0.0",
+    "gunicorn",
 ]
 
 aiohttp = [

@@ -143,6 +143,62 @@ Async Client
     if __name__ == '__main__':
         asyncio.run(main())
 
+Gunicorn
+--------
+
+``thriftpy2.contrib.gunicorn`` provides worker classes so a processor can be
+served by gunicorn, with its multi process management, graceful reload and
+the rest of its features. Expose a processor in a module:
+
+.. code:: python
+
+    # app.py
+    import thriftpy2
+    from thriftpy2.thrift import TProcessor
+
+    pingpong_thrift = thriftpy2.load("pingpong.thrift", module_name="pingpong_thrift")
+
+
+    class Dispatcher(object):
+        def ping(self):
+            return "pong"
+
+
+    app = TProcessor(pingpong_thrift.PingPong, Dispatcher())
+
+and start it with the gunicorn command:
+
+.. code:: bash
+
+    gunicorn -k thriftpy2.contrib.gunicorn.ThriftSyncWorker -w 4 -b 127.0.0.1:6000 app:app
+
+``ThriftSyncWorker`` handles one connection at a time per worker process.
+``ThriftAsyncWorker`` serves a ``TAsyncProcessor`` with async handlers on an
+asyncio event loop and handles many connections per process. Idle
+connections are closed after ``--keep-alive`` seconds, and ``--max-requests``
+counts thrift calls. The protocol and transport default to binary over
+buffered. To use others, subclass a worker and override ``proto_factory``
+and ``trans_factory``, which can be done right in the gunicorn config file:
+
+.. code:: python
+
+    # gunicorn.conf.py
+    from thriftpy2.contrib.gunicorn import ThriftSyncWorker
+    from thriftpy2.protocol import TCompactProtocolFactory
+    from thriftpy2.transport import TFramedTransportFactory
+
+
+    class Worker(ThriftSyncWorker):
+        proto_factory = TCompactProtocolFactory()
+        trans_factory = TFramedTransportFactory()
+
+
+    worker_class = Worker
+
+.. code:: bash
+
+    gunicorn -c gunicorn.conf.py -w 4 -b 127.0.0.1:6000 app:app
+
 See the ``examples`` and ``tests`` directories for more usage examples.
 
 
