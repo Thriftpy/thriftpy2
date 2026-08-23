@@ -8,13 +8,14 @@ from __future__ import annotations
 import struct
 import zlib
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 from .._compat import CYTHON
 from ..thrift import TApplicationException
 from .base import TTransportBase, TTransportException, readall
 from .memory import TMemoryBuffer
 
-if CYTHON:
+if not TYPE_CHECKING and CYTHON:
     from .memory import TCyMemoryBuffer as TMemoryBuffer  # noqa
 
 U16 = struct.Struct("!H")
