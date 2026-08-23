@@ -146,9 +146,13 @@ Async Client
 Gunicorn
 --------
 
-``thriftpy2.contrib.gunicorn`` provides worker classes so a processor can be
-served by gunicorn, with its multi process management, graceful reload and
-the rest of its features. Expose a processor in a module:
+Running under gunicorn is the recommended way to serve thriftpy2 in
+production. A single Python process is limited to one core, while gunicorn
+forks multiple worker processes to use all of them, and brings mature process
+management on top, such as graceful shutdown and reload, automatic restart of
+crashed or leaking workers and adjusting the worker count at runtime.
+``thriftpy2.contrib.gunicorn`` provides the worker classes for it. Expose a
+processor in a module:
 
 .. code:: python
 
