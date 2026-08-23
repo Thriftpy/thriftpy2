@@ -381,13 +381,14 @@ class TestDeprecatedTimeoutKwarg:
     """
     def setup_method(self):
         # Create and apply a fresh patch for each test.
-        self.async_sock = patch(
+        self.patcher = patch(
             'thriftpy2.contrib.aio.rpc.TAsyncSocket',
             side_effect=RuntimeError,
-        ).__enter__()
+        )
+        self.async_sock = self.patcher.start()
 
     def teardown_method(self):
-        self.async_sock.__exit__()  # Clean up patch
+        self.patcher.stop()
 
     @pytest.mark.asyncio
     async def test_no_timeout_given(self):
