@@ -53,11 +53,13 @@ class ThriftAsyncWorker(ThriftWorkerMixin, base.Worker):
     proto_factory = TAsyncBinaryProtocolFactory()
     trans_factory = TAsyncBufferedTransportFactory()
 
+    loop: asyncio.AbstractEventLoop
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.loop = None
-        self.servers = []
-        self.connections = {}
+        # the loop is created in init_process, after the fork
+        self.servers: list[asyncio.AbstractServer] = []
+        self.connections: dict[asyncio.Task, _ClientStream] = {}
         self.quick_shutdown = False
 
     @classmethod
@@ -108,7 +110,7 @@ class ThriftAsyncWorker(ThriftWorkerMixin, base.Worker):
         ssl_context = gsock.ssl_context(self.cfg) if self.cfg.is_ssl else None
         for s in self.sockets:
             server = await asyncio.start_server(
-                self.handle, sock=s.sock, ssl=ssl_context)
+                self.handle, sock=getattr(s, "sock", s), ssl=ssl_context)
             self.servers.append(server)
 
         while self.alive:
@@ -127,6 +129,7 @@ class ThriftAsyncWorker(ThriftWorkerMixin, base.Worker):
             writer.close()
             return
         task = asyncio.current_task()
+        assert task is not None
         client = _ClientStream(reader, writer, self.cfg.keepalive or None)
         self.connections[task] = client
         itrans, otrans, iprot, oprot = self.make_protocols(client)
