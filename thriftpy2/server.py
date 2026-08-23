@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 
-from thriftpy2.protocol import TBinaryProtocolFactory, THeaderProtocolFactory
+from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.protocol.base import TProtocolBase, TProtocolFactory
 from thriftpy2.thrift import TProcessor
 from thriftpy2.transport import (
@@ -31,22 +31,21 @@ class TServer:
         self.otrans_factory = otrans_factory or self.itrans_factory
         self.oprot_factory = oprot_factory or self.iprot_factory
 
-        input_is_header = isinstance(self.iprot_factory,
-                                     THeaderProtocolFactory)
-        output_is_header = isinstance(self.oprot_factory,
-                                      THeaderProtocolFactory)
-        if input_is_header != output_is_header:
-            raise ValueError("THeaderProtocol servers require that both the "
-                             "input and output protocols are THeaderProtocol.")
+        # a factory declaring shared_instance produces protocols that detect
+        # the client dialect while reading and must answer through the same
+        # instance, e.g. THeaderProtocolFactory
+        input_shared = getattr(self.iprot_factory, "shared_instance", False)
+        output_shared = getattr(self.oprot_factory, "shared_instance", False)
+        if input_shared != output_shared:
+            raise ValueError("Protocols sharing one instance for both "
+                             "directions require that the input and output "
+                             "protocol factories do so as well.")
 
     def _make_protocols(self, client: TTransportBase) -> tuple[
             TTransportBase, TTransportBase, TProtocolBase, TProtocolBase]:
         itrans = self.itrans_factory.get_transport(client)
         iprot = self.iprot_factory.get_protocol(itrans)
-        if isinstance(self.iprot_factory, THeaderProtocolFactory):
-            # THeaderProtocol detects the client dialect while reading and
-            # must answer with the same one, so a single protocol instance
-            # has to serve both directions
+        if getattr(self.iprot_factory, "shared_instance", False):
             return itrans, itrans, iprot, iprot
         otrans = self.otrans_factory.get_transport(client)
         oprot = self.oprot_factory.get_protocol(otrans)

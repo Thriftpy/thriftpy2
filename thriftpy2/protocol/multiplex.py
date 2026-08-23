@@ -27,6 +27,10 @@ class TMultiplexedProtocolFactory:
     def __init__(self, proto_factory: TProtocolFactory, service_name):
         self._proto_factory = proto_factory
         self.service_name = service_name
+        # servers must keep treating a wrapped shared-instance protocol,
+        # e.g. THeaderProtocol, as one instance for both directions
+        self.shared_instance = getattr(proto_factory, "shared_instance",
+                                       False)
 
     def get_protocol(self, trans):
         proto = self._proto_factory.get_protocol(trans)

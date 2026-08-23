@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from thriftpy2._compat import CYTHON, PYPY
+from thriftpy2._compat import CYTHON
 from thriftpy2.thrift import TApplicationException, TMessageType
 from thriftpy2.transport.header import (
     THeaderClientType,
@@ -16,7 +16,7 @@ from .compact import TCompactProtocol
 
 if TYPE_CHECKING:
     TCyBinaryProtocol = TBinaryProtocol
-elif CYTHON and not PYPY:
+elif CYTHON:
     from .cybin import TCyBinaryProtocol
 else:
     TCyBinaryProtocol = TBinaryProtocol
@@ -30,8 +30,8 @@ PROTOCOLS_BY_ID = {
 # unframed clients are read straight from the wire, the accelerated binary
 # protocol needs a Cython transport so the pure Python one is used there
 UNFRAMED_PROTOCOLS_BY_ID = {
+    **PROTOCOLS_BY_ID,
     THeaderSubprotocolID.BINARY: TBinaryProtocol,
-    THeaderSubprotocolID.COMPACT: TCompactProtocol,
 }
 
 
@@ -55,6 +55,10 @@ class THeaderProtocol(TProtocolBase):
         self.trans: THeaderTransport = trans
         self.decode_response = decode_response
         self.strict_decode = strict_decode
+        # latched by the first read or write, a client always writes its
+        # request before reading anything
+        self._is_server = None
+        self._protocols_key = None
         self._iprot: TProtocolBase
         self._oprot: TProtocolBase
         self._set_protocols()
@@ -87,6 +91,11 @@ class THeaderProtocol(TProtocolBase):
 
     def _set_protocols(self):
         protocol_id = self.trans.protocol_id
+        # a connected peer virtually never changes dialect, rebuild the sub
+        # protocols only when it actually does
+        key = (self.trans.client_type, protocol_id)
+        if key == self._protocols_key:
+            return
         kwargs = dict(decode_response=self.decode_response,
                       strict_decode=self.strict_decode)
         if self.trans.is_unframed:
@@ -96,19 +105,26 @@ class THeaderProtocol(TProtocolBase):
             cls = self._protocol_cls(PROTOCOLS_BY_ID, protocol_id)
             self._iprot = cls(self.trans.read_buffer, **kwargs)
         self._oprot = self._make_write_protocol(protocol_id)
+        self._protocols_key = key
 
     def skip(self, ttype):
         self._iprot.skip(ttype)
 
     def read_message_begin(self):
+        if self._is_server is None:
+            self._is_server = True
         prev_protocol_id = self.trans.protocol_id
         try:
             self.trans.read_frame()
             self._set_protocols()
         except TApplicationException as exc:
+            if not self._is_server:
+                # only a server answers frames it cannot decode, a client
+                # must never write an exception into the request stream
+                raise
             # reply in the protocol the peer spoke before this frame, the
             # header may have asked for one we cannot provide
-            self.trans._protocol_id = prev_protocol_id
+            self.trans.reset_protocol_id(prev_protocol_id)
             oprot = self._make_write_protocol(prev_protocol_id)
             oprot.write_message_begin(
                 "", TMessageType.EXCEPTION, self.trans.sequence_id)
@@ -122,6 +138,8 @@ class THeaderProtocol(TProtocolBase):
         self._iprot.read_message_end()
 
     def write_message_begin(self, name, ttype, seqid):
+        if self._is_server is None:
+            self._is_server = False
         self.trans.sequence_id = seqid
         self._oprot.write_message_begin(name, ttype, seqid)
 
@@ -136,6 +154,10 @@ class THeaderProtocol(TProtocolBase):
 
 
 class THeaderProtocolFactory:
+    # the sub protocol is detected while reading and replies must use the
+    # same dialect, so servers route both directions through one instance
+    shared_instance = True
+
     def __init__(self, allowed_client_types=(THeaderClientType.HEADERS,),
                  default_protocol=THeaderSubprotocolID.BINARY,
                  decode_response=True, strict_decode=False):

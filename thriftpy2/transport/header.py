@@ -24,14 +24,6 @@ HEADER_MAGIC = 0x0FFF
 DEFAULT_MAX_FRAME_SIZE = 16384000
 HARD_MAX_FRAME_SIZE = 0x3FFFFFFF
 
-# mirrored from protocol/binary.py and protocol/compact.py, importing them
-# here would create an import cycle through thriftpy2.protocol
-_BINARY_VERSION_MASK = -65536
-_BINARY_VERSION_1 = -2147418112
-_COMPACT_PROTOCOL_ID = 0x82
-_COMPACT_VERSION = 1
-_COMPACT_VERSION_MASK = 0x1F
-
 
 class THeaderClientType:
     HEADERS = 0x00
@@ -72,6 +64,9 @@ _FRAMED_CLIENT_TYPES = (
 )
 
 
+# local varint helpers instead of the ones in protocol/compact.py: these
+# operate on plain buffers and turn truncated input into a clean
+# END_OF_FILE, compact's read_varint would raise a bare TypeError there
 def _write_varint(buf, n):
     if n < 0:
         raise ValueError("varint must not be negative")
@@ -115,13 +110,44 @@ def _write_string(buf, value):
 
 
 def _is_binary_header(word):
+    # imported lazily, a module level import would be a cycle through
+    # thriftpy2.protocol
+    from ..protocol.binary import VERSION_1, VERSION_MASK
     value, = I32.unpack(word)
-    return value & _BINARY_VERSION_MASK == _BINARY_VERSION_1
+    return value & VERSION_MASK == VERSION_1
 
 
 def _is_compact_header(word):
-    return (word[0] == _COMPACT_PROTOCOL_ID
-            and word[1] & _COMPACT_VERSION_MASK == _COMPACT_VERSION)
+    from ..protocol.compact import TCompactProtocol
+    return (word[0] == TCompactProtocol.PROTOCOL_ID
+            and word[1] & TCompactProtocol.VERSION_MASK
+            == TCompactProtocol.VERSION)
+
+
+class _FrameBuffer(TMemoryBuffer):
+    """Memory buffer holding the payload of one incoming frame.
+
+    Reading past the end of the frame raises END_OF_FILE instead of
+    returning short data, so the sub protocols surface truncated or corrupt
+    frames as a clean transport error rather than a struct.error.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.remaining = 0
+
+    def setvalue(self, value):
+        super().setvalue(value)
+        self.remaining = len(value)
+
+    def read(self, sz):
+        data = super().read(sz)
+        self.remaining -= len(data)
+        if len(data) != sz:
+            raise TTransportException(
+                TTransportException.END_OF_FILE,
+                "End of frame while reading payload.")
+        return data
 
 
 class THeaderTransport(TTransportBase):
@@ -139,7 +165,7 @@ class THeaderTransport(TTransportBase):
         self._client_type = THeaderClientType.HEADERS
         self._allowed_client_types = tuple(allowed_client_types)
 
-        self.read_buffer = TMemoryBuffer()
+        self.read_buffer = _FrameBuffer()
         self.write_buffer = TMemoryBuffer()
         self._pending = b""
 
@@ -202,6 +228,11 @@ class THeaderTransport(TTransportBase):
     def is_unframed(self):
         return self._client_type in _UNFRAMED_CLIENT_TYPES
 
+    def reset_protocol_id(self, protocol_id):
+        # used when answering a frame that asked for an unsupported
+        # protocol, the reply must use the one the peer spoke before
+        self._protocol_id = protocol_id
+
     @property
     def protocol_id(self):
         if self._client_type == THeaderClientType.HEADERS:
@@ -223,11 +254,14 @@ class THeaderTransport(TTransportBase):
             return data
         if self.is_unframed:
             return self._trans.read(sz)
-        data = self.read_buffer.read(sz)
-        if not data:
+        if self.read_buffer.remaining == 0:
+            # the current frame is exhausted, fetch the next one
             self.read_frame()
-            data = self.read_buffer.read(sz)
-        return data
+            if self._pending:
+                # read_frame detected an unframed client instead
+                data, self._pending = self._pending[:sz], self._pending[sz:]
+                return data
+        return self.read_buffer.read(sz)
 
     def _set_client_type(self, client_type):
         if client_type not in self._allowed_client_types:
@@ -390,6 +424,11 @@ class THeaderTransport(TTransportBase):
         padding = (4 - headers.tell() % 4) % 4
         headers.write(b"\x00" * padding)
         header_bytes = headers.getvalue()
+        # the header section length is a 16 bit count of 4 byte words
+        if len(header_bytes) // 4 > 0xFFFF:
+            raise TTransportException(
+                TTransportException.SIZE_LIMIT,
+                "Headers are too large to fit in the frame header section.")
 
         out = BytesIO()
         out.write(I32.pack(10 + len(header_bytes) + len(payload)))

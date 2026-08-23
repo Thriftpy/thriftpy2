@@ -78,6 +78,17 @@ def free_port():
         return sock.getsockname()[-1]
 
 
+def wait_for_port(port, timeout=5.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                return
+        except OSError:
+            time.sleep(0.01)
+    raise RuntimeError("server did not start listening on port %d" % port)
+
+
 @contextlib.contextmanager
 def header_server(proto_factory):
     port = free_port()
@@ -91,7 +102,7 @@ def header_server(proto_factory):
     )
     thread = threading.Thread(target=server.serve, daemon=True)
     thread.start()
-    time.sleep(0.1)
+    wait_for_port(port)
     try:
         yield port
     finally:
@@ -176,6 +187,49 @@ def test_server_requires_header_on_both_sides():
         TServer(processor, TServerSocket(port=0),
                 iprot_factory=THeaderProtocolFactory(),
                 oprot_factory=TBinaryProtocolFactory())
+
+
+def test_wrapped_header_factory_shares_instance():
+    # a wrapper factory must forward the shared instance declaration so
+    # the server guard cannot be bypassed
+    from thriftpy2.protocol import TMultiplexedProtocolFactory
+    factory = TMultiplexedProtocolFactory(THeaderProtocolFactory(), "svc")
+    assert factory.shared_instance
+
+    processor = TProcessor(addressbook.AddressBookService, Dispatcher())
+    with pytest.raises(ValueError):
+        TServer(processor, TServerSocket(port=0),
+                iprot_factory=factory,
+                oprot_factory=TBinaryProtocolFactory())
+
+
+@pytest.mark.parametrize("proto_factory,trans_factory", [
+    (THeaderProtocolFactory(allowed_client_types=ALL_CLIENT_TYPES),
+     TBufferedTransportFactory()),
+    (TBinaryProtocolFactory(), TBufferedTransportFactory()),
+    (TCompactProtocolFactory(), TFramedTransportFactory()),
+], ids=["header", "unframed-binary", "framed-compact"])
+def test_header_over_http(proto_factory, trans_factory):
+    from thriftpy2 import http
+
+    port = free_port()
+    server = http.make_server(
+        addressbook.AddressBookService, Dispatcher(),
+        host="127.0.0.1", port=port,
+        proto_factory=THeaderProtocolFactory(
+            allowed_client_types=ALL_CLIENT_TYPES))
+    thread = threading.Thread(target=server.serve, daemon=True)
+    thread.start()
+    wait_for_port(port)
+    try:
+        with http.client_context(
+            addressbook.AddressBookService, "127.0.0.1", port,
+            proto_factory=proto_factory, trans_factory=trans_factory,
+        ) as client:
+            exercise(client)
+    finally:
+        server.httpd.shutdown()
+        thread.join(timeout=1)
 
 
 # wire level tests on memory buffers
@@ -275,10 +329,57 @@ def test_truncated_payload(cut):
     payload = binary_payload()
     data = header_frame(b"\x00\x00", payload[:cut])
     back = THeaderProtocol(TMemoryBuffer(data))
-    # must fail loudly, never decode garbage
-    with pytest.raises(Exception):
+    # must fail with a clean transport error, never decode garbage
+    with pytest.raises(TTransportException) as exc:
         back.read_message_begin()
         back.read_struct(Empty())
+    assert exc.value.type == TTransportException.END_OF_FILE
+
+
+def test_client_does_not_answer_undecodable_reply():
+    written = []
+
+    class RecordingBuffer(TMemoryBuffer):
+        def write(self, buf):
+            written.append(bytes(buf))
+            super().write(buf)
+
+    trans = RecordingBuffer()
+    proto = THeaderProtocol(trans)
+    encode_message(proto)  # the request write latches the client role
+    written.clear()
+
+    # a reply with an unknown transform
+    trans.setvalue(header_frame(b"\x00\x01\x7f", b""))
+    with pytest.raises(TApplicationException):
+        proto.read_message_begin()
+    # a client must never write an exception frame back towards the server
+    assert written == []
+
+
+def test_oversized_headers_rejected():
+    proto = THeaderProtocol(TMemoryBuffer())
+    proto.set_header(b"k", b"x" * 300000)
+    with pytest.raises(TTransportException) as exc:
+        encode_message(proto)
+    assert exc.value.type == TTransportException.SIZE_LIMIT
+
+
+def test_plain_protocol_over_header_transport():
+    # a plain protocol layered over THeaderTransport via the transport
+    # factory, both for a detected unframed client and a framed one
+    from thriftpy2.protocol.binary import TBinaryProtocol
+    from thriftpy2.transport.header import THeaderTransportFactory
+
+    factory = THeaderTransportFactory(allowed_client_types=ALL_CLIENT_TYPES)
+    payload = binary_payload()
+    framed = struct.pack("!i", len(payload)) + payload
+    for data in (payload, framed):
+        trans = factory.get_transport(TMemoryBuffer(data))
+        proto = TBinaryProtocol(trans)
+        assert proto.read_message_begin() == ("ping", TMessageType.CALL, 7)
+        proto.read_struct(Empty())
+        proto.read_message_end()
 
 
 def test_frame_too_large():
