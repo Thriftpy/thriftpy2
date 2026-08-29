@@ -47,7 +47,7 @@ from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.protocol.base import TProtocolFactory
 from thriftpy2.server import TServer
 from thriftpy2.thrift import TClient, TProcessor
-from thriftpy2.transport import TBufferedTransportFactory, TMemoryBuffer
+from thriftpy2.transport import TBufferedTransportFactory
 from thriftpy2.transport.base import TTransportFactory, TTransportBase
 
 HTTP_URI = '{scheme}://{host}:{port}{path}'
@@ -55,25 +55,34 @@ DEFAULT_HTTP_CLIENT_TIMEOUT_MS = 30000  # 30 seconds
 
 
 class TFileObjectTransport(TTransportBase):
-    """Wraps a file-like object to make it work as a Thrift transport."""
+    """Wraps file-like object(s) to make them work as a Thrift transport.
 
-    def __init__(self, fileobj: BinaryIO) -> None:
+    A separate write_fileobj may be given when reads and writes go to
+    different streams, e.g. an HTTP request body and response body.
+    """
+
+    def __init__(self, fileobj: BinaryIO,
+                 write_fileobj: BinaryIO | None = None) -> None:
         self.fileobj = fileobj
+        self.write_fileobj = (write_fileobj if write_fileobj is not None
+                              else fileobj)
 
     def isOpen(self) -> bool:
         return True
 
     def close(self) -> None:
         self.fileobj.close()
+        if self.write_fileobj is not self.fileobj:
+            self.write_fileobj.close()
 
     def read(self, sz: int) -> bytes:
         return self.fileobj.read(sz)
 
     def write(self, buf: bytes) -> None:
-        self.fileobj.write(buf)
+        self.write_fileobj.write(buf)
 
     def flush(self) -> None:
-        self.fileobj.flush()
+        self.write_fileobj.flush()
 
 
 class ResponseException(Exception):
@@ -142,12 +151,13 @@ class THttpServer(TServer):
                 # replicate that properly to prevent timeout issues
                 content_len = int(self.headers['Content-Length'])
                 buf = BytesIO(self.rfile.read(content_len))
-                itrans = TFileObjectTransport(buf)
-                itrans = thttpserver.itrans_factory.get_transport(itrans)
-                iprot = thttpserver.iprot_factory.get_protocol(itrans)
-
-                otrans = TMemoryBuffer()
-                oprot = thttpserver.oprot_factory.get_protocol(otrans)
+                out = BytesIO()
+                # _make_protocols needs one duplex transport so protocols
+                # that detect the client dialect while reading can answer
+                # through the same instance
+                client = TFileObjectTransport(buf, write_fileobj=out)
+                itrans, otrans, iprot, oprot = \
+                    thttpserver._make_protocols(client)
                 try:
                     thttpserver.processor.process(iprot, oprot)
                 except ResponseException as exn:
@@ -156,7 +166,7 @@ class THttpServer(TServer):
                     self.send_response(200)
                     self.send_header("content-type", "application/x-thrift")
                     self.end_headers()
-                    self.wfile.write(otrans.getvalue())
+                    self.wfile.write(out.getvalue())
 
         self.httpd = server_class(server_address, RequestHandler)
 

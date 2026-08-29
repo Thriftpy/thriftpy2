@@ -89,6 +89,8 @@ python lib):
 
   * json protocol
 
+  * header protocol (THeader)
+
   * buffered transport (python & cython)
 
   * framed transport
