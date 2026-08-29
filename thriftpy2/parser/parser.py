@@ -888,20 +888,37 @@ def _fill_incomplete_ttype(tmodule, definition, incomplete_type):
 def _get_definition(thrift, name, lineno, incomplete_type):
     """Get definition from thrift module and incomplete type map.
     """
+    def not_found():
+        return ThriftParserError(f'No type found: {name!r}, at line {lineno}')
+
+    # Walk every part of a dotted name, so that a missing type behind an
+    # include prefix (``other.MissingType``) is reported instead of silently
+    # resolving to the included module itself.
+    parts = name.split('.')
     ref_type = thrift
-    for n in name.split('.'):
-        ref_type = getattr(thrift, n, None)
-        if ref_type is None:
-            raise ThriftParserError(
-                f'No type found: {name!r}, at line {lineno}')
-        if isinstance(ref_type, int) and ref_type < 0:
-            raise ThriftParserError(
-                'No type found: %r, at line %d' %
-                incomplete_type[ref_type])
-        if hasattr(ref_type, '_ttype'):
-            return (getattr(ref_type, '_ttype'), ref_type)
-        else:
-            return ref_type
+    for n in parts[:-1]:
+        ref_type = getattr(ref_type, n, None)
+        # Only included modules can be traversed further. Anything else is
+        # already a concrete type, which makes the trailing parts member
+        # lookups rather than a type reference.
+        if not isinstance(ref_type, types.ModuleType):
+            raise not_found()
+    ref_type = getattr(ref_type, parts[-1], None)
+    if ref_type is None:
+        raise not_found()
+    if isinstance(ref_type, int) and ref_type < 0:
+        # Negative ints are placeholder keys for types that were still
+        # incomplete when the reference was parsed. A negative value that
+        # isn't a known placeholder is an ordinary const or enum value, so
+        # the name doesn't refer to a type at all.
+        info = incomplete_type.get(ref_type)
+        if info is None:
+            raise not_found()
+        raise ThriftParserError('No type found: %r, at line %d' % info)
+    if hasattr(ref_type, '_ttype'):
+        return (getattr(ref_type, '_ttype'), ref_type)
+    else:
+        return ref_type
 
 
 def _add_thrift_meta(thrift, key, val):

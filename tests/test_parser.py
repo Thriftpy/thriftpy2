@@ -494,3 +494,18 @@ def test_thrift_in_include_path():
 
 def test_issue_121():
     load(TEST_DIR / 'parser-cases/issue_121.thrift')
+
+
+def test_issue_177():
+    with pytest.raises(ThriftParserError) as excinfo:
+        load(TEST_DIR / 'parser-cases/issue_177.thrift')
+    assert "No type found: 'issue_177_include.invalidType'" in str(excinfo.value)
+
+
+def test_issue_177_through_non_module():
+    # 'NEG' is a const, so nothing can be looked up behind it. This must be
+    # reported as a parser error naming the whole reference, not leak the
+    # placeholder lookup as a KeyError.
+    with pytest.raises(ThriftParserError) as excinfo:
+        load(TEST_DIR / 'parser-cases/issue_177_deep.thrift')
+    assert "No type found: 'issue_177_deep_include.NEG.Foo'" in str(excinfo.value)
