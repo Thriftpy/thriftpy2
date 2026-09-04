@@ -10,6 +10,19 @@ from cpython cimport bool, PyObject_GetBuffer, PyBuffer_Release, PyBUF_ANY_CONTI
 from thriftpy2.thrift import TDecodeException
 from thriftpy2.transport.cybase cimport CyTransportBase, STACK_STRING_LEN
 
+# How deep structs and containers may nest, the outermost struct included,
+# before reading, writing or skipping raises RecursionError instead of
+# overflowing the native stack. Same default as Apache Thrift.
+DEFAULT_MAX_DEPTH = 64
+
+
+cdef inline int check_depth(int budget, const char *where) except -1:
+    if budget <= 0:
+        raise RecursionError(
+            "maximum nesting depth exceeded" + (<bytes>where).decode())
+    return 0
+
+
 cdef extern from "endian_port.h":
     int16_t htobe16(int16_t n)
     int32_t htobe32(int32_t n)
@@ -106,7 +119,7 @@ cdef inline int write_double(CyTransportBase buf, double val) except -1:
     return 0
 
 
-cdef inline write_list(CyTransportBase buf, object val, spec):
+cdef inline write_list(CyTransportBase buf, object val, spec, int budget):
     cdef TType e_type
     cdef int val_len
 
@@ -125,7 +138,7 @@ cdef inline write_list(CyTransportBase buf, object val, spec):
     write_i32(buf, val_len)
 
     for e_val in val:
-        c_write_val(buf, e_type, e_val, e_spec)
+        c_write_val(buf, e_type, e_val, e_spec, budget)
 
 
 cdef inline write_string(CyTransportBase buf, bytes val):
@@ -145,7 +158,7 @@ cdef inline write_buffer(CyTransportBase buf, val):
         PyBuffer_Release(&in_buffer)
 
 
-cdef inline write_dict(CyTransportBase buf, object val, spec):
+cdef inline write_dict(CyTransportBase buf, object val, spec, int budget):
     cdef int val_len
     cdef TType v_type, k_type
 
@@ -178,18 +191,20 @@ cdef inline write_dict(CyTransportBase buf, object val, spec):
     write_i32(buf, val_len)
 
     for k, v in val.items():
-        c_write_val(buf, k_type, k, k_spec)
-        c_write_val(buf, v_type, v, v_spec)
+        c_write_val(buf, k_type, k, k_spec, budget)
+        c_write_val(buf, v_type, v, v_spec, budget)
 
 
-cdef inline read_struct(CyTransportBase buf, obj, decode_response=True,
-                        strict_decode=False):
+cdef inline read_struct(CyTransportBase buf, obj, decode_response,
+                        strict_decode, int budget):
     cdef dict field_specs = obj.thrift_spec
     cdef int fid
     cdef TType field_type, ttype
     cdef tuple field_spec
     cdef str name
 
+    check_depth(budget, " while reading a Thrift struct")
+    budget -= 1
     while True:
         field_type = <TType>read_i08(buf)
         if field_type == T_STOP:
@@ -197,13 +212,13 @@ cdef inline read_struct(CyTransportBase buf, obj, decode_response=True,
 
         fid = read_i16(buf)
         if fid not in field_specs:
-            skip(buf, field_type)
+            c_skip(buf, field_type, budget)
             continue
 
         field_spec = field_specs[fid]
         ttype = field_spec[0]
         if field_type != ttype and not (ttype in BIN_TYPES and field_type in BIN_TYPES):
-            skip(buf, field_type)
+            c_skip(buf, field_type, budget)
             continue
 
         name = field_spec[1]
@@ -213,18 +228,20 @@ cdef inline read_struct(CyTransportBase buf, obj, decode_response=True,
             spec = field_spec[2]
 
         setattr(obj, name, c_read_val(buf, ttype, spec, decode_response,
-                                      strict_decode))
+                                      strict_decode, budget))
 
     return obj
 
 
-cdef inline write_struct(CyTransportBase buf, obj):
+cdef inline write_struct(CyTransportBase buf, obj, int budget):
     cdef int fid
     cdef TType f_type
     cdef dict thrift_spec = obj.thrift_spec
     cdef tuple field_spec
     cdef str f_name
 
+    check_depth(budget, " while writing a Thrift struct")
+    budget -= 1
     for fid, field_spec in thrift_spec.items():
         f_type = field_spec[0]
         f_name = field_spec[1]
@@ -242,7 +259,7 @@ cdef inline write_struct(CyTransportBase buf, obj):
             write_i08(buf, f_type)
         write_i16(buf, fid)
         try:
-            c_write_val(buf, f_type, v, container_spec)
+            c_write_val(buf, f_type, v, container_spec, budget)
         except (TypeError, AttributeError, AssertionError, OverflowError) as e:
             raise TDecodeException(obj.__class__.__name__, fid, f_name, v,
                                    f_type, container_spec)
@@ -279,7 +296,8 @@ cdef inline c_read_string(CyTransportBase buf, int32_t size,
 
 
 cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
-                decode_response=True, strict_decode=False):
+                decode_response=True, strict_decode=False,
+                int budget=DEFAULT_MAX_DEPTH):
     cdef int size
     cdef int64_t n
     cdef TType v_type, k_type, orig_type, orig_key_type
@@ -317,6 +335,8 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
             return c_read_binary(buf, size)
 
     elif ttype == T_SET or ttype == T_LIST:
+        check_depth(budget, " while reading a Thrift container")
+        budget -= 1
         if isinstance(spec, int):
             v_type = spec
             v_spec = None
@@ -329,13 +349,16 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
 
         if orig_type != v_type and not (orig_type in BIN_TYPES and v_type in BIN_TYPES):
             for _ in range(size):
-                skip(buf, orig_type)
+                c_skip(buf, orig_type, budget)
             return []
 
-        return [c_read_val(buf, v_type, v_spec, decode_response, strict_decode)
+        return [c_read_val(buf, v_type, v_spec, decode_response, strict_decode,
+                           budget)
                 for _ in range(size)]
 
     elif ttype == T_MAP:
+        check_depth(budget, " while reading a Thrift container")
+        budget -= 1
         key = spec[0]
         if isinstance(key, int):
             k_type = key
@@ -361,21 +384,24 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
             orig_type = v_type
         if orig_key_type != k_type or orig_type != v_type:
             for _ in range(size):
-                skip(buf, orig_key_type)
-                skip(buf, orig_type)
+                c_skip(buf, orig_key_type, budget)
+                c_skip(buf, orig_type, budget)
             return {}
 
         return {
-            c_read_val(buf, k_type, k_spec, decode_response, strict_decode):
-                c_read_val(buf, v_type, v_spec, decode_response, strict_decode)
+            c_read_val(buf, k_type, k_spec, decode_response, strict_decode,
+                       budget):
+                c_read_val(buf, v_type, v_spec, decode_response, strict_decode,
+                           budget)
             for _ in range(size)
         }
 
     elif ttype == T_STRUCT:
-        return read_struct(buf, spec(), decode_response, strict_decode)
+        return read_struct(buf, spec(), decode_response, strict_decode, budget)
 
 
-cdef c_write_val(CyTransportBase buf, TType ttype, val, spec=None):
+cdef c_write_val(CyTransportBase buf, TType ttype, val, spec=None,
+                 int budget=DEFAULT_MAX_DEPTH):
     if ttype == T_BOOL:
         write_i08(buf, 1 if val else 0)
 
@@ -408,16 +434,18 @@ cdef c_write_val(CyTransportBase buf, TType ttype, val, spec=None):
         write_string(buf, val)
 
     elif ttype == T_SET or ttype == T_LIST:
-        write_list(buf, val, spec)
+        check_depth(budget, " while writing a Thrift container")
+        write_list(buf, val, spec, budget - 1)
 
     elif ttype == T_MAP:
-        write_dict(buf, val, spec)
+        check_depth(budget, " while writing a Thrift container")
+        write_dict(buf, val, spec, budget - 1)
 
     elif ttype == T_STRUCT:
-        write_struct(buf, val)
+        write_struct(buf, val, budget)
 
 
-cpdef skip(CyTransportBase buf, TType ttype):
+cdef int c_skip(CyTransportBase buf, TType ttype, int budget) except -1:
     cdef TType v_type, k_type, f_type
     cdef int size
 
@@ -433,33 +461,45 @@ cpdef skip(CyTransportBase buf, TType ttype):
         size = read_i32(buf)
         c_read_binary(buf, size)
     elif ttype == T_SET or ttype == T_LIST:
+        check_depth(budget, " while skipping a Thrift container")
+        budget -= 1
         v_type = <TType>read_i08(buf)
         size = read_i32(buf)
         for _ in range(size):
-            skip(buf, v_type)
+            c_skip(buf, v_type, budget)
     elif ttype == T_MAP:
+        check_depth(budget, " while skipping a Thrift container")
+        budget -= 1
         k_type = <TType>read_i08(buf)
         v_type = <TType>read_i08(buf)
         size = read_i32(buf)
         for _ in range(size):
-            skip(buf, k_type)
-            skip(buf, v_type)
+            c_skip(buf, k_type, budget)
+            c_skip(buf, v_type, budget)
     elif ttype == T_STRUCT:
+        check_depth(budget, " while skipping a Thrift struct")
+        budget -= 1
         while 1:
             f_type = <TType>read_i08(buf)
             if f_type == T_STOP:
                 break
             read_i16(buf)
-            skip(buf, f_type)
+            c_skip(buf, f_type, budget)
+    return 0
+
+
+def skip(CyTransportBase buf, TType ttype):
+    c_skip(buf, ttype, DEFAULT_MAX_DEPTH)
 
 
 def read_val(CyTransportBase buf, TType ttype, decode_response=True,
              strict_decode=False):
-    return c_read_val(buf, ttype, None, decode_response, strict_decode)
+    return c_read_val(buf, ttype, None, decode_response, strict_decode,
+                      DEFAULT_MAX_DEPTH)
 
 
 def write_val(CyTransportBase buf, TType ttype, val, spec=None):
-    c_write_val(buf, ttype, val, spec)
+    c_write_val(buf, ttype, val, spec, DEFAULT_MAX_DEPTH)
 
 
 cdef class TCyBinaryProtocol(object):
@@ -468,17 +508,20 @@ cdef class TCyBinaryProtocol(object):
     cdef public bool strict_write
     cdef public bool decode_response
     cdef public bool strict_decode
+    cdef public int max_depth
 
     def __init__(self, trans, strict_read=True, strict_write=True,
-                 decode_response=True, strict_decode=False):
+                 decode_response=True, strict_decode=False,
+                 max_depth=DEFAULT_MAX_DEPTH):
         self.trans = trans
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
         self.strict_decode = strict_decode
+        self.max_depth = max_depth
 
     def skip(self, ttype):
-        skip(self.trans, <TType>(ttype))
+        c_skip(self.trans, <TType>(ttype), self.max_depth)
 
     def read_message_begin(self):
         cdef int32_t size, version, seqid
@@ -523,14 +566,14 @@ cdef class TCyBinaryProtocol(object):
     def read_struct(self, obj):
         try:
             return read_struct(self.trans, obj, self.decode_response,
-                               self.strict_decode)
+                               self.strict_decode, self.max_depth)
         except Exception:
             self.trans.clean()
             raise
 
     def write_struct(self, obj):
         try:
-            write_struct(self.trans, obj)
+            write_struct(self.trans, obj, self.max_depth)
         except Exception:
             self.trans.clean()
             raise
@@ -538,13 +581,15 @@ cdef class TCyBinaryProtocol(object):
 
 class TCyBinaryProtocolFactory(object):
     def __init__(self, strict_read=True, strict_write=True,
-                 decode_response=True, strict_decode=False):
+                 decode_response=True, strict_decode=False,
+                 max_depth=DEFAULT_MAX_DEPTH):
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
         self.strict_decode = strict_decode
+        self.max_depth = max_depth
 
     def get_protocol(self, trans):
         return TCyBinaryProtocol(
             trans, self.strict_read, self.strict_write, self.decode_response,
-            self.strict_decode)
+            self.strict_decode, self.max_depth)
