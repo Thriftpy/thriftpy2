@@ -13,6 +13,16 @@ VERSION_1 = -2147418112
 TYPE_MASK = 0x000000ff
 BIN_TYPES = (TType.STRING, TType.BINARY)
 
+# How deep structs and containers may nest, the outermost struct included,
+# before reading, writing or skipping raises RecursionError. Same default as
+# Apache Thrift and the Cython implementation.
+DEFAULT_MAX_DEPTH = 64
+
+
+def check_depth(budget, where):
+    if budget <= 0:
+        raise RecursionError("maximum nesting depth exceeded" + where)
+
 
 def pack_i8(byte):
     return struct.pack("!b", byte)
@@ -93,7 +103,8 @@ def write_map_begin(outbuf, ktype, vtype, size):
     outbuf.write(pack_i8(ktype) + pack_i8(vtype) + pack_i32(size))
 
 
-def write_val(outbuf, ttype, val, spec: Any = None):
+def write_val(outbuf, ttype, val, spec: Any = None,
+              budget=DEFAULT_MAX_DEPTH):
     if ttype == TType.BOOL:
         if val:
             outbuf.write(pack_i8(1))
@@ -128,10 +139,11 @@ def write_val(outbuf, ttype, val, spec: Any = None):
         else:
             e_type, t_spec = spec, None
 
+        check_depth(budget, " while writing a Thrift container")
         val_len = len(val)
         write_list_begin(outbuf, e_type, val_len)
         for e_val in val:
-            write_val(outbuf, e_type, e_val, t_spec)
+            write_val(outbuf, e_type, e_val, t_spec, budget - 1)
 
     elif ttype == TType.MAP:
         if isinstance(spec[0], int):
@@ -146,12 +158,14 @@ def write_val(outbuf, ttype, val, spec: Any = None):
         else:
             v_type, v_spec = spec[1]
 
+        check_depth(budget, " while writing a Thrift container")
         write_map_begin(outbuf, k_type, v_type, len(val))
         for k in iter(val):
-            write_val(outbuf, k_type, k, k_spec)
-            write_val(outbuf, v_type, val[k], v_spec)
+            write_val(outbuf, k_type, k, k_spec, budget - 1)
+            write_val(outbuf, v_type, val[k], v_spec, budget - 1)
 
     elif ttype == TType.STRUCT:
+        check_depth(budget, " while writing a Thrift struct")
         for fid in iter(val.thrift_spec):
             f_spec = val.thrift_spec[fid]
             if len(f_spec) == 3:
@@ -165,7 +179,7 @@ def write_val(outbuf, ttype, val, spec: Any = None):
                 continue
 
             write_field_begin(outbuf, f_type, fid)
-            write_val(outbuf, f_type, v, f_container_spec)
+            write_val(outbuf, f_type, v, f_container_spec, budget - 1)
         write_field_stop(outbuf)
 
 
@@ -215,7 +229,7 @@ def read_map_begin(inbuf):
 
 
 def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
-             strict_decode=False):
+             strict_decode=False, budget=DEFAULT_MAX_DEPTH):
     if ttype == TType.BOOL:
         return bool(unpack_i8(inbuf.read(1)))
 
@@ -258,18 +272,20 @@ def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
         else:
             v_type, v_spec = spec, None
 
+        check_depth(budget, " while reading a Thrift container")
+        budget -= 1
         result = []
         r_type, sz = read_list_begin(inbuf)
         # the v_type is useless here since we already get it from spec
         if (r_type != v_type
                 and not (r_type in BIN_TYPES and v_type in BIN_TYPES)):
             for _ in range(sz):
-                skip(inbuf, r_type)
+                skip(inbuf, r_type, budget)
             return []
 
         for i in range(sz):
             result.append(read_val(inbuf, v_type, v_spec, decode_response,
-                                   strict_decode))
+                                   strict_decode, budget))
         return result
 
     elif ttype == TType.MAP:
@@ -285,6 +301,8 @@ def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
         else:
             v_type, v_spec = spec[1]
 
+        check_depth(budget, " while reading a Thrift container")
+        budget -= 1
         result = {}
         sk_type, sv_type, sz = read_map_begin(inbuf)
         if sk_type in BIN_TYPES:
@@ -293,33 +311,36 @@ def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
             sv_type = v_type
         if sk_type != k_type or sv_type != v_type:
             for _ in range(sz):
-                skip(inbuf, sk_type)
-                skip(inbuf, sv_type)
+                skip(inbuf, sk_type, budget)
+                skip(inbuf, sv_type, budget)
             return {}
 
         for i in range(sz):
             k_val = read_val(inbuf, k_type, k_spec, decode_response,
-                             strict_decode)
+                             strict_decode, budget)
             v_val = read_val(inbuf, v_type, v_spec, decode_response,
-                             strict_decode)
+                             strict_decode, budget)
             result[k_val] = v_val
 
         return result
 
     elif ttype == TType.STRUCT:
         obj = spec()
-        read_struct(inbuf, obj, decode_response, strict_decode)
+        read_struct(inbuf, obj, decode_response, strict_decode, budget)
         return obj
 
 
-def read_struct(inbuf, obj, decode_response=True, strict_decode=False):
+def read_struct(inbuf, obj, decode_response=True, strict_decode=False,
+                budget=DEFAULT_MAX_DEPTH):
+    check_depth(budget, " while reading a Thrift struct")
+    budget -= 1
     while True:
         f_type, fid = read_field_begin(inbuf)
         if f_type == TType.STOP:
             break
 
         if fid not in obj.thrift_spec:
-            skip(inbuf, f_type)
+            skip(inbuf, f_type, budget)
             continue
 
         if len(obj.thrift_spec[fid]) == 3:
@@ -334,15 +355,15 @@ def read_struct(inbuf, obj, decode_response=True, strict_decode=False):
             if f_type in BIN_TYPES:
                 f_type = sf_type
             else:
-                skip(inbuf, f_type)
+                skip(inbuf, f_type, budget)
                 continue
 
         setattr(obj, f_name,
                 read_val(inbuf, f_type, f_container_spec, decode_response,
-                         strict_decode))
+                         strict_decode, budget))
 
 
-def skip(inbuf, ftype):
+def skip(inbuf, ftype, budget=DEFAULT_MAX_DEPTH):
     if ftype == TType.BOOL or ftype == TType.BYTE:
         inbuf.read(1)
 
@@ -362,22 +383,25 @@ def skip(inbuf, ftype):
         inbuf.read(unpack_i32(inbuf.read(4)))
 
     elif ftype == TType.SET or ftype == TType.LIST:
+        check_depth(budget, " while skipping a Thrift container")
         v_type, sz = read_list_begin(inbuf)
         for i in range(sz):
-            skip(inbuf, v_type)
+            skip(inbuf, v_type, budget - 1)
 
     elif ftype == TType.MAP:
+        check_depth(budget, " while skipping a Thrift container")
         k_type, v_type, sz = read_map_begin(inbuf)
         for i in range(sz):
-            skip(inbuf, k_type)
-            skip(inbuf, v_type)
+            skip(inbuf, k_type, budget - 1)
+            skip(inbuf, v_type, budget - 1)
 
     elif ftype == TType.STRUCT:
+        check_depth(budget, " while skipping a Thrift struct")
         while True:
             f_type, fid = read_field_begin(inbuf)
             if f_type == TType.STOP:
                 break
-            skip(inbuf, f_type)
+            skip(inbuf, f_type, budget - 1)
 
 
 class TBinaryProtocol(TProtocolBase):
@@ -385,15 +409,17 @@ class TBinaryProtocol(TProtocolBase):
 
     def __init__(self, trans,
                  strict_read=True, strict_write=True,
-                 decode_response=True, strict_decode=False):
+                 decode_response=True, strict_decode=False,
+                 max_depth=DEFAULT_MAX_DEPTH):
         TProtocolBase.__init__(self, trans)
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
         self.strict_decode = strict_decode
+        self.max_depth = max_depth
 
     def skip(self, ttype):
-        skip(self.trans, ttype)
+        skip(self.trans, ttype, self.max_depth)
 
     def read_message_begin(self):
         api, ttype, seqid = read_message_begin(
@@ -412,21 +438,24 @@ class TBinaryProtocol(TProtocolBase):
 
     def read_struct(self, obj):
         return read_struct(self.trans, obj, self.decode_response,
-                           self.strict_decode)
+                           self.strict_decode, self.max_depth)
 
     def write_struct(self, obj):
-        write_val(self.trans, TType.STRUCT, obj)
+        write_val(self.trans, TType.STRUCT, obj, budget=self.max_depth)
 
 
 class TBinaryProtocolFactory(object):
     def __init__(self, strict_read=True, strict_write=True,
-                 decode_response=True, strict_decode=False):
+                 decode_response=True, strict_decode=False,
+                 max_depth=DEFAULT_MAX_DEPTH):
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
         self.strict_decode = strict_decode
+        self.max_depth = max_depth
 
     def get_protocol(self, trans):
         return TBinaryProtocol(trans,
                                self.strict_read, self.strict_write,
-                               self.decode_response, self.strict_decode)
+                               self.decode_response, self.strict_decode,
+                               self.max_depth)
