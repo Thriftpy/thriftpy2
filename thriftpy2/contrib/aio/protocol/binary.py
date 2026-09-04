@@ -4,9 +4,11 @@ from thriftpy2.thrift import TType
 
 from thriftpy2.protocol.exc import TProtocolException
 from thriftpy2.protocol.binary import (
+    DEFAULT_MAX_DEPTH,
     VERSION_MASK,
     VERSION_1,
     TYPE_MASK,
+    check_depth,
     unpack_i8,
     unpack_i16,
     unpack_i32,
@@ -69,7 +71,7 @@ async def read_map_begin(inbuf):
 
 
 async def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
-                   strict_decode=False):
+                   strict_decode=False, budget=DEFAULT_MAX_DEPTH):
     if ttype == TType.BOOL:
         return bool(unpack_i8(await inbuf.read(1)))
 
@@ -112,19 +114,21 @@ async def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
         else:
             v_type, v_spec = spec, None
 
+        check_depth(budget, " while reading a Thrift container")
+        budget -= 1
         result = []
         r_type, sz = await read_list_begin(inbuf)
         # the v_type is useless here since we already get it from spec
         if (r_type != v_type
                 and not (r_type in BIN_TYPES and v_type in BIN_TYPES)):
             for _ in range(sz):
-                await skip(inbuf, r_type)
+                await skip(inbuf, r_type, budget)
             return []
 
         for i in range(sz):
             result.append(
                 await read_val(inbuf, v_type, v_spec, decode_response,
-                               strict_decode)
+                               strict_decode, budget)
             )
         return result
 
@@ -141,6 +145,8 @@ async def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
         else:
             v_type, v_spec = spec[1]
 
+        check_depth(budget, " while reading a Thrift container")
+        budget -= 1
         result = {}
         sk_type, sv_type, sz = await read_map_begin(inbuf)
         if sk_type in BIN_TYPES:
@@ -149,33 +155,36 @@ async def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
             sv_type = v_type
         if sk_type != k_type or sv_type != v_type:
             for _ in range(sz):
-                await skip(inbuf, sk_type)
-                await skip(inbuf, sv_type)
+                await skip(inbuf, sk_type, budget)
+                await skip(inbuf, sv_type, budget)
             return {}
 
         for i in range(sz):
             k_val = await read_val(inbuf, k_type, k_spec, decode_response,
-                                   strict_decode)
+                                   strict_decode, budget)
             v_val = await read_val(inbuf, v_type, v_spec, decode_response,
-                                   strict_decode)
+                                   strict_decode, budget)
             result[k_val] = v_val
 
         return result
 
     elif ttype == TType.STRUCT:
         obj = spec()
-        await read_struct(inbuf, obj, decode_response, strict_decode)
+        await read_struct(inbuf, obj, decode_response, strict_decode, budget)
         return obj
 
 
-async def read_struct(inbuf, obj, decode_response=True, strict_decode=False):
+async def read_struct(inbuf, obj, decode_response=True, strict_decode=False,
+                      budget=DEFAULT_MAX_DEPTH):
+    check_depth(budget, " while reading a Thrift struct")
+    budget -= 1
     while True:
         f_type, fid = await read_field_begin(inbuf)
         if f_type == TType.STOP:
             break
 
         if fid not in obj.thrift_spec:
-            await skip(inbuf, f_type)
+            await skip(inbuf, f_type, budget)
             continue
 
         if len(obj.thrift_spec[fid]) == 3:
@@ -190,15 +199,16 @@ async def read_struct(inbuf, obj, decode_response=True, strict_decode=False):
             if f_type in BIN_TYPES:
                 f_type = sf_type
             else:
-                await skip(inbuf, f_type)
+                await skip(inbuf, f_type, budget)
                 continue
 
         _buf = await read_val(
-            inbuf, f_type, f_container_spec, decode_response, strict_decode)
+            inbuf, f_type, f_container_spec, decode_response, strict_decode,
+            budget)
         setattr(obj, f_name, _buf)
 
 
-async def skip(inbuf, ftype):
+async def skip(inbuf, ftype, budget=DEFAULT_MAX_DEPTH):
     if ftype == TType.BOOL or ftype == TType.BYTE:
         await inbuf.read(1)
 
@@ -219,22 +229,25 @@ async def skip(inbuf, ftype):
         await inbuf.read(unpack_i32(_size))
 
     elif ftype == TType.SET or ftype == TType.LIST:
+        check_depth(budget, " while skipping a Thrift container")
         v_type, sz = await read_list_begin(inbuf)
         for i in range(sz):
-            await skip(inbuf, v_type)
+            await skip(inbuf, v_type, budget - 1)
 
     elif ftype == TType.MAP:
+        check_depth(budget, " while skipping a Thrift container")
         k_type, v_type, sz = await read_map_begin(inbuf)
         for i in range(sz):
-            await skip(inbuf, k_type)
-            await skip(inbuf, v_type)
+            await skip(inbuf, k_type, budget - 1)
+            await skip(inbuf, v_type, budget - 1)
 
     elif ftype == TType.STRUCT:
+        check_depth(budget, " while skipping a Thrift struct")
         while True:
             f_type, fid = await read_field_begin(inbuf)
             if f_type == TType.STOP:
                 break
-            await skip(inbuf, f_type)
+            await skip(inbuf, f_type, budget - 1)
 
 
 class TAsyncBinaryProtocol(TAsyncProtocolBase):
@@ -242,15 +255,17 @@ class TAsyncBinaryProtocol(TAsyncProtocolBase):
 
     def __init__(self, trans,
                  strict_read=True, strict_write=True,
-                 decode_response=True, strict_decode=False):
+                 decode_response=True, strict_decode=False,
+                 max_depth=DEFAULT_MAX_DEPTH):
         TAsyncProtocolBase.__init__(self, trans)
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
         self.strict_decode = strict_decode
+        self.max_depth = max_depth
 
     async def skip(self, ttype):
-        await skip(self.trans, ttype)
+        await skip(self.trans, ttype, self.max_depth)
 
     async def read_message_begin(self):
         api, ttype, seqid = await read_message_begin(
@@ -271,19 +286,21 @@ class TAsyncBinaryProtocol(TAsyncProtocolBase):
 
     async def read_struct(self, obj):
         return await read_struct(self.trans, obj, self.decode_response,
-                                 self.strict_decode)
+                                 self.strict_decode, self.max_depth)
 
     def write_struct(self, obj):
-        write_val(self.trans, TType.STRUCT, obj)
+        write_val(self.trans, TType.STRUCT, obj, budget=self.max_depth)
 
 
 class TAsyncBinaryProtocolFactory(object):
     def __init__(self, strict_read=True, strict_write=True,
-                 decode_response=True, strict_decode=False):
+                 decode_response=True, strict_decode=False,
+                 max_depth=DEFAULT_MAX_DEPTH):
         self.strict_read = strict_read
         self.strict_write = strict_write
         self.decode_response = decode_response
         self.strict_decode = strict_decode
+        self.max_depth = max_depth
 
     def get_protocol(self, trans):
         return TAsyncBinaryProtocol(
@@ -292,4 +309,5 @@ class TAsyncBinaryProtocolFactory(object):
             self.strict_write,
             self.decode_response,
             self.strict_decode,
+            self.max_depth,
         )
