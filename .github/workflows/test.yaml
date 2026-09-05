@@ -5,9 +5,9 @@ name: Test
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "0.7.x" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "0.7.x" ]
 
 jobs:
   test:
