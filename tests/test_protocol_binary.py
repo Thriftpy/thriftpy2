@@ -402,3 +402,28 @@ def test_max_depth_is_configurable():
     obj = TTree()
     p.read_struct(obj)
     assert tree_depth(obj) == depth
+
+
+class TStringThenInt(TPayload):
+    thrift_spec = {
+        1: (TType.STRING, "a", False),
+        2: (TType.I32, "b", False),
+    }
+    default_spec = [("a", None), ("b", None)]
+
+
+class TIntThenInt(TPayload):
+    thrift_spec = {
+        1: (TType.I32, "a", False),
+        2: (TType.I32, "b", False),
+    }
+    default_spec = [("a", None), ("b", None)]
+
+
+def test_read_struct_skips_field_with_mismatched_type():
+    b = BytesIO()
+    proto.TBinaryProtocol(b).write_struct(TStringThenInt(a="hello", b=7))
+    b.seek(0)
+    obj = TIntThenInt()
+    proto.TBinaryProtocol(b).read_struct(obj)
+    assert obj == TIntThenInt(a=None, b=7)
