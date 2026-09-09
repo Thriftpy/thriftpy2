@@ -197,3 +197,27 @@ def test_client(server_func):
     finally:
         proc.terminate()
     time.sleep(1)
+
+
+def test_consecutive_messages_on_same_transport():
+    class Struct(thriftpy2.thrift.TPayload):
+        thrift_spec = {1: (TType.STRING, "a", False)}
+        default_spec = [("a", None)]
+
+    obuf = TMemoryBuffer()
+    writer = TApacheJSONProtocol(obuf)
+    for name in ("first", "second"):
+        writer.write_message_begin(name, 1, 1)
+        writer.write_struct(Struct(a=name))
+        writer.write_message_end()
+
+    reader = TApacheJSONProtocol(TMemoryBuffer(obuf.getvalue()))
+    seen = []
+    for _ in range(2):
+        name, _, _ = reader.read_message_begin()
+        obj = Struct()
+        reader.read_struct(obj)
+        reader.read_message_end()
+        seen.append((name, obj.a))
+
+    assert seen == [("first", "first"), ("second", "second")]
