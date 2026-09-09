@@ -378,11 +378,11 @@ cdef c_read_val(CyTransportBase buf, TType ttype, spec=None,
         orig_key_type = <TType>read_i08(buf)
         orig_type = <TType>read_i08(buf)
         size = read_i32(buf)
-        if orig_key_type in BIN_TYPES:
-            orig_key_type = k_type
-        if orig_type in BIN_TYPES:
-            orig_type = v_type
-        if orig_key_type != k_type or orig_type != v_type:
+        k_mismatch = orig_key_type != k_type and not (
+            orig_key_type in BIN_TYPES and k_type in BIN_TYPES)
+        v_mismatch = orig_type != v_type and not (
+            orig_type in BIN_TYPES and v_type in BIN_TYPES)
+        if k_mismatch or v_mismatch:
             for _ in range(size):
                 c_skip(buf, orig_key_type, budget)
                 c_skip(buf, orig_type, budget)

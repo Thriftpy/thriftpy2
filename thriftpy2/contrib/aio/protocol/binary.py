@@ -149,11 +149,11 @@ async def read_val(inbuf, ttype, spec: Any = None, decode_response=True,
         budget -= 1
         result = {}
         sk_type, sv_type, sz = await read_map_begin(inbuf)
-        if sk_type in BIN_TYPES:
-            sk_type = k_type
-        if sv_type in BIN_TYPES:
-            sv_type = v_type
-        if sk_type != k_type or sv_type != v_type:
+        k_mismatch = sk_type != k_type and not (
+            sk_type in BIN_TYPES and k_type in BIN_TYPES)
+        v_mismatch = sv_type != v_type and not (
+            sv_type in BIN_TYPES and v_type in BIN_TYPES)
+        if k_mismatch or v_mismatch:
             for _ in range(sz):
                 await skip(inbuf, sk_type, budget)
                 await skip(inbuf, sv_type, budget)
