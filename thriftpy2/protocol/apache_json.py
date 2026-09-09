@@ -130,9 +130,6 @@ class TApacheJSONProtocol(TProtocolBase):
         self._req = items[0] if items else None
 
     def read_message_begin(self):
-        # Always load a fresh message. The protocol instance lives for the
-        # whole connection, so reusing a previously parsed request would
-        # replay the first message forever on a persistent connection.
         self._load_data()
         return self._req[1:4]
 

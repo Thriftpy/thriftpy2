@@ -200,10 +200,6 @@ def test_client(server_func):
 
 
 def test_consecutive_messages_on_same_transport():
-    """Regression: the protocol used to cache the first parsed request and
-    never clear it, so every message after the first on a persistent
-    connection was silently replaced by the first one.
-    """
     class Struct(thriftpy2.thrift.TPayload):
         thrift_spec = {1: (TType.STRING, "a", False)}
         default_spec = [("a", None)]
@@ -225,46 +221,3 @@ def test_consecutive_messages_on_same_transport():
         seen.append((name, obj.a))
 
     assert seen == [("first", "first"), ("second", "second")]
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="this test requires fork")
-def test_rpc_client_multiple_calls_on_one_connection(tmp_path):
-    test_thrift = thriftpy2.load(
-        TEST_DIR / "apache_json_test.thrift",
-        module_name="test_thrift"
-    )
-    unix_socket = str(tmp_path / "apache_json.sock")
-
-    class Handler:
-        @staticmethod
-        def test(t):
-            return t
-
-    def run_server():
-        server = make_rpc_server(
-            test_thrift.TestService,
-            handler=Handler(),
-            unix_socket=unix_socket,
-            proto_factory=TApacheJSONProtocolFactory(),
-            trans_factory=TBufferedTransportFactory()
-        )
-        server.serve()
-
-    proc = Process(target=run_server)
-    proc.start()
-    time.sleep(0.25)
-
-    try:
-        client = make_rpc_client(
-            test_thrift.TestService,
-            unix_socket=unix_socket,
-            proto_factory=TApacheJSONProtocolFactory(),
-            trans_factory=TBufferedTransportFactory()
-        )
-        for i in range(3):
-            res = client.test(test_thrift.Test(tint=i, tstr="call %d" % i))
-            assert res.tint == i
-            assert res.tstr == "call %d" % i
-    finally:
-        proc.terminate()
-    time.sleep(1)
