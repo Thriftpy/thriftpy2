@@ -231,7 +231,11 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
 
             result = {}
             sk_type, sv_type, sz = await self._read_map_begin()
-            if sk_type != k_type or sv_type != v_type:
+            k_mismatch = sk_type != k_type and not (
+                sk_type in BIN_TYPES and k_type in BIN_TYPES)
+            v_mismatch = sv_type != v_type and not (
+                sv_type in BIN_TYPES and v_type in BIN_TYPES)
+            if k_mismatch or v_mismatch:
                 for _ in range(sz):
                     await self.skip(sk_type)
                     await self.skip(sv_type)

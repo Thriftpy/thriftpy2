@@ -177,3 +177,26 @@ async def test_read_struct_skips_field_with_mismatched_type():
     blob = encode(TStringThenInt(a="hello", b=7))
     obj = await decode(blob, TIntThenInt)
     assert obj == TIntThenInt(a=None, b=7)
+
+
+class TStringKeyMap(TPayload):
+    thrift_spec = {
+        1: (TType.MAP, "m", (TType.STRING, TType.I32), False),
+        2: (TType.I32, "x", False),
+    }
+    default_spec = [("m", None), ("x", None)]
+
+
+class TIntKeyMap(TPayload):
+    thrift_spec = {
+        1: (TType.MAP, "m", (TType.I32, TType.I32), False),
+        2: (TType.I32, "x", False),
+    }
+    default_spec = [("m", None), ("x", None)]
+
+
+@pytest.mark.asyncio
+async def test_read_struct_skips_map_with_mismatched_key_type():
+    blob = encode(TStringKeyMap(m={"abcd": 1, "efgh": 2}, x=5))
+    obj = await decode(blob, TIntKeyMap)
+    assert obj == TIntKeyMap(m={}, x=5)

@@ -1,9 +1,10 @@
-from unittest import TestCase
+from unittest import TestCase, expectedFailure
 
 from thriftpy2.thrift import TType, TPayload
 
 from thriftpy2.transport.memory import TMemoryBuffer
 from thriftpy2.protocol.binary import TBinaryProtocol
+from thriftpy2.protocol.compact import TCompactProtocol
 
 from thriftpy2._compat import CYTHON
 
@@ -72,6 +73,33 @@ class MismatchTestCase(TestCase):
 
         assert item2.addr == {}
 
+    def test_map_type_mismatch_with_string_on_wire(self):
+        class TWireItem(TPayload):
+            thrift_spec = {
+                1: (TType.MAP, "addr", (TType.STRING, TType.I32), False),
+                2: (TType.I32, "x", False),
+            }
+            default_spec = [("addr", None), ("x", None)]
+
+        class TMismatchItem(TPayload):
+            thrift_spec = {
+                1: (TType.MAP, "addr", (TType.I32, TType.I32), False),
+                2: (TType.I32, "x", False),
+            }
+            default_spec = [("addr", None), ("x", None)]
+
+        t = self.BUFFER()
+        p = self.PROTO(t)
+
+        p.write_struct(TWireItem(addr={"abcd": 1, "efgh": 2}, x=5))
+        p.write_message_end()
+
+        item2 = TMismatchItem()
+        p.read_struct(item2)
+
+        assert item2.addr == {}
+        assert item2.x == 5
+
     def test_struct_mismatch(self):
         class MismatchStruct(TPayload):
             thrift_spec = {
@@ -103,6 +131,15 @@ class MismatchTestCase(TestCase):
 
         assert len(item2.data) == 3
         assert all([i.b for i in item2.data])
+
+
+class CompactMismatchTestCase(MismatchTestCase):
+    PROTO = TCompactProtocol
+
+    # The compact protocol does not check list element types yet.
+    @expectedFailure
+    def test_list_type_mismatch(self):
+        super().test_list_type_mismatch()
 
 
 if CYTHON:
