@@ -1,6 +1,5 @@
 import json
 import sys
-import time
 from io import BytesIO
 from multiprocessing import Process
 from pathlib import Path
@@ -17,6 +16,8 @@ from thriftpy2.rpc import make_server as make_rpc_server, \
 from thriftpy2.thrift import TProcessor, TType
 from thriftpy2.transport import TMemoryBuffer
 from thriftpy2.transport.buffered import TBufferedTransportFactory
+
+from _helpers import free_port, wait_for_port
 
 TEST_DIR = Path(__file__).parent
 
@@ -161,12 +162,14 @@ def test_client(server_func):
         def test(t):
             return t
 
+    port = free_port()
+
     def run_server():
         server = make_http_server(
             test_thrift.TestService,
             handler=Handler(),
             host='localhost',
-            port=9090,
+            port=port,
             proto_factory=TApacheJSONProtocolFactory(),
             trans_factory=TBufferedTransportFactory()
         )
@@ -174,7 +177,7 @@ def test_client(server_func):
 
     proc = Process(target=run_server, )
     proc.start()
-    time.sleep(0.25)
+    wait_for_port(port, host='localhost')
 
     try:
         test_object = test_thrift.Test(
@@ -188,7 +191,7 @@ def test_client(server_func):
         client = make_http_client(
             test_thrift.TestService,
             host='localhost',
-            port=9090,
+            port=port,
             proto_factory=TApacheJSONProtocolFactory(),
             trans_factory=TBufferedTransportFactory()
         )
@@ -196,7 +199,7 @@ def test_client(server_func):
         assert recursive_vars(res) == recursive_vars(test_object)
     finally:
         proc.terminate()
-    time.sleep(1)
+        proc.join()
 
 
 def test_consecutive_messages_on_same_transport():

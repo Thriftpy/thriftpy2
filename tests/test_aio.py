@@ -1,7 +1,6 @@
 import asyncio
 import contextlib
 import os
-import random
 import socket
 import sys
 import threading
@@ -100,6 +99,17 @@ def _create_person():
     return alice
 
 
+def _start_in_thread(server, timeout=5.0):
+    """Run ``server.serve()`` in a daemon thread and wait until it listens."""
+    thread = threading.Thread(target=server.serve, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + timeout
+    while server.server is None:
+        if not thread.is_alive() or time.monotonic() > deadline:
+            raise RuntimeError("aio server failed to start")
+        time.sleep(0.01)
+
+
 class _TestAIO:
     # Base test case for all async tests
     TRANSPORT_FACTORY = NotImplemented
@@ -134,10 +144,7 @@ class _TestAIO:
             loop=asyncio.new_event_loop(),
             **cls.server_kwargs(),
         )
-        st = threading.Thread(target=cls.server.serve)
-        st.daemon = True
-        st.start()
-        time.sleep(0.1)
+        _start_in_thread(cls.server)
 
     @classmethod
     def _start_ipv6_server(cls):
@@ -150,10 +157,7 @@ class _TestAIO:
             socket_family=socket.AF_INET6,
             **cls.ipv6_server_kwargs(),
         )
-        st = threading.Thread(target=cls.ipv6_server.serve)
-        st.daemon = True
-        st.start()
-        time.sleep(0.1)
+        _start_in_thread(cls.ipv6_server)
 
     @classmethod
     def server_kwargs(cls):
@@ -273,9 +277,20 @@ class SSLServerMixin:
 
     @classmethod
     def setup_class(cls):
-        cls.port = random.randint(55000, 56000)
-        cls.ipv6_port = random.randint(56000, 57000)
+        # bind to port 0 and read back what the kernel picked
+        cls.port = 0
+        cls.ipv6_port = 0
         super().setup_class()
+
+    @classmethod
+    def _start_server(cls):
+        super()._start_server()
+        cls.port = cls.server.server.sockets[0].getsockname()[1]
+
+    @classmethod
+    def _start_ipv6_server(cls):
+        super()._start_ipv6_server()
+        cls.ipv6_port = cls.ipv6_server.server.sockets[0].getsockname()[1]
 
     @classmethod
     def server_kwargs(cls):

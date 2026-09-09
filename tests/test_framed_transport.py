@@ -1,7 +1,5 @@
 import contextlib
-import socket
 import threading
-import time
 
 from os import path
 from unittest import TestCase
@@ -11,6 +9,8 @@ from thriftpy2._compat import CYTHON
 from thriftpy2.protocol.binary import TBinaryProtocolFactory
 from thriftpy2.rpc import client_context, make_server
 from thriftpy2.transport.framed import TFramedTransportFactory
+
+from _helpers import bound_port, wait_for_port
 
 
 addressbook = thriftpy2.load(path.join(path.dirname(__file__),
@@ -61,15 +61,11 @@ class FramedTransportTestCase(TestCase):
         )
 
     def setUp(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.bind(("127.0.0.1", 0))
-            self.port = sock.getsockname()[-1]
-
         self.server = make_server(
             addressbook.AddressBookService,
             Dispatcher(),
             host="127.0.0.1",
-            port=self.port,
+            port=0,
             proto_factory=self.PROTOCOL_FACTORY,
             trans_factory=self.TRANSPORT_FACTORY,
         )
@@ -78,7 +74,8 @@ class FramedTransportTestCase(TestCase):
             target=self.server.serve, daemon=True
         )
         self.server_thread.start()
-        time.sleep(0.1)
+        self.port = bound_port(lambda: self.server.trans.sock)
+        wait_for_port(self.port)
 
         self.clients = contextlib.ExitStack()
         self.client = self.clients.enter_context(self.mk_client())

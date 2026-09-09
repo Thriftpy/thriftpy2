@@ -1,8 +1,6 @@
 import contextlib
-import socket
 import struct
 import threading
-import time
 import zlib
 from os import path
 
@@ -38,6 +36,8 @@ from thriftpy2.transport.header import (
     THeaderTransport,
 )
 
+from _helpers import bound_port, wait_for_port
+
 addressbook = thriftpy2.load(path.join(path.dirname(__file__),
                                        "addressbook.thrift"))
 
@@ -72,36 +72,19 @@ class Dispatcher:
         return True
 
 
-def free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[-1]
-
-
-def wait_for_port(port, timeout=5.0):
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=0.1):
-                return
-        except OSError:
-            time.sleep(0.01)
-    raise RuntimeError("server did not start listening on port %d" % port)
-
-
 @contextlib.contextmanager
 def header_server(proto_factory):
-    port = free_port()
     server = make_server(
         addressbook.AddressBookService,
         Dispatcher(),
         host="127.0.0.1",
-        port=port,
+        port=0,
         proto_factory=proto_factory,
         trans_factory=TBufferedTransportFactory(),
     )
     thread = threading.Thread(target=server.serve, daemon=True)
     thread.start()
+    port = bound_port(lambda: server.trans.sock)
     wait_for_port(port)
     try:
         yield port
@@ -212,15 +195,15 @@ def test_wrapped_header_factory_shares_instance():
 def test_header_over_http(proto_factory, trans_factory):
     from thriftpy2 import http
 
-    port = free_port()
     server = http.make_server(
         addressbook.AddressBookService, Dispatcher(),
-        host="127.0.0.1", port=port,
+        host="127.0.0.1", port=0,
         proto_factory=THeaderProtocolFactory(
             allowed_client_types=ALL_CLIENT_TYPES))
+    # HTTPServer binds in its constructor, so the port is known already
+    port = server.httpd.server_address[1]
     thread = threading.Thread(target=server.serve, daemon=True)
     thread.start()
-    wait_for_port(port)
     try:
         with http.client_context(
             addressbook.AddressBookService, "127.0.0.1", port,

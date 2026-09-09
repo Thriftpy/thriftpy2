@@ -14,8 +14,11 @@ thriftpy2.install_import_hook()  # noqa
 from thriftpy2.http import make_server, make_client, client_context, THttpHeaderFactory  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
 
+from _helpers import free_port, wait_for_port  # noqa
+
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
+PORT = free_port()
 
 
 if sys.platform == "win32":
@@ -76,11 +79,10 @@ class CustomHeaderFactory(THttpHeaderFactory):
 @pytest.fixture(scope="module")
 def server(request):
     server = make_server(addressbook.AddressBookService, Dispatcher(),
-                         host="127.0.0.1", port=6080)
+                         host="127.0.0.1", port=PORT)
     ps = multiprocessing.Process(target=server.serve)
     ps.start()
-
-    time.sleep(0.1)
+    wait_for_port(PORT)
 
     def fin():
         if ps.is_alive():
@@ -110,52 +112,52 @@ def person():
 
 def client(timeout=3000):
     return client_context(addressbook.AddressBookService,
-                          host="127.0.0.1", port=6080, timeout=timeout)
+                          host="127.0.0.1", port=PORT, timeout=timeout)
 
 
 def client_context_with_url(timeout=3000):
     return client_context(addressbook.AddressBookService,
-                          url="http://127.0.0.1:6080", timeout=timeout)
+                          url=f"http://127.0.0.1:{PORT}", timeout=timeout)
 
 
 def client_context_with_malformed_path(timeout=3000):
     return client_context(addressbook.AddressBookService, host="127.0.0.1",
-                          port=6080, path="foo", timeout=timeout)
+                          port=PORT, path="foo", timeout=timeout)
 
 
 def client_with_url(timeout=3000):
     return make_client(addressbook.AddressBookService,
-                       url="http://127.0.0.1:6080", timeout=timeout)
+                       url=f"http://127.0.0.1:{PORT}", timeout=timeout)
 
 
 def client_without_url(timeout=3000):
     return make_client(addressbook.AddressBookService, host="127.0.0.1",
-                       port=6080, path="/foo", timeout=timeout)
+                       port=PORT, path="/foo", timeout=timeout)
 
 
 @pytest.fixture
 def client_with_malformed_path(timeout=3000):
     return make_client(addressbook.AddressBookService, host="127.0.0.1",
-                       port=6080, path="foo", timeout=timeout)
+                       port=PORT, path="foo", timeout=timeout)
 
 
 def client_context_with_header_factory(timeout=3000):
     return client_context(addressbook.AddressBookService,
-                          url="http://127.0.0.1:6080",
+                          url=f"http://127.0.0.1:{PORT}",
                           timeout=timeout,
                           http_header_factory=THttpHeaderFactory())
 
 
 def client_context_with_custom_header_factory(timeout=3000):
     return client_context(addressbook.AddressBookService,
-                          url="http://127.0.0.1:6080",
+                          url=f"http://127.0.0.1:{PORT}",
                           timeout=timeout,
                           http_header_factory=CustomHeaderFactory())
 
 
 def client_with_header_factory(timeout=3000):
     return make_client(addressbook.AddressBookService,
-                       url="http://127.0.0.1:6080",
+                       url=f"http://127.0.0.1:{PORT}",
                        timeout=timeout,
                        http_header_factory=THttpHeaderFactory(
                            {"X-REQUEST-ID": str(uuid.uuid4())}))
@@ -163,7 +165,7 @@ def client_with_header_factory(timeout=3000):
 
 def client_with_custom_header_factory(timeout=3000):
     return make_client(addressbook.AddressBookService,
-                       url="http://127.0.0.1:6080",
+                       url=f"http://127.0.0.1:{PORT}",
                        timeout=timeout,
                        http_header_factory=CustomHeaderFactory())
 
