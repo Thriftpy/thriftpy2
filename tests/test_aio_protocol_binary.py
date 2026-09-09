@@ -154,3 +154,26 @@ async def test_max_depth_is_configurable():
     obj = TTree()
     await p.read_struct(obj)
     assert tree_depth(obj) == depth
+
+
+class TStringThenInt(TPayload):
+    thrift_spec = {
+        1: (TType.STRING, "a", False),
+        2: (TType.I32, "b", False),
+    }
+    default_spec = [("a", None), ("b", None)]
+
+
+class TIntThenInt(TPayload):
+    thrift_spec = {
+        1: (TType.I32, "a", False),
+        2: (TType.I32, "b", False),
+    }
+    default_spec = [("a", None), ("b", None)]
+
+
+@pytest.mark.asyncio
+async def test_read_struct_skips_field_with_mismatched_type():
+    blob = encode(TStringThenInt(a="hello", b=7))
+    obj = await decode(blob, TIntThenInt)
+    assert obj == TIntThenInt(a=None, b=7)

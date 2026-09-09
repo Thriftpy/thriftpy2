@@ -193,10 +193,10 @@ async def read_struct(inbuf, obj, decode_response=True, strict_decode=False,
         else:
             sf_type, f_name, f_container_spec, f_req = obj.thrift_spec[fid]
 
-        # it really should equal here. but since we already wasted
-        # space storing the duplicate info, let's check it.
+        # STRING and BINARY are interchangeable on the wire, anything else
+        # that does not match the spec is skipped.
         if f_type != sf_type:
-            if f_type in BIN_TYPES:
+            if f_type in BIN_TYPES and sf_type in BIN_TYPES:
                 f_type = sf_type
             else:
                 await skip(inbuf, f_type, budget)
