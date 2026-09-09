@@ -1,5 +1,4 @@
 import sys
-import time
 import traceback
 from multiprocessing import Process
 from pathlib import Path
@@ -22,6 +21,8 @@ from thriftpy2.protocol import TBinaryProtocolFactory
 from thriftpy2.rpc import make_server as make_rpc_server, \
     make_client as make_rpc_client
 from thriftpy2.transport import TBufferedTransportFactory, TCyMemoryBuffer
+
+from _helpers import free_port, wait_for_port
 
 TEST_DIR = Path(__file__).parent
 
@@ -78,13 +79,14 @@ def test_protocols(proto_factory, binary, tlist, server_func):
             return t
 
     trans_factory = TBufferedTransportFactory
+    port = free_port()
 
     def run_server():
         server = server_func[0](
             test_thrift.TestService,
             handler=Handler(),
             host='localhost',
-            port=9090,
+            port=port,
             proto_factory=proto_factory(),
             trans_factory=trans_factory(),
         )
@@ -92,7 +94,7 @@ def test_protocols(proto_factory, binary, tlist, server_func):
 
     proc = Process(target=run_server)
     proc.start()
-    time.sleep(0.2)
+    wait_for_port(port, host='localhost')
     err = None
     try:
         test_object = test_thrift.Test(
@@ -142,7 +144,7 @@ def test_protocols(proto_factory, binary, tlist, server_func):
         client = server_func[1](
             test_thrift.TestService,
             host='localhost',
-            port=9090,
+            port=port,
             proto_factory=proto_factory(),
             trans_factory=trans_factory(),
         )
@@ -153,9 +155,9 @@ def test_protocols(proto_factory, binary, tlist, server_func):
         err = e
     finally:
         proc.terminate()
+        proc.join()
     if err:
         raise err
-    time.sleep(0.1)
 
 
 @pytest.mark.parametrize('server_func',
@@ -173,32 +175,35 @@ def test_exceptions(server_func, proto_factory):
         def do_error(self, arg):
             raise TestException(message=arg)
 
+    port = free_port()
+
     def do_server():
         server = server_func[0](
             service=test_thrift.TestService,
             handler=Handler(),
             host='localhost',
-            port=9090,
+            port=port,
             proto_factory=proto_factory()
         )
         server.serve()
 
     proc = Process(target=do_server)
     proc.start()
-    time.sleep(0.25)
+    wait_for_port(port, host='localhost')
     msg = "exception raised!"
-    with pytest.raises(TestException)as e:
-        client = server_func[1](
-            test_thrift.TestService,
-            host='localhost',
-            port=9090,
-            proto_factory=proto_factory()
-        )
-        client.do_error(msg)
-    assert e.value.message == msg
-
-    proc.terminate()
-    time.sleep(1)
+    try:
+        with pytest.raises(TestException) as e:
+            client = server_func[1](
+                test_thrift.TestService,
+                host='localhost',
+                port=port,
+                proto_factory=proto_factory()
+            )
+            client.do_error(msg)
+        assert e.value.message == msg
+    finally:
+        proc.terminate()
+        proc.join()
 
 
 @pytest.mark.parametrize('proto_factory', protocols)
@@ -243,13 +248,14 @@ def test_complex_binary(proto_factory):
             return t
 
     trans_factory = TBufferedTransportFactory
+    port = free_port()
 
     def run_server():
         server = make_rpc_server(
             spec.BinService,
             handler=Handler(),
             host='localhost',
-            port=9090,
+            port=port,
             proto_factory=proto_factory(),
             trans_factory=trans_factory(),
         )
@@ -257,13 +263,13 @@ def test_complex_binary(proto_factory):
 
     proc = Process(target=run_server)
     proc.start()
-    time.sleep(0.2)
+    wait_for_port(port, host='localhost')
 
     try:
         client = make_rpc_client(
             spec.BinService,
             host='localhost',
-            port=9090,
+            port=port,
             proto_factory=proto_factory(),
             trans_factory=trans_factory(),
         )
@@ -271,7 +277,7 @@ def test_complex_binary(proto_factory):
         check_types(spec.BinTest.thrift_spec, res)
     finally:
         proc.terminate()
-    time.sleep(0.2)
+        proc.join()
 
 
 @pytest.mark.skipif(_compat.PYPY, reason="Must be run in cpython")

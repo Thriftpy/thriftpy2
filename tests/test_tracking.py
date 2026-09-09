@@ -18,8 +18,6 @@ import contextlib
 import multiprocessing
 import os
 import pickle
-import random
-import socket
 import sys
 import tempfile
 import time
@@ -42,6 +40,7 @@ from thriftpy2.server import TThreadedServer
 from thriftpy2.transport import TServerSocket, TBufferedTransportFactory, \
     TTransportException, TSocket
 from thriftpy2.protocol import TBinaryProtocolFactory
+from _helpers import free_port, wait_for_port
 from compatible.version_2.tracking import (
     TTrackedProcessor as TTrackedProcessorV2,
     TTrackedClient as TTrackedClientV2,
@@ -64,20 +63,9 @@ addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
 _, db_file = tempfile.mkstemp()
 
-
-def _get_port():
-    while True:
-        port = 20000 + random.randint(1, 9999)
-        for i in range(5):
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            result = sock.connect_ex(('127.0.0.1', port))
-            if result == 0:
-                continue
-        else:
-            return port
-
-
-PORT = _get_port()
+# one port per server fixture below
+PORTS = [free_port() for _ in range(5)]
+PORT = PORTS[0]
 
 
 class SampleTracker(TrackerBase):
@@ -137,10 +125,10 @@ class Dispatcher:
                 addressbook.PhoneNumber(number='saf')]
 
     def add(self, person):
-        with client(port=PORT + 1) as c:
+        with client(port=PORTS[1]) as c:
             c.get_phonenumbers("jane", 1)
 
-        with client(port=PORT + 1) as c:
+        with client(port=PORTS[1]) as c:
             c.ping()
         return True
 
@@ -190,13 +178,13 @@ def gen_server(port, tracker=tracker, processor=TTrackedProcessor):
                            trans_factory=TBufferedTransportFactory())
     ps = multiprocessing.Process(target=server.serve)
     ps.start()
+    wait_for_port(port, host="localhost")
     return ps, server
 
 
 @pytest.fixture(scope="module")
 def server(request):
     ps, ser = gen_server(PORT)
-    time.sleep(0.15)
 
     def fin():
         if ps.is_alive():
@@ -209,8 +197,7 @@ def server(request):
 
 @pytest.fixture(scope="module")
 def server1(request):
-    ps, ser = gen_server(PORT + 1)
-    time.sleep(0.15)
+    ps, ser = gen_server(PORTS[1])
 
     def fin():
         if ps.is_alive():
@@ -223,8 +210,7 @@ def server1(request):
 
 @pytest.fixture(scope="module")
 def server2(request):
-    ps, ser = gen_server(PORT + 2)
-    time.sleep(0.15)
+    ps, ser = gen_server(PORTS[2])
 
     def fin():
         if ps.is_alive():
@@ -237,8 +223,7 @@ def server2(request):
 
 @pytest.fixture(scope="module")
 def native_server(request):
-    ps, ser = gen_server(PORT + 3, tracker=None, processor=TProcessor)
-    time.sleep(0.15)
+    ps, ser = gen_server(PORTS[3], tracker=None, processor=TProcessor)
 
     def fin():
         if ps.is_alive():
@@ -251,9 +236,8 @@ def native_server(request):
 
 @pytest.fixture(scope="module")
 def tracked_server_v2(request):
-    ps, ser = gen_server(PORT + 4, tracker=tracker_v2,
+    ps, ser = gen_server(PORTS[4], tracker=tracker_v2,
                          processor=TTrackedProcessorV2)
-    time.sleep(0.15)
 
     def fin():
         if ps.is_alive():
@@ -460,13 +444,13 @@ def test_native_client_tracked_server_v3(server):
 
 
 def test_native_client_tracked_server_v2(tracked_server_v2):
-    with client(TClient, port=PORT + 4) as c:
+    with client(TClient, port=PORTS[4]) as c:
         c.ping()
         c.hello("world")
 
 
 def test_tracked_client_v2_native_server(native_server):
-    with client(TTrackedClientV2, PORT + 3) as c:
+    with client(TTrackedClientV2, PORTS[3]) as c:
         assert c._upgraded is False
         c.ping()
         c.hello("cat")
@@ -477,7 +461,7 @@ def test_tracked_client_v2_native_server(native_server):
 
 def test_tracked_client_v2_tracked_server_v2(
         tracked_server_v2, dbm_db, tracker_ctx):
-    with client(TTrackedClientV2, PORT + 4) as c:
+    with client(TTrackedClientV2, PORTS[4]) as c:
         assert c._upgraded is True
 
         c.ping()
@@ -537,7 +521,7 @@ def test_tracked_client_v2_tracked_server_v3(server, dbm_db, tracker_ctx):
 
 
 def test_tracked_client_v3_native_server(native_server):
-    with client(port=PORT + 3) as c:
+    with client(port=PORTS[3]) as c:
         assert c.is_upgraded is False
         c.ping()
         assert not hasattr(ctx, "response_header")
@@ -550,7 +534,7 @@ def test_tracked_client_v3_native_server(native_server):
 
 def test_tracked_client_v3_tracked_server_v2(
         tracked_server_v2, dbm_db, tracker_ctx):
-    with client(port=PORT + 4) as c:
+    with client(port=PORTS[4]) as c:
         assert c.is_upgraded is True
 
         c.ping()

@@ -1,7 +1,6 @@
 import multiprocessing
 import os
 import sys
-import time
 
 import pytest
 
@@ -14,6 +13,8 @@ from thriftpy2.rpc import client_context
 from thriftpy2.server import TThreadedServer
 from thriftpy2.thrift import TProcessor, TMultiplexedProcessor
 from thriftpy2.transport import TBufferedTransportFactory, TServerSocket
+
+from _helpers import wait_for_unix_socket
 
 
 if sys.platform == "win32":
@@ -49,7 +50,7 @@ def server(request):
                               itrans_factory=TBufferedTransportFactory())
     ps = multiprocessing.Process(target=_server.serve)
     ps.start()
-    time.sleep(0.1)
+    wait_for_unix_socket(sock_path)
 
     def fin():
         if ps.is_alive():

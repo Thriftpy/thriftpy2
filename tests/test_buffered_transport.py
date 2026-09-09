@@ -1,7 +1,6 @@
 import logging
 import multiprocessing
 import sys
-import time
 from os import path
 
 import pytest
@@ -13,6 +12,7 @@ from thriftpy2.transport.buffered import TBufferedTransportFactory
 from thriftpy2.protocol.binary import TBinaryProtocolFactory
 
 from thriftpy2._compat import CYTHON
+from _helpers import free_port, wait_for_port
 logging.basicConfig(level=logging.INFO)
 
 addressbook = thriftpy2.load(path.join(path.dirname(__file__),
@@ -46,11 +46,9 @@ class BufferedTransportTestCase(TestCase):
     TRANSPORT_FACTORY = TBufferedTransportFactory()
     PROTOCOL_FACTORY = TBinaryProtocolFactory()
 
-    PORT = 50001
-
     def mk_server(self):
         server = make_server(addressbook.AddressBookService, Dispatcher(),
-                             host="localhost", port=self.PORT,
+                             host="localhost", port=self.port,
                              proto_factory=self.PROTOCOL_FACTORY,
                              trans_factory=self.TRANSPORT_FACTORY)
         p = multiprocessing.Process(target=server.serve)
@@ -58,14 +56,15 @@ class BufferedTransportTestCase(TestCase):
 
     def client(self):
         return client_context(addressbook.AddressBookService,
-                              host="localhost", port=self.PORT,
+                              host="localhost", port=self.port,
                               proto_factory=self.PROTOCOL_FACTORY,
                               trans_factory=self.TRANSPORT_FACTORY)
 
     def setUp(self):
+        self.port = free_port()
         self.server = self.mk_server()
         self.server.start()
-        time.sleep(0.1)
+        wait_for_port(self.port, host="localhost")
 
     def tearDown(self):
         if self.server.is_alive():

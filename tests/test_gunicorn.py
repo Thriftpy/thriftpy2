@@ -1,7 +1,6 @@
 import asyncio
 import os
 import signal
-import socket
 import subprocess
 import sys
 import time
@@ -11,6 +10,8 @@ import pytest
 import thriftpy2
 from thriftpy2.rpc import make_aio_client, make_client
 from thriftpy2.transport import TTransportException
+
+from _helpers import free_port, wait_for_port
 
 pytest.importorskip("gunicorn")
 
@@ -24,23 +25,6 @@ SYNC = "thriftpy2.contrib.gunicorn.ThriftSyncWorker"
 ASYNC = "thriftpy2.contrib.gunicorn.ThriftAsyncWorker"
 
 
-def free_port():
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
-def wait_for_port(port, timeout=15):
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=1):
-                return
-        except OSError:
-            time.sleep(0.1)
-    raise RuntimeError("gunicorn did not start listening")
-
-
 class Gunicorn:
     def __init__(self, worker, app="gunicorn_app:app", *extra):
         self.port = free_port()
@@ -52,7 +36,7 @@ class Gunicorn:
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
         )
         try:
-            wait_for_port(self.port)
+            wait_for_port(self.port, timeout=15)
         except Exception:
             self.stop()
             raise RuntimeError(self.output)
@@ -151,7 +135,7 @@ def test_max_requests_restarts_worker():
         with pytest.raises(TTransportException):
             client.hello("3")
         client.close()
-        wait_for_port(srv.port)
+        wait_for_port(srv.port, timeout=15)
         client = srv.client()
         assert client.hello("4") == "hello 4"
         client.close()

@@ -16,6 +16,8 @@ from thriftpy2.rpc import client_context, make_server  # noqa
 from thriftpy2.thrift import TApplicationException  # noqa
 from thriftpy2.transport import TTransportException  # noqa
 
+from _helpers import free_port, wait_for_port, wait_for_unix_socket  # noqa
+
 TEST_DIR = Path(__file__).parent
 
 if sys.platform == "win32":
@@ -25,7 +27,8 @@ if sys.platform == "win32":
 addressbook = thriftpy2.load(os.path.join(os.path.dirname(__file__),
                                           "addressbook.thrift"))
 unix_sock = "/tmp/thriftpy_test.sock"
-SSL_PORT = 50441
+ipv6_unix_sock = "/tmp/thriftpy_test_ipv6.sock"
+SSL_PORT = free_port()
 
 
 class Dispatcher:
@@ -86,8 +89,7 @@ def server(request):
                          unix_socket=unix_sock)
     ps = multiprocessing.Process(target=server.serve)
     ps.start()
-
-    time.sleep(0.1)
+    wait_for_unix_socket(unix_sock)
 
     def fin():
         if ps.is_alive():
@@ -103,17 +105,16 @@ def server(request):
 @pytest.fixture(scope="module")
 def ipv6_server(request):
     server = make_server(addressbook.AddressBookService, Dispatcher(),
-                         unix_socket=unix_sock, socket_family=socket.AF_INET6)
+                         unix_socket=ipv6_unix_sock, socket_family=socket.AF_INET6)
     ps = multiprocessing.Process(target=server.serve)
     ps.start()
-
-    time.sleep(0.1)
+    wait_for_unix_socket(ipv6_unix_sock)
 
     def fin():
         if ps.is_alive():
             ps.terminate()
         try:
-            os.remove(unix_sock)
+            os.remove(ipv6_unix_sock)
         except IOError:
             pass
 
@@ -127,8 +128,7 @@ def ssl_server(request):
                              certfile=TEST_DIR / "ssl/server.pem")
     ps = multiprocessing.Process(target=ssl_server.serve)
     ps.start()
-
-    time.sleep(0.1)
+    wait_for_port(SSL_PORT, host='localhost', use_ssl=True)
 
     def fin():
         if ps.is_alive():
@@ -167,7 +167,7 @@ def ipv6_client(timeout=3000):
     return client_context(addressbook.AddressBookService,
                           socket_timeout=timeout,
                           connect_timeout=timeout,
-                          unix_socket=unix_sock,
+                          unix_socket=ipv6_unix_sock,
                           socket_family=socket.AF_INET6)
 
 

@@ -79,7 +79,7 @@ def make_server(service: types.ModuleType, handler: object,
         server_socket = TServerSocket(unix_socket=unix_socket)
         if certfile:
             warnings.warn("SSL only works with host:port, not unix_socket.")
-    elif host and port:
+    elif host and port is not None:
         if certfile:
             server_socket = TSSLServerSocket(
                 host=host, port=port, client_timeout=client_timeout,

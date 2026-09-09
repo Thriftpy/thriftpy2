@@ -1,6 +1,5 @@
 import asyncio
 import os
-import random
 import threading
 import time
 
@@ -87,13 +86,22 @@ def _create_person():
     return alice
 
 
-class _TestAsyncHttp:
+def _bound_port(server, timeout=5.0):
+    """Port an aiohttp based server started with port 0 ended up listening on."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        runner = server._runner
+        if runner is not None and runner.addresses:
+            return runner.addresses[0][1]
+        time.sleep(0.01)
+    raise RuntimeError("server did not start listening")
+
+
+class _ServerMixin:
     PROTOCOL_FACTORY = TAsyncBinaryProtocolFactory()
 
     @classmethod
     def setup_class(cls):
-        cls.port = random.randint(57000, 58000)
-        cls.person = _create_person()
         cls._start_server()
 
     @classmethod
@@ -107,7 +115,7 @@ class _TestAsyncHttp:
             addressbook.AddressBookService,
             Dispatcher(),
             host='127.0.0.1',
-            port=cls.port,
+            port=0,
             proto_factory=cls.PROTOCOL_FACTORY
         )
 
@@ -123,7 +131,7 @@ class _TestAsyncHttp:
 
         cls._server_thread = threading.Thread(target=server_thread, daemon=True)
         cls._server_thread.start()
-        time.sleep(0.3)  # Wait for server to start
+        cls.port = _bound_port(cls.server)
 
     @classmethod
     def _stop_server(cls):
@@ -135,6 +143,13 @@ class _TestAsyncHttp:
         except Exception:
             pass
         cls._server_thread.join(timeout=2)
+
+
+class _TestAsyncHttp(_ServerMixin):
+    @classmethod
+    def setup_class(cls):
+        cls.person = _create_person()
+        super().setup_class()
 
     async def client(self, timeout=30000):
         return await make_client(
@@ -215,51 +230,7 @@ class TestAsyncHttpCompact(_TestAsyncHttp):
     PROTOCOL_FACTORY = TAsyncCompactProtocolFactory()
 
 
-class TestAsyncHttpTimeout:
-    @classmethod
-    def setup_class(cls):
-        cls.port = random.randint(58000, 59000)
-        cls._start_server()
-
-    @classmethod
-    def teardown_class(cls):
-        cls._stop_server()
-
-    @classmethod
-    def _start_server(cls):
-        cls._server_loop = asyncio.new_event_loop()
-        cls.server = make_server(
-            addressbook.AddressBookService,
-            Dispatcher(),
-            host='127.0.0.1',
-            port=cls.port
-        )
-
-        async def run_server():
-            await cls.server.serve()
-
-        def server_thread():
-            asyncio.set_event_loop(cls._server_loop)
-            try:
-                cls._server_loop.run_until_complete(run_server())
-            except asyncio.CancelledError:
-                pass
-
-        cls._server_thread = threading.Thread(target=server_thread, daemon=True)
-        cls._server_thread.start()
-        time.sleep(0.3)
-
-    @classmethod
-    def _stop_server(cls):
-        future = asyncio.run_coroutine_threadsafe(
-            cls.server.close(), cls._server_loop
-        )
-        try:
-            future.result(timeout=2)
-        except Exception:
-            pass
-        cls._server_thread.join(timeout=2)
-
+class TestAsyncHttpTimeout(_ServerMixin):
     @pytest.mark.asyncio
     async def test_timeout(self):
         c = await make_client(
@@ -274,51 +245,7 @@ class TestAsyncHttpTimeout:
         c.close()
 
 
-class TestAsyncHttpCustomHeaders:
-    @classmethod
-    def setup_class(cls):
-        cls.port = random.randint(59000, 60000)
-        cls._start_server()
-
-    @classmethod
-    def teardown_class(cls):
-        cls._stop_server()
-
-    @classmethod
-    def _start_server(cls):
-        cls._server_loop = asyncio.new_event_loop()
-        cls.server = make_server(
-            addressbook.AddressBookService,
-            Dispatcher(),
-            host='127.0.0.1',
-            port=cls.port
-        )
-
-        async def run_server():
-            await cls.server.serve()
-
-        def server_thread():
-            asyncio.set_event_loop(cls._server_loop)
-            try:
-                cls._server_loop.run_until_complete(run_server())
-            except asyncio.CancelledError:
-                pass
-
-        cls._server_thread = threading.Thread(target=server_thread, daemon=True)
-        cls._server_thread.start()
-        time.sleep(0.3)
-
-    @classmethod
-    def _stop_server(cls):
-        future = asyncio.run_coroutine_threadsafe(
-            cls.server.close(), cls._server_loop
-        )
-        try:
-            future.result(timeout=2)
-        except Exception:
-            pass
-        cls._server_thread.join(timeout=2)
-
+class TestAsyncHttpCustomHeaders(_ServerMixin):
     @pytest.mark.asyncio
     async def test_custom_headers(self):
         header_factory = TAsyncHttpHeaderFactory({

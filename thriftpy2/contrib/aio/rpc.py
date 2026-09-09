@@ -85,7 +85,7 @@ def make_server(
         server_socket = TAsyncServerSocket(unix_socket=unix_socket)
         if certfile:
             warnings.warn("SSL only works with host:port, not unix_socket.")
-    elif host and port:
+    elif host and port is not None:
         server_socket = TAsyncServerSocket(
             host=host,
             port=port,
