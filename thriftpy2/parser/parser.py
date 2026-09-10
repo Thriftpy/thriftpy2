@@ -65,20 +65,27 @@ def p_include(p):
     thrift = p.parser.context.thrift_stack[-1]
     # A module parsed from a file-like object has no path of its own, so
     # includes are resolved against `include_dirs` only (default: ['.']).
-    if thrift.__thrift_file__ is None:
+    # (Bound to a local so type checkers can narrow the Optional[str].)
+    thrift_file = thrift.__thrift_file__
+    if thrift_file is None:
         base_dir = None
         replace_include_dirs = list(p.parser.context.include_dirs)
     else:
-        base_dir = os.path.dirname(thrift.__thrift_file__)
+        base_dir = os.path.dirname(thrift_file)
         replace_include_dirs = [base_dir] + p.parser.context.include_dirs
     for include_dir in replace_include_dirs:
         path = os.path.join(include_dir, p[2])
         if os.path.exists(path):
             if base_dir is None:
+                # Anchor the child module name at the include dir the child
+                # was found in, so that including e.g. `a/t.thrift` and
+                # `b/t.thrift` from two different roots yields distinct
+                # module names (`a.t_thrift`, `b.t_thrift`) instead of both
+                # collapsing onto the bare basename `t_thrift`.
                 module_prefix = ""
-                child_rel_path = os.path.basename(path)
+                child_rel_path = os.path.relpath(path, include_dir)
             else:
-                thrift_file_name_module = os.path.basename(thrift.__thrift_file__)
+                thrift_file_name_module = os.path.basename(thrift_file)
                 if thrift_file_name_module.endswith(".thrift"):
                     thrift_file_name_module = thrift_file_name_module[:-7] + "_thrift"
                 module_prefix = str(thrift.__name__)[:-len(thrift_file_name_module)] if thrift.__name__.endswith(thrift_file_name_module) else ""
@@ -701,7 +708,7 @@ def parse(path, module_name=None, include_dirs=None, include_dir=None,
 
 
 def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True,
-             _context=None):
+             include_dirs=None, include_dir=None, _context=None):
     """Parse a file-like object to thrift module object, e.g.::
 
         >>> from thriftpy2.parser.parser import parse_fp
@@ -716,6 +723,15 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True,
     :param parser: ply parser to use, if not provided, `parse` will new one.
     :param enable_cache: if this is set to be `True`, parsed module will be
                          cached by `module_name`, this is enabled by default.
+    :param include_dirs: directories to find thrift files while processing
+                         the `include` directive, by default: ['.']. A module
+                         parsed from a file-like object has no path of its
+                         own, so this is the only place its includes are
+                         resolved from.
+    :param include_dir: directory to find child thrift files. Note this keyword
+                        parameter will be deprecated in the future, it exists
+                        for compatible reason. If it's provided (not `None`),
+                        it will be appended to `include_dirs`.
     """
     context = _context if _context is not None else ParseContext()
 
@@ -730,6 +746,11 @@ def parse_fp(source, module_name, lexer=None, parser=None, enable_cache=True,
     with _parse_lock:
         if enable_cache and module_name in _thrift_cache:
             return _thrift_cache[module_name]
+
+        if include_dirs is not None:
+            context.include_dirs = include_dirs
+        if include_dir is not None:
+            context.include_dirs.append(include_dir)
 
         data = source.read()
 

@@ -1,3 +1,4 @@
+import os
 import sys
 import threading
 from pathlib import Path
@@ -338,22 +339,105 @@ def test_load_fp():
     assert thrift.__thrift_meta__['services'] == [thrift.SharedService]
 
 
-def test_load_fp_with_include(monkeypatch):
+def test_load_fp_with_include():
     from thriftpy2.parser import parser as _parser
     _parser._thrift_cache.clear()
 
-    monkeypatch.chdir(TEST_DIR / 'parser-cases')
     try:
-        with open('include.thrift') as thrift_fp:
-            thrift = load_fp(thrift_fp, 'include_fp_thrift')
+        with open(TEST_DIR / 'parser-cases' / 'include.thrift') as thrift_fp:
+            thrift = load_fp(thrift_fp, 'include_fp_thrift',
+                             include_dirs=[TEST_DIR / 'parser-cases'])
 
         assert thrift.__thrift_file__ is None
         assert thrift.datetime == 1422009523
         assert [t.__name__ for t in thrift.__thrift_meta__['includes']] == \
             ['included', 'included_1']
     finally:
-        # the includes were cached under paths relative to this directory
+        # the includes were cached under names derived from the include dir
         _parser._thrift_cache.clear()
+
+
+def test_load_fp_include_same_basename_no_collision(tmp_path):
+    # including `a/t.thrift` and `b/t.thrift` from two fp-loaded roots must
+    # not collapse onto the same `t_thrift` module
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
+    added_modules = []
+
+    try:
+        (tmp_path / 'a').mkdir()
+        (tmp_path / 'b').mkdir()
+        (tmp_path / 'a' / 't.thrift').write_text('struct A { 1: string x }')
+        (tmp_path / 'b' / 't.thrift').write_text('struct B { 1: string y }')
+        (tmp_path / 'root_a.thrift').write_text(
+            'include "a/t.thrift"\nstruct RootA { 1: t.A a }')
+        (tmp_path / 'root_b.thrift').write_text(
+            'include "b/t.thrift"\nstruct RootB { 1: t.B b }')
+
+        with open(tmp_path / 'root_a.thrift') as fp:
+            thrift_a = load_fp(fp, 'root_a_fp_thrift', include_dirs=[tmp_path])
+        with open(tmp_path / 'root_b.thrift') as fp:
+            thrift_b = load_fp(fp, 'root_b_fp_thrift', include_dirs=[tmp_path])
+        added_modules.extend(['root_a_fp_thrift', 'root_b_fp_thrift',
+                              'a.t_thrift', 'b.t_thrift'])
+
+        assert thrift_a.t.A is not thrift_b.t.B
+        assert thrift_a.t.__thrift_file__.endswith(os.path.join('a', 't.thrift'))
+        assert thrift_b.t.__thrift_file__.endswith(os.path.join('b', 't.thrift'))
+    finally:
+        _parser._thrift_cache.clear()
+        for mod in added_modules:
+            sys.modules.pop(mod, None)
+
+
+def test_load_fp_include_child_matches_load(tmp_path):
+    # the same included file yields the same classes whether the root came
+    # from load() or load_fp()
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
+    added_modules = []
+
+    try:
+        (tmp_path / 't.thrift').write_text('struct A { 1: string x }')
+        (tmp_path / 'root.thrift').write_text(
+            'include "t.thrift"\nstruct Root { 1: t.A a }')
+
+        with open(tmp_path / 'root.thrift') as fp:
+            fp_thrift = load_fp(fp, 'root_fp_thrift', include_dirs=[tmp_path])
+        file_thrift = load(str(tmp_path / 'root.thrift'))
+        added_modules.extend(['root_fp_thrift', 't_thrift'])
+
+        assert fp_thrift.t.A is file_thrift.t.A
+    finally:
+        _parser._thrift_cache.clear()
+        for mod in added_modules:
+            sys.modules.pop(mod, None)
+
+
+def test_load_fp_include_child_picklable(tmp_path):
+    # structs from files included by an fp-loaded root are registered in
+    # sys.modules, so they can be pickled
+    import pickle
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
+    added_modules = []
+
+    try:
+        (tmp_path / 't.thrift').write_text('struct A { 1: string x }')
+        (tmp_path / 'root.thrift').write_text(
+            'include "t.thrift"\nstruct Root { 1: t.A a }')
+
+        with open(tmp_path / 'root.thrift') as fp:
+            thrift = load_fp(fp, 'root_pickle_fp_thrift',
+                             include_dirs=[tmp_path])
+        added_modules.extend(['root_pickle_fp_thrift', 't_thrift'])
+
+        obj = thrift.t.A(x='hello')
+        assert pickle.loads(pickle.dumps(obj)).x == 'hello'
+    finally:
+        _parser._thrift_cache.clear()
+        for mod in added_modules:
+            sys.modules.pop(mod, None)
 
 
 def test_e_load_fp():

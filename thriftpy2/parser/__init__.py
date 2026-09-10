@@ -17,6 +17,28 @@ from .exc import ThriftModuleNameConflict
 from .exc import ThriftParserError  # noqa: F401, re-exported for compat
 
 
+def _register_include_modules(thrift: types.ModuleType) -> None:
+    """Register a thrift module's included children in ``sys.modules``,
+    recursively, so structs defined in included files are importable (and
+    therefore picklable). Mirrors what :func:`load` has always done for
+    file-loaded modules.
+    """
+    include_thrifts = thrift.__thrift_meta__["includes"][:]
+    while include_thrifts:
+        include_thrift = include_thrifts.pop()
+        registered_thrift = sys.modules.get(include_thrift.__thrift_module_name__)
+        if registered_thrift is None:
+            sys.modules[include_thrift.__thrift_module_name__] = include_thrift
+            if hasattr(include_thrift, "__thrift_meta__"):
+                include_thrifts.extend(
+                    include_thrift.__thrift_meta__["includes"][:])
+        elif registered_thrift.__thrift_file__ != include_thrift.__thrift_file__:
+            raise ThriftModuleNameConflict(
+                'Module name conflict between "%s" and "%s"' %
+                (registered_thrift.__thrift_file__, include_thrift.__thrift_file__)
+            )
+
+
 def load(
     path: Union[str, os.PathLike],
     module_name: Optional[str] = None,
@@ -46,29 +68,36 @@ def load(
     # add sub modules to sys.modules recursively
     if real_module:
         sys.modules[module_name] = thrift
-        include_thrifts = thrift.__thrift_meta__["includes"][:]
-        while include_thrifts:
-            include_thrift = include_thrifts.pop()
-            registered_thrift = sys.modules.get(include_thrift.__thrift_module_name__)
-            if registered_thrift is None:
-                sys.modules[include_thrift.__thrift_module_name__] = include_thrift
-                if hasattr(include_thrift, "__thrift_meta__"):
-                    include_thrifts.extend(
-                        include_thrift.__thrift_meta__["includes"][:])
-            else:
-                if registered_thrift.__thrift_file__ != include_thrift.__thrift_file__:
-                    raise ThriftModuleNameConflict(
-                        'Module name conflict between "%s" and "%s"' %
-                        (registered_thrift.__thrift_file__, include_thrift.__thrift_file__)
-                    )
+        _register_include_modules(thrift)
     return thrift
 
 
-def load_fp(source: TextIO, module_name: str) -> types.ModuleType:
+def load_fp(source: TextIO, module_name: str,
+            include_dirs: Optional[List[Union[str, os.PathLike]]] = None,
+            include_dir: Optional[Union[str, os.PathLike]] = None
+            ) -> types.ModuleType:
     """Load thrift file like object as a module.
+
+    :param include_dirs: directories to find thrift files while processing
+                         the `include` directive, by default: ['.']. A module
+                         loaded from a file-like object has no path of its
+                         own, so this is the only place its includes are
+                         resolved from; pass the directory holding the thrift
+                         files instead of changing the working directory.
+    :param include_dir: directory to find child thrift files. Note this keyword
+                        parameter will be deprecated in the future, it exists
+                        for compatible reason. If it's provided (not `None`),
+                        it will be appended to `include_dirs`.
     """
-    thrift = parse_fp(source, module_name)
+    if include_dirs is not None:
+        include_dirs = [os.fspath(d) for d in include_dirs]
+    if include_dir is not None:
+        include_dir = os.fspath(include_dir)
+    thrift = parse_fp(source, module_name, include_dirs=include_dirs,
+                      include_dir=include_dir)
     sys.modules[module_name] = thrift
+    # register included children as well, so their structs are picklable
+    _register_include_modules(thrift)
     return thrift
 
 
