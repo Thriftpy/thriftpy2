@@ -209,6 +209,12 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
                 v_type, v_spec = spec, None
             result = []
             r_type, sz = await self._read_collection_begin()
+            if r_type != v_type and not (
+                    r_type in BIN_TYPES and v_type in BIN_TYPES):
+                for _ in range(sz):
+                    await self.skip(r_type)
+                self._read_collection_end()
+                return []
 
             for i in range(sz):
                 result.append(await self._read_val(v_type, v_spec))
