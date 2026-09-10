@@ -40,3 +40,28 @@ async def test_read_struct_skips_map_with_mismatched_key_type():
     obj = TIntKeyMap()
     await proto.read_struct(obj)
     assert obj == TIntKeyMap(m={}, x=5)
+
+
+@pytest.mark.asyncio
+async def test_read_struct_skips_list_with_mismatched_element_type():
+    class TIntList(TPayload):
+        thrift_spec = {
+            1: (TType.LIST, "l", TType.I32, False),
+            2: (TType.I32, "x", False),
+        }
+        default_spec = [("l", None), ("x", None)]
+
+    class TStringList(TPayload):
+        thrift_spec = {
+            1: (TType.LIST, "l", TType.STRING, False),
+            2: (TType.I32, "x", False),
+        }
+        default_spec = [("l", None), ("x", None)]
+
+    b = BytesIO()
+    compact.TAsyncCompactProtocol(b).write_struct(
+        TStringList(l=["ab", "cd"], x=99))
+    _, proto = gen_proto(b.getvalue())
+    obj = TIntList()
+    await proto.read_struct(obj)
+    assert obj == TIntList(l=[], x=99)

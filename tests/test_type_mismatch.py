@@ -1,4 +1,4 @@
-from unittest import TestCase, expectedFailure
+from unittest import TestCase
 
 from thriftpy2.thrift import TType, TPayload
 
@@ -135,11 +135,6 @@ class MismatchTestCase(TestCase):
 
 class CompactMismatchTestCase(MismatchTestCase):
     PROTO = TCompactProtocol
-
-    # The compact protocol does not check list element types yet.
-    @expectedFailure
-    def test_list_type_mismatch(self):
-        super().test_list_type_mismatch()
 
 
 if CYTHON:
