@@ -224,3 +224,40 @@ def test_consecutive_messages_on_same_transport():
         seen.append((name, obj.a))
 
     assert seen == [("first", "first"), ("second", "second")]
+
+
+def test_nested_containers_round_trip():
+    class Foo(thriftpy2.thrift.TPayload):
+        thrift_spec = {1: (TType.STRING, "bar", False)}
+        default_spec = [("bar", None)]
+
+    class Nested(thriftpy2.thrift.TPayload):
+        thrift_spec = {
+            1: (TType.LIST, "ll", (TType.LIST, TType.I32), False),
+            2: (TType.MAP, "m",
+                (TType.STRING, (TType.LIST, (TType.LIST, TType.I32))), False),
+            3: (TType.LIST, "lf", (TType.LIST, (TType.STRUCT, Foo)), False),
+        }
+        default_spec = [(v[1], None) for v in thrift_spec.values()]
+
+    obj = Nested(ll=[[1, 2], [3]], m={"k": [[1], [2, 3]]},
+                 lf=[[Foo(bar="x")], []])
+
+    obuf = TMemoryBuffer()
+    writer = TApacheJSONProtocol(obuf)
+    writer.write_message_begin("nested", 1, 1)
+    writer.write_struct(obj)
+    writer.write_message_end()
+
+    doc = json.loads(obuf.getvalue().decode("utf8"))[4]
+    assert doc["1"] == {"lst": ["lst", 2, ["i32", 2, 1, 2], ["i32", 1, 3]]}
+    assert doc["3"] == {
+        "lst": ["lst", 2, ["rec", 1, {"1": {"str": "x"}}], ["rec", 0]]}
+
+    reader = TApacheJSONProtocol(TMemoryBuffer(obuf.getvalue()))
+    reader.read_message_begin()
+    result = Nested()
+    reader.read_struct(result)
+    reader.read_message_end()
+
+    assert recursive_vars(result) == recursive_vars(obj)
