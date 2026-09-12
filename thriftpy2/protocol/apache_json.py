@@ -33,25 +33,18 @@ JTYPES = {v: k for k, v in CTYPES.items()}
 VERSION = 1
 
 
-def flatten(suitable_for_isinstance):
+def _spec_ttype(spec):
     """
-    isinstance() can accept a bunch of really annoying different types:
-        * a single type
-        * a tuple of types
-        * an arbitrary nested tree of tuples
-    Return a flattened tuple of the given argument.
+    Return the TType of a thrift spec entry.
+
+    A spec entry is one of: a bare TType int, a struct class, or a tuple
+    ``(ttype, sub_spec)`` describing a container or a struct.
     """
-
-    types = list()
-
-    if not isinstance(suitable_for_isinstance, tuple):
-        suitable_for_isinstance = (suitable_for_isinstance,)
-    for thing in suitable_for_isinstance:
-        if isinstance(thing, tuple):
-            types.extend(flatten(thing))
-        else:
-            types.append(thing)
-    return tuple(types)
+    if isinstance(spec, tuple):
+        return spec[0]
+    if hasattr(spec, 'thrift_spec'):
+        return TType.STRUCT
+    return spec
 
 
 def _ensure_b64_encode(val):
@@ -169,79 +162,48 @@ class TApacheJSONProtocol(TProtocolBase):
               {"1":{"i32":567809.0},"2":{"i32":2.0},"3":{"str":"Other test"},"4":{"tf":0}}]}}}}}}
 
         :param thrift_obj: the thing we want to make into a dict
-        :param item_type: the type of the item we are to convert
+        :param item_type: spec describing the type of ``thrift_obj``, in the
+            same shape as the element specs found in ``thrift_spec``
         :return:
         """
-        if not hasattr(thrift_obj, 'thrift_spec'):
-            # use item_type to render it
-            if item_type is not None:
-                if isinstance(item_type, tuple) and len(item_type) > 1:
-                    to_type = item_type[1]
-                    flat_key_val = [TType.STRUCT if hasattr(t, 'thrift_spec') else t for t in flatten(to_type)]
-                    if flat_key_val[0] == TType.LIST or isinstance(thrift_obj, list):
-                        return [CTYPES[flat_key_val[1]], len(thrift_obj)] + [self._thrift_to_dict(v, to_type[1]) for v
-                                                                             in thrift_obj]
-                    elif flat_key_val[0] == TType.MAP or isinstance(thrift_obj, dict):
-                        if to_type[0] == TType.MAP:
-                            key_type = flat_key_val[1]
-                            val_type = flat_key_val[2]
-                        else:
-                            key_type = flat_key_val[0]
-                            val_type = flat_key_val[1]
-                        return [CTYPES[key_type], CTYPES[val_type], len(thrift_obj), {
-                            self._thrift_to_dict(k, key_type):
-                                self._thrift_to_dict(v, to_type[1]) for k, v in thrift_obj.items()
-                        }]
-                    if (to_type == TType.BINARY or item_type[-1] == TType.BINARY) and TType.BINARY != TType.STRING:
-                        return base64.b64encode(_ensure_b64_encode(thrift_obj)).decode('ascii')
+        if hasattr(thrift_obj, 'thrift_spec'):
+            result = {}
+            for field_idx, thrift_spec in thrift_obj.thrift_spec.items():
+                ttype, field_name, raw_spec = thrift_spec[:3]
+                val = getattr(thrift_obj, field_name)
+                if val is None:
+                    continue
+                if ttype in (TType.LIST, TType.SET, TType.MAP, TType.STRUCT):
+                    spec: Any = (ttype, raw_spec)
+                else:
+                    spec = ttype
+                result[field_idx] = {CTYPES[ttype]: self._thrift_to_dict(val, spec)}
+            return result
+
+        if item_type is None:
             if isinstance(thrift_obj, bool):
                 return int(thrift_obj)
-            if (
-                item_type == TType.BINARY
-                or (isinstance(item_type, tuple) and item_type
-                    and item_type[0] == TType.BINARY)
-            ) and TType.BINARY != TType.STRING:
-                return base64.b64encode(_ensure_b64_encode(thrift_obj)).decode("ascii")
             return thrift_obj
-        result = {}
-        for field_idx, thrift_spec in thrift_obj.thrift_spec.items():
-            ttype, field_name, raw_spec = thrift_spec[:3]
-            spec: Any = raw_spec
-            if isinstance(spec, int):
-                spec = (spec,)
-            val = getattr(thrift_obj, field_name)
-            if val is not None:
-                if ttype == TType.STRUCT:
-                    result[field_idx] = {
-                        CTYPES[ttype]: self._thrift_to_dict(val)
-                    }
-                elif ttype in [TType.LIST, TType.SET]:
-                    # format is [list_item_type, length, items]
-                    result[field_idx] = {
-                        CTYPES[ttype]: [CTYPES[spec[0]], len(val)] + [self._thrift_to_dict(v, spec) for v in val]
-                    }
-                elif ttype == TType.MAP:
-                    key_type = CTYPES[spec[0]]
-                    val_type = CTYPES[spec[1][0] if isinstance(spec[1], tuple) else spec[1]]
-                    # format is [key_type, value_type, length, dict]
-                    result[field_idx] = {
-                        CTYPES[ttype]: [key_type, val_type, len(val),
-                                        {self._thrift_to_dict(k, spec[0]):
-                                         self._thrift_to_dict(v, spec) for k, v in val.items()}]
-                    }
-                elif ttype == TType.BINARY and TType.BINARY != TType.STRING:
-                    result[field_idx] = {
-                        CTYPES[ttype]: base64.b64encode(_ensure_b64_encode(val)).decode('ascii')
-                    }
-                elif ttype == TType.BOOL:
-                    result[field_idx] = {
-                        CTYPES[ttype]: int(val)
-                    }
-                else:
-                    result[field_idx] = {
-                        CTYPES[ttype]: val
-                    }
-        return result
+
+        ttype = _spec_ttype(item_type)
+        sub_spec: Any = item_type[1] if isinstance(item_type, tuple) and len(item_type) > 1 else None
+        if ttype in (TType.LIST, TType.SET):
+            # format is [item_type, length, items...]
+            return [CTYPES[_spec_ttype(sub_spec)], len(thrift_obj)] + [
+                self._thrift_to_dict(v, sub_spec) for v in thrift_obj
+            ]
+        if ttype == TType.MAP:
+            key_spec, val_spec = sub_spec
+            # format is [key_type, value_type, length, dict]
+            return [CTYPES[_spec_ttype(key_spec)], CTYPES[_spec_ttype(val_spec)], len(thrift_obj), {
+                self._thrift_to_dict(k, key_spec): self._thrift_to_dict(v, val_spec)
+                for k, v in thrift_obj.items()
+            }]
+        if ttype == TType.BINARY and TType.BINARY != TType.STRING:
+            return base64.b64encode(_ensure_b64_encode(thrift_obj)).decode('ascii')
+        if ttype == TType.BOOL:
+            return int(thrift_obj)
+        return thrift_obj
 
     def _dict_to_thrift(self, data: Any, base_type: Any) -> Any:
         """
