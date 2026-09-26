@@ -7,22 +7,21 @@ import urllib.parse
 import warnings
 from typing import Any
 
-from thriftpy2.protocol.base import TProtocolFactory
-from thriftpy2.transport.base import TTransportFactory
-
 from .client import TAsyncClient
 from .processor import TAsyncProcessor
+from .protocol.base import TAsyncProtocolFactory
 from .protocol.binary import TAsyncBinaryProtocolFactory
 from .server import TAsyncServer
 from .socket import TAsyncServerSocket, TAsyncSocket
+from .transport.base import TAsyncTransportFactory
 from .transport.buffered import TAsyncBufferedTransportFactory
 
 
 async def make_client(
         service: types.ModuleType, host: str = 'localhost', port: int = 9090,
         unix_socket: str | None = None,
-        proto_factory: TProtocolFactory = TAsyncBinaryProtocolFactory(),
-        trans_factory: TTransportFactory = TAsyncBufferedTransportFactory(),
+        proto_factory: TAsyncProtocolFactory = TAsyncBinaryProtocolFactory(),
+        trans_factory: TAsyncTransportFactory = TAsyncBufferedTransportFactory(),
         timeout: int | None = 3000, connect_timeout: int | None = None,
         cafile: str | None = None, ssl_context: ssl.SSLContext | None = None,
         certfile: str | None = None, keyfile: str | None = None,
@@ -73,8 +72,8 @@ async def make_client(
 def make_server(
         service: types.ModuleType, handler: Any, host: str = 'localhost',
         port: int = 9090, unix_socket: str | None = None,
-        proto_factory: TProtocolFactory = TAsyncBinaryProtocolFactory(),
-        trans_factory: TTransportFactory = TAsyncBufferedTransportFactory(),
+        proto_factory: TAsyncProtocolFactory = TAsyncBinaryProtocolFactory(),
+        trans_factory: TAsyncTransportFactory = TAsyncBufferedTransportFactory(),
         client_timeout: int | None = 3000, certfile: str | None = None,
         keyfile: str | None = None, ssl_context: ssl.SSLContext | None = None,
         loop: Any | None = None,

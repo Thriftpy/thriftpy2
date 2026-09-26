@@ -16,11 +16,13 @@ from thriftpy2.transport._ssl import (
     DEFAULT_CIPHERS
 )
 
+from .transport.base import TAsyncTransportBase
+
 
 MAC_OR_BSD = sys.platform == 'darwin' or sys.platform.startswith('freebsd')
 
 
-class TAsyncSocket:
+class TAsyncSocket(TAsyncTransportBase):
     """Socket implementation for client side."""
 
     def __init__(self, host=None, port=None, unix_socket=None,
@@ -185,7 +187,7 @@ class TAsyncSocket:
                 # in lib/cpp/src/transport/TSocket.cpp.
                 self.close()
                 # Trigger the check to raise the END_OF_FILE exception below.
-                buff = ''
+                buff = b''
             else:
                 raise
 
@@ -194,8 +196,8 @@ class TAsyncSocket:
                                       message='TSocket read 0 bytes')
         return buff
 
-    def write(self, buff):
-        self.writer.write(buff)
+    def write(self, buf):
+        self.writer.write(buf)
 
     async def flush(self):
         await asyncio.wait_for(self.writer.drain(), self.connect_timeout)
@@ -332,7 +334,7 @@ class TAsyncServerSocket:
             pass
 
 
-class StreamHandler:
+class StreamHandler(TAsyncTransportBase):
     def __init__(self, reader, writer):
         self.reader, self.writer = reader, writer
 
@@ -347,7 +349,7 @@ class StreamHandler:
                 # in lib/cpp/src/transport/TSocket.cpp.
                 self.close()
                 # Trigger the check to raise the END_OF_FILE exception below.
-                buff = ''
+                buff = b''
             else:
                 raise
 
@@ -356,8 +358,8 @@ class StreamHandler:
                                       message='TSocket read 0 bytes')
         return buff
 
-    def write(self, buff):
-        self.writer.write(buff)
+    def write(self, buf):
+        self.writer.write(buf)
 
     async def flush(self):
         await self.writer.drain()
