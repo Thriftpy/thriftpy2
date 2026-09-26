@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import sys
 import types
+from collections.abc import Sequence
 from typing import TextIO
 
 from .parser import parse, parse_fp
@@ -20,8 +21,8 @@ from .exc import ThriftParserError  # noqa: F401, re-exported for compat
 def load(
     path: str | os.PathLike,
     module_name: str | None = None,
-    include_dirs: list[str | os.PathLike] | None = None,
-    include_dir: str | os.PathLike | None = None,
+    include_dirs: Sequence[str | os.PathLike[str]] | None = None,
+    include_dir: str | os.PathLike[str] | None = None,
     encoding: str = 'utf-8',
 ) -> types.ModuleType:
     """Load thrift file as a module.

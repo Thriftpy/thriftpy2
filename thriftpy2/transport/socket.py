@@ -14,7 +14,8 @@ class TSocket(TTransportBase):
 
     def __init__(self, host=None, port=None, unix_socket=None,
                  sock=None, socket_family=socket.AF_INET,
-                 socket_timeout=3000, connect_timeout=None):
+                 socket_timeout: float | None = 3000,
+                 connect_timeout: float | None = None):
         """Initialize a TSocket
 
         TSocket can be initialized in 3 ways:
@@ -160,7 +161,8 @@ class TServerSocket:
     """Socket implementation for server side."""
 
     def __init__(self, host=None, port=None, unix_socket=None,
-                 socket_family=socket.AF_INET, client_timeout=3000,
+                 socket_family=socket.AF_INET,
+                 client_timeout: float | None = 3000,
                  backlog=128):
         """Initialize a TServerSocket
 
