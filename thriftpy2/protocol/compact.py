@@ -1,5 +1,4 @@
 import array
-import sys
 from struct import pack, unpack
 from typing import Any
 
@@ -110,8 +109,12 @@ TTYPES = dict((v, k) for k, v in CTYPES.items())
 TTYPES[CompactType.FALSE] = TType.BOOL
 
 
-class TCompactProtocol(TProtocolBase):
-    """Compact implementation of the Thrift protocol driver."""
+class _TCompactProtocolBase:
+    """State and write path shared by the sync and async compact protocols.
+
+    Writes only buffer bytes on the transport, so both implementations can
+    share them. Reads differ because async transports return coroutines.
+    """
     PROTOCOL_ID = 0x82
     VERSION = 1
     VERSION_MASK = 0x1f
@@ -119,8 +122,9 @@ class TCompactProtocol(TProtocolBase):
     TYPE_BITS = 0x07
     TYPE_SHIFT_AMOUNT = 5
 
-    def __init__(self, trans, decode_response=True, strict_decode=False):
-        TProtocolBase.__init__(self, trans)
+    trans: Any
+
+    def _init_state(self, decode_response, strict_decode):
         self._last_fid = 0
         self._bool_fid = None
         self._bool_value = None
@@ -130,53 +134,6 @@ class TCompactProtocol(TProtocolBase):
 
     def _get_ttype(self, byte):
         return TTYPES[byte & 0x0f]
-
-    def _read_size(self):
-        result = read_varint(self.trans)
-        if result < 0:
-            raise TException("Length < 0")
-        return result
-
-    def read_message_begin(self):
-        proto_id = self._read_ubyte()
-        if proto_id != self.PROTOCOL_ID:
-            raise TProtocolException(
-                TProtocolException.BAD_VERSION,
-                f'Bad protocol id in the message: {proto_id}')
-
-        ver_type = self._read_ubyte()
-        type = (ver_type >> self.TYPE_SHIFT_AMOUNT) & self.TYPE_BITS
-        version = ver_type & self.VERSION_MASK
-        if version != self.VERSION:
-            raise TProtocolException(
-                TProtocolException.BAD_VERSION,
-                f'Bad version: {version} (expect {self.VERSION})')
-        seqid = read_varint(self.trans)
-        name = self._read_string()
-        return name, type, seqid
-
-    def read_message_end(self):
-        assert len(self._structs) == 0
-
-    def _read_field_begin(self):
-        type = self._read_ubyte()
-        if type & 0x0f == TType.STOP:
-            return None, 0, 0
-
-        delta = type >> 4
-        if delta == 0:
-            fid = from_zig_zag(read_varint(self.trans))
-        else:
-            fid = self._last_fid + delta
-        self._last_fid = fid
-
-        type = type & 0x0f
-        if type == CompactType.TRUE:
-            self._bool_value = True
-        elif type == CompactType.FALSE:
-            self._bool_value = False
-
-        return None, self._get_ttype(type), fid
 
     def _read_field_end(self):
         pass
@@ -188,171 +145,8 @@ class TCompactProtocol(TProtocolBase):
     def _read_struct_end(self):
         self._last_fid = self._structs.pop()
 
-    def _read_map_begin(self):
-        size = self._read_size()
-        types = 0
-        if size > 0:
-            types = self._read_ubyte()
-        vtype = self._get_ttype(types)
-        ktype = self._get_ttype(types >> 4)
-        return (ktype, vtype, size)
-
-    def _read_collection_begin(self):
-        size_type = self._read_ubyte()
-        size = size_type >> 4
-        type = self._get_ttype(size_type)
-        if size == 15:
-            size = self._read_size()
-        return type, size
-
     def _read_collection_end(self):
         pass
-
-    def _read_byte(self):
-        result, = unpack('!b', self.trans.read(1))
-        return result
-
-    def _read_ubyte(self):
-        result, = unpack('!B', self.trans.read(1))
-        return result
-
-    def _read_int(self):
-        return from_zig_zag(read_varint(self.trans))
-
-    def _read_double(self):
-        buff = self.trans.read(8)
-        val, = unpack('<d', buff)
-        return val
-
-    def _read_binary(self):
-        length = self._read_size()
-        return self.trans.read(length)
-
-    def _read_string(self):
-        len = self._read_size()
-        byte_payload = self.trans.read(len)
-
-        if self.decode_response:
-            try:
-                byte_payload = byte_payload.decode('utf-8')
-            except UnicodeDecodeError:
-                if self.strict_decode:
-                    raise
-        return byte_payload
-
-    def _read_bool(self):
-        if self._bool_value is not None:
-            result = self._bool_value
-            self._bool_value = None
-            return result
-        return self._read_byte() == CompactType.TRUE
-
-    def read_struct(self, obj):
-        self._read_struct_begin()
-        while True:
-            fname, ftype, fid = self._read_field_begin()
-            if ftype == TType.STOP:
-                break
-
-            if fid not in obj.thrift_spec:
-                self.skip(ftype)
-                continue
-
-            try:
-                field = obj.thrift_spec[fid]
-            except IndexError:
-                self.skip(ftype)
-                raise
-            else:
-                if field is not None and\
-                        (ftype == field[0]
-                         or (ftype in BIN_TYPES
-                             and field[0] in BIN_TYPES)):
-                    fname = field[1]
-                    fspec = field[2]
-                    val = self._read_val(field[0], fspec)
-                    setattr(obj, fname, val)
-                else:
-                    self.skip(ftype)
-            self._read_field_end()
-        self._read_struct_end()
-
-    def _read_val(self, ttype, spec: Any = None):
-        if ttype == TType.BOOL:
-            return self._read_bool()
-
-        elif ttype == TType.BYTE:
-            return self._read_byte()
-
-        elif ttype in (TType.I16, TType.I32, TType.I64):
-            return self._read_int()
-
-        elif ttype == TType.DOUBLE:
-            return self._read_double()
-
-        elif ttype == TType.BINARY:
-            return self._read_binary()
-
-        elif ttype == TType.STRING:
-            return self._read_string()
-
-        elif ttype in (TType.LIST, TType.SET):
-            if isinstance(spec, tuple):
-                v_type, v_spec = spec[0], spec[1]
-            else:
-                v_type, v_spec = spec, None
-            result = []
-            r_type, sz = self._read_collection_begin()
-            if r_type != v_type and not (
-                    r_type in BIN_TYPES and v_type in BIN_TYPES):
-                for _ in range(sz):
-                    self.skip(r_type)
-                self._read_collection_end()
-                return []
-
-            for i in range(sz):
-                result.append(self._read_val(v_type, v_spec))
-
-            self._read_collection_end()
-            return result
-
-        elif ttype == TType.MAP:
-            if isinstance(spec[0], int):
-                k_type = spec[0]
-                k_spec = None
-            else:
-                k_type, k_spec = spec[0]
-
-            if isinstance(spec[1], int):
-                v_type = spec[1]
-                v_spec = None
-            else:
-                v_type, v_spec = spec[1]
-
-            result = {}
-            sk_type, sv_type, sz = self._read_map_begin()
-            k_mismatch = sk_type != k_type and not (
-                sk_type in BIN_TYPES and k_type in BIN_TYPES)
-            v_mismatch = sv_type != v_type and not (
-                sv_type in BIN_TYPES and v_type in BIN_TYPES)
-            if k_mismatch or v_mismatch:
-                for _ in range(sz):
-                    self.skip(sk_type)
-                    self.skip(sv_type)
-                self._read_collection_end()
-                return {}
-
-            for i in range(sz):
-                k_val = self._read_val(k_type, k_spec)
-                v_val = self._read_val(v_type, v_spec)
-                result[k_val] = v_val
-            self._read_collection_end()
-            return result
-
-        elif ttype == TType.STRUCT:
-            obj = spec()
-            self.read_struct(obj)
-            return obj
 
     def _write_size(self, i32):
         write_varint(self.trans, i32)
@@ -530,6 +324,224 @@ class TCompactProtocol(TProtocolBase):
 
         elif ttype == TType.STRUCT:
             self.write_struct(val)
+
+
+class TCompactProtocol(_TCompactProtocolBase, TProtocolBase):
+    """Compact implementation of the Thrift protocol driver."""
+
+    def __init__(self, trans, decode_response=True, strict_decode=False):
+        TProtocolBase.__init__(self, trans)
+        self._init_state(decode_response, strict_decode)
+
+    def _read_size(self):
+        result = read_varint(self.trans)
+        if result < 0:
+            raise TException("Length < 0")
+        return result
+
+    def read_message_begin(self):
+        proto_id = self._read_ubyte()
+        if proto_id != self.PROTOCOL_ID:
+            raise TProtocolException(
+                TProtocolException.BAD_VERSION,
+                f'Bad protocol id in the message: {proto_id}')
+
+        ver_type = self._read_ubyte()
+        type = (ver_type >> self.TYPE_SHIFT_AMOUNT) & self.TYPE_BITS
+        version = ver_type & self.VERSION_MASK
+        if version != self.VERSION:
+            raise TProtocolException(
+                TProtocolException.BAD_VERSION,
+                f'Bad version: {version} (expect {self.VERSION})')
+        seqid = read_varint(self.trans)
+        name = self._read_string()
+        return name, type, seqid
+
+    def read_message_end(self):
+        assert len(self._structs) == 0
+
+    def _read_field_begin(self):
+        type = self._read_ubyte()
+        if type & 0x0f == TType.STOP:
+            return None, 0, 0
+
+        delta = type >> 4
+        if delta == 0:
+            fid = from_zig_zag(read_varint(self.trans))
+        else:
+            fid = self._last_fid + delta
+        self._last_fid = fid
+
+        type = type & 0x0f
+        if type == CompactType.TRUE:
+            self._bool_value = True
+        elif type == CompactType.FALSE:
+            self._bool_value = False
+
+        return None, self._get_ttype(type), fid
+
+    def _read_map_begin(self):
+        size = self._read_size()
+        types = 0
+        if size > 0:
+            types = self._read_ubyte()
+        vtype = self._get_ttype(types)
+        ktype = self._get_ttype(types >> 4)
+        return (ktype, vtype, size)
+
+    def _read_collection_begin(self):
+        size_type = self._read_ubyte()
+        size = size_type >> 4
+        type = self._get_ttype(size_type)
+        if size == 15:
+            size = self._read_size()
+        return type, size
+
+    def _read_byte(self):
+        result, = unpack('!b', self.trans.read(1))
+        return result
+
+    def _read_ubyte(self):
+        result, = unpack('!B', self.trans.read(1))
+        return result
+
+    def _read_int(self):
+        return from_zig_zag(read_varint(self.trans))
+
+    def _read_double(self):
+        buff = self.trans.read(8)
+        val, = unpack('<d', buff)
+        return val
+
+    def _read_binary(self):
+        length = self._read_size()
+        return self.trans.read(length)
+
+    def _read_string(self):
+        len = self._read_size()
+        byte_payload = self.trans.read(len)
+
+        if self.decode_response:
+            try:
+                byte_payload = byte_payload.decode('utf-8')
+            except UnicodeDecodeError:
+                if self.strict_decode:
+                    raise
+        return byte_payload
+
+    def _read_bool(self):
+        if self._bool_value is not None:
+            result = self._bool_value
+            self._bool_value = None
+            return result
+        return self._read_byte() == CompactType.TRUE
+
+    def read_struct(self, obj):
+        self._read_struct_begin()
+        while True:
+            fname, ftype, fid = self._read_field_begin()
+            if ftype == TType.STOP:
+                break
+
+            if fid not in obj.thrift_spec:
+                self.skip(ftype)
+                continue
+
+            try:
+                field = obj.thrift_spec[fid]
+            except IndexError:
+                self.skip(ftype)
+                raise
+            else:
+                if field is not None and\
+                        (ftype == field[0]
+                         or (ftype in BIN_TYPES
+                             and field[0] in BIN_TYPES)):
+                    fname = field[1]
+                    fspec = field[2]
+                    val = self._read_val(field[0], fspec)
+                    setattr(obj, fname, val)
+                else:
+                    self.skip(ftype)
+            self._read_field_end()
+        self._read_struct_end()
+
+    def _read_val(self, ttype, spec: Any = None):
+        if ttype == TType.BOOL:
+            return self._read_bool()
+
+        elif ttype == TType.BYTE:
+            return self._read_byte()
+
+        elif ttype in (TType.I16, TType.I32, TType.I64):
+            return self._read_int()
+
+        elif ttype == TType.DOUBLE:
+            return self._read_double()
+
+        elif ttype == TType.BINARY:
+            return self._read_binary()
+
+        elif ttype == TType.STRING:
+            return self._read_string()
+
+        elif ttype in (TType.LIST, TType.SET):
+            if isinstance(spec, tuple):
+                v_type, v_spec = spec[0], spec[1]
+            else:
+                v_type, v_spec = spec, None
+            result = []
+            r_type, sz = self._read_collection_begin()
+            if r_type != v_type and not (
+                    r_type in BIN_TYPES and v_type in BIN_TYPES):
+                for _ in range(sz):
+                    self.skip(r_type)
+                self._read_collection_end()
+                return []
+
+            for i in range(sz):
+                result.append(self._read_val(v_type, v_spec))
+
+            self._read_collection_end()
+            return result
+
+        elif ttype == TType.MAP:
+            if isinstance(spec[0], int):
+                k_type = spec[0]
+                k_spec = None
+            else:
+                k_type, k_spec = spec[0]
+
+            if isinstance(spec[1], int):
+                v_type = spec[1]
+                v_spec = None
+            else:
+                v_type, v_spec = spec[1]
+
+            result = {}
+            sk_type, sv_type, sz = self._read_map_begin()
+            k_mismatch = sk_type != k_type and not (
+                sk_type in BIN_TYPES and k_type in BIN_TYPES)
+            v_mismatch = sv_type != v_type and not (
+                sv_type in BIN_TYPES and v_type in BIN_TYPES)
+            if k_mismatch or v_mismatch:
+                for _ in range(sz):
+                    self.skip(sk_type)
+                    self.skip(sv_type)
+                self._read_collection_end()
+                return {}
+
+            for i in range(sz):
+                k_val = self._read_val(k_type, k_spec)
+                v_val = self._read_val(v_type, v_spec)
+                result[k_val] = v_val
+            self._read_collection_end()
+            return result
+
+        elif ttype == TType.STRUCT:
+            obj = spec()
+            self.read_struct(obj)
+            return obj
 
     def skip(self, ttype):
         if ttype == TType.STOP:
