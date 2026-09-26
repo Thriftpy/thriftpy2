@@ -16,7 +16,8 @@ class TSSLSocket(TSocket):
     """
 
     def __init__(self, host, port, socket_family=socket.AF_INET,
-                 socket_timeout=3000, connect_timeout=None,
+                 socket_timeout: float | None = 3000,
+                 connect_timeout: float | None = None,
                  ssl_context=None, validate=True,
                  cafile=None, capath=None, certfile=None, keyfile=None,
                  ciphers=DEFAULT_CIPHERS):
@@ -79,7 +80,7 @@ class TSSLServerSocket(TServerSocket):
     """
 
     def __init__(self, host, port, socket_family=socket.AF_INET,
-                 client_timeout=3000, backlog=128,
+                 client_timeout: float | None = 3000, backlog=128,
                  ssl_context=None, certfile='cert.pem',
                  ciphers=RESTRICTED_SERVER_CIPHERS):
         """Initialize a TSSLServerSocket
