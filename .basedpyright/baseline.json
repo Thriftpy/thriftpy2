@@ -1,31 +1,5 @@
 {
     "files": {
-        "./thriftpy2/contrib/aio/protocol/base.py": [
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 14,
-                    "endColumn": 18,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 14,
-                    "endColumn": 32,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 14,
-                    "endColumn": 30,
-                    "lineCount": 1
-                }
-            }
-        ],
         "./thriftpy2/contrib/aio/protocol/compact.py": [
             {
                 "code": "reportIncompatibleMethodOverride",
@@ -152,58 +126,6 @@
                 "range": {
                     "startColumn": 14,
                     "endColumn": 18,
-                    "lineCount": 1
-                }
-            }
-        ],
-        "./thriftpy2/contrib/aio/rpc.py": [
-            {
-                "code": "reportArgumentType",
-                "range": {
-                    "startColumn": 44,
-                    "endColumn": 57,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportGeneralTypeIssues",
-                "range": {
-                    "startColumn": 10,
-                    "endColumn": 26,
-                    "lineCount": 1
-                }
-            }
-        ],
-        "./thriftpy2/contrib/aio/transport/base.py": [
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 14,
-                    "endColumn": 18,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 14,
-                    "endColumn": 19,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 14,
-                    "endColumn": 18,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportIncompatibleMethodOverride",
-                "range": {
-                    "startColumn": 14,
-                    "endColumn": 19,
                     "lineCount": 1
                 }
             }

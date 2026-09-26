@@ -46,7 +46,7 @@ from thriftpy2.contrib.aio.client import TAsyncClient
 from thriftpy2.contrib.aio.processor import TAsyncProcessor
 from thriftpy2.contrib.aio.protocol import TAsyncBinaryProtocolFactory
 from thriftpy2.contrib.aio.transport.base import TAsyncTransportBase
-from thriftpy2.protocol.base import TProtocolFactory
+from thriftpy2.contrib.aio.protocol.base import TAsyncProtocolFactory
 from thriftpy2.transport import TTransportException
 
 HTTP_URI = '{scheme}://{host}:{port}{path}'
@@ -331,7 +331,7 @@ class TAsyncHttpServer:
 async def make_client(
         service: types.ModuleType, host: str = 'localhost', port: int = 9090,
         path: str = '', scheme: str = 'http',
-        proto_factory: TProtocolFactory | None = None,
+        proto_factory: TAsyncProtocolFactory | None = None,
         ssl_context: ssl.SSLContext | None = None,
         http_header_factory: TAsyncHttpHeaderFactory | None = None,
         timeout: int | None = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
@@ -378,7 +378,7 @@ async def make_client(
 async def client_context(
         service: types.ModuleType, host: str = 'localhost', port: int = 9090,
         path: str = '', scheme: str = 'http',
-        proto_factory: TProtocolFactory | None = None,
+        proto_factory: TAsyncProtocolFactory | None = None,
         ssl_context: ssl.SSLContext | None = None,
         http_header_factory: TAsyncHttpHeaderFactory | None = None,
         timeout: int | None = DEFAULT_HTTP_CLIENT_TIMEOUT_MS,
@@ -424,7 +424,7 @@ async def client_context(
 
 
 def make_server(service: types.ModuleType, handler: Any, host: str, port: int,
-                proto_factory: TProtocolFactory | None = None,
+                proto_factory: TAsyncProtocolFactory | None = None,
                 ssl_context: ssl.SSLContext | None = None) -> TAsyncHttpServer:
     """Create an async HTTP server.
 
