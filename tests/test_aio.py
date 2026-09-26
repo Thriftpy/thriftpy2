@@ -375,6 +375,59 @@ class TestAIOFramedCompactSSL(SSLServerMixin, TestAIOFramedCompact):
     pass
 
 
+@pytest.mark.parametrize("use_unix_socket", [False, True])
+@pytest.mark.asyncio
+async def test_server_client_timeout_is_idle_timeout(use_unix_socket):
+    """client_timeout bounds idle time between reads, not connection age."""
+    if use_unix_socket:
+        server_kwargs = {"unix_socket": "/tmp/aio_thriftpy_idle_timeout.sock"}
+    else:
+        server_kwargs = {"host": "127.0.0.1", "port": 0}
+    server = make_aio_server(
+        addressbook.AddressBookService,
+        Dispatcher(),
+        client_timeout=500,
+        loop=asyncio.new_event_loop(),
+        **server_kwargs,
+    )
+    _start_in_thread(server)
+    try:
+        if use_unix_socket:
+            client_kwargs = server_kwargs
+        else:
+            port = server.trans.raw_sock.getsockname()[1]
+            client_kwargs = {"host": "127.0.0.1", "port": port}
+
+        c = await make_aio_client(addressbook.AddressBookService,
+                                  **client_kwargs)
+        try:
+            # a long lived connection that keeps making requests stays open
+            for _ in range(5):
+                await asyncio.sleep(0.1)
+                await c.ping()
+            # a request whose handler runs longer than client_timeout
+            # is not cut short
+            assert await c.sleep(1000) is True
+        finally:
+            c.close()
+
+        # an idle connection is closed by the server after client_timeout,
+        # well before the 3s default that would apply if the value were
+        # dropped on the way to the server socket
+        if use_unix_socket:
+            reader, writer = await asyncio.open_unix_connection(
+                server_kwargs["unix_socket"])
+        else:
+            reader, writer = await asyncio.open_connection(
+                "127.0.0.1", port)
+        try:
+            assert await asyncio.wait_for(reader.read(1), 2) == b""
+        finally:
+            writer.close()
+    finally:
+        server.loop.call_soon_threadsafe(server.loop.stop)
+
+
 @pytest.mark.asyncio
 async def test_client_connect_timeout():
     with pytest.raises(TTransportException):
