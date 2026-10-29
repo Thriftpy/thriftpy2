@@ -61,14 +61,14 @@ jobs:
         release: "15.1"
         copyback: false
         prepare: |
-          pkg install -y python311 py311-pip py311-aiohttp
+          pkg install -y python312 py312-pip py312-aiohttp
         run: |
-          python3.11 -m pip install -e ".[dev]"
+          python3.12 -m pip install -e ".[dev]"
           # The Cython extensions fall back to pure Python silently on import
           # failure, so make sure they actually load.
-          python3.11 -c "import thriftpy2.protocol.cybin.cybin, thriftpy2.transport.framed.cyframed"
+          python3.12 -c "import thriftpy2.protocol.cybin.cybin, thriftpy2.transport.framed.cyframed"
           cd tests
-          python3.11 -m pytest -v
+          python3.12 -m pytest -v
 
   typecheck:
     runs-on: ubuntu-24.04
