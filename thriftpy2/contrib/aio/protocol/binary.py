@@ -41,7 +41,7 @@ async def read_message_begin(inbuf, strict=True):
             raise TProtocolException(type=TProtocolException.BAD_VERSION,
                                      message='No protocol version header')
 
-        name = await inbuf.read(sz)
+        name = (await inbuf.read(sz)).decode('utf-8')
         type_ = unpack_i8(await inbuf.read(1))
 
     seqid = unpack_i32(await inbuf.read(4))
