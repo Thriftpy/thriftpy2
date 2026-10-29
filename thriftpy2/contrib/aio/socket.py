@@ -233,7 +233,9 @@ class TAsyncServerSocket:
         @param unix_socket(str) The filename of a unix socket to connect to
         @param socket_family(str) socket.AF_INET or socket.AF_INET6. only
             take effect when using host/port
-        @param client_timeout   client socket timeout
+        @param client_timeout   idle timeout in ms for each client
+            connection, applied to every read and flush like the
+            sync server does with settimeout. None disables it.
         @param backlog          backlog for server socket
         @param certfile(str)        The server cert pem filename
         @param keyfile(str)         The server cert key filename
@@ -314,11 +316,9 @@ class TAsyncServerSocket:
 
         async def client_connected_cb(reader, writer):
             try:
-                await asyncio.wait_for(
-                    callback(StreamHandler(reader, writer)),
-                    self.client_timeout
-                )
-            except asyncio.exceptions.TimeoutError:
+                await callback(
+                    StreamHandler(reader, writer, self.client_timeout))
+            finally:
                 writer.close()
 
         return client_connected_cb
@@ -335,12 +335,20 @@ class TAsyncServerSocket:
 
 
 class StreamHandler(TAsyncTransportBase):
-    def __init__(self, reader, writer):
+    def __init__(self, reader, writer, timeout=None):
+        """
+        @param timeout  idle timeout in seconds for read and flush, None
+            means wait forever.
+        """
         self.reader, self.writer = reader, writer
+        self.timeout = timeout
 
     async def read(self, sz):
         try:
-            buff = await self.reader.read(sz)
+            buff = await asyncio.wait_for(self.reader.read(sz), self.timeout)
+        except asyncio.TimeoutError:
+            raise TTransportException(type=TTransportException.TIMED_OUT,
+                                      message='TSocket read timed out')
         except socket.error as e:
             if e.errno == errno.ECONNRESET and MAC_OR_BSD:
                 # freebsd and Mach don't follow POSIX semantic of recv
@@ -362,7 +370,14 @@ class StreamHandler(TAsyncTransportBase):
         self.writer.write(buf)
 
     async def flush(self):
-        await self.writer.drain()
+        try:
+            await asyncio.wait_for(self.writer.drain(), self.timeout)
+        except asyncio.TimeoutError:
+            # close() would keep the fd open until the peer drains the
+            # buffered data, drop the connection right away instead
+            self.writer.transport.abort()
+            raise TTransportException(type=TTransportException.TIMED_OUT,
+                                      message='TSocket write timed out')
 
     def close(self):
         try:
