@@ -2,7 +2,7 @@ from io import BytesIO
 
 import pytest
 
-from thriftpy2.thrift import TType, TPayload
+from thriftpy2.thrift import TType, TPayload, TMessageType
 from thriftpy2.contrib.aio.protocol import binary as proto
 
 
@@ -20,6 +20,18 @@ class AsyncBytesIO:
 
     async def read(self, *args, **kwargs):
         return self.b.read(*args, **kwargs)
+
+
+@pytest.mark.parametrize("name", ["hello", "你好"])
+@pytest.mark.asyncio
+async def test_read_unversioned_message_begin(name):
+    buf = BytesIO()
+    writer = proto.TAsyncBinaryProtocol(buf, strict_write=False)
+    writer.write_message_begin(name, TMessageType.CALL, 42)
+    reader = proto.TAsyncBinaryProtocol(
+        AsyncBytesIO(BytesIO(buf.getvalue())), strict_read=False)
+
+    assert await reader.read_message_begin() == (name, TMessageType.CALL, 42)
 
 
 @pytest.mark.asyncio
