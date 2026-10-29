@@ -6,7 +6,7 @@ from thriftpy2.thrift import TException, TType
 from thriftpy2.protocol.compact import (
     from_zig_zag,
     CompactType,
-    TCompactProtocol,
+    _TCompactProtocolBase,
 )
 
 from .base import TAsyncProtocolBase
@@ -27,15 +27,12 @@ async def read_varint(trans):
         shift += 7
 
 
-class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
-                            TAsyncProtocolBase):
+class TAsyncCompactProtocol(_TCompactProtocolBase, TAsyncProtocolBase):
     """Compact implementation of the Thrift protocol driver."""
-    PROTOCOL_ID = 0x82
-    VERSION = 1
-    VERSION_MASK = 0x1f
-    TYPE_MASK = 0xe0
-    TYPE_BITS = 0x07
-    TYPE_SHIFT_AMOUNT = 5
+
+    def __init__(self, trans, decode_response=True, strict_decode=False):
+        TAsyncProtocolBase.__init__(self, trans)
+        self._init_state(decode_response, strict_decode)
 
     async def _read_size(self):
         result = await read_varint(self.trans)
@@ -84,16 +81,6 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
 
         return None, self._get_ttype(type), fid
 
-    def _read_field_end(self):
-        pass
-
-    def _read_struct_begin(self):
-        self._structs.append(self._last_fid)
-        self._last_fid = 0
-
-    def _read_struct_end(self):
-        self._last_fid = self._structs.pop()
-
     async def _read_map_begin(self):
         size = await self._read_size()
         types = 0
@@ -110,9 +97,6 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
         if size == 15:
             size = await self._read_size()
         return type, size
-
-    def _read_collection_end(self):
-        pass
 
     async def _read_byte(self):
         result, = unpack('!b', await self.trans.read(1))

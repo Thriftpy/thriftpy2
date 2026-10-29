@@ -1,5 +1,6 @@
 __all__ = [
     'TAsyncTransportBase',
+    'TAsyncTransportFactory',
     'TAsyncBufferedTransport',
     'TAsyncBufferedTransportFactory',
     'TAsyncFramedTransport',
@@ -8,7 +9,7 @@ __all__ = [
     'TAsyncSaslClientTransportFactory',
 ]
 
-from .base import TAsyncTransportBase
+from .base import TAsyncTransportBase, TAsyncTransportFactory
 from .buffered import TAsyncBufferedTransport, TAsyncBufferedTransportFactory
 from .framed import TAsyncFramedTransport, TAsyncFramedTransportFactory
 from .sasl import (

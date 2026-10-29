@@ -108,18 +108,17 @@ def test_inet6_socket():
     _test_socket(server_socket, client_socket)
 
 
-@pytest.mark.skipif(
-    sys.platform == 'darwin' and os.getuid() != 0,
-    reason='os.mknod() requires super-user privileges on darwin')
 @pytest.mark.skipif(sys.platform == "win32",
-                    reason="os.mknod is missing on Windows")
+                    reason="AF_UNIX is not supported on Windows")
 def test_unix_domain_socket():
     sock_file = "/tmp/thriftpy_test.sock"
 
-    # if socket file already exists, it will be removed
+    # leave a stale socket file behind, the server should remove it
     if os.path.exists(sock_file):
         os.unlink(sock_file)
-    os.mknod(sock_file)
+    stale = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    stale.bind(sock_file)
+    stale.close()
 
     server_socket = TServerSocket(unix_socket=sock_file)
     client_socket = TSocket(unix_socket=sock_file)
