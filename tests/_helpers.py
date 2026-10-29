@@ -61,7 +61,11 @@ def bound_port(get_sock, timeout=5.0):
     while time.monotonic() < deadline:
         sock = get_sock()
         if sock is not None:
-            port = sock.getsockname()[1]
+            try:
+                port = sock.getsockname()[1]
+            except OSError:
+                # Windows raises on getsockname() before bind()
+                port = 0
             if port:
                 return port
         time.sleep(0.01)
