@@ -51,6 +51,25 @@ jobs:
         cd tests
         pytest -v
 
+  freebsd:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Test on FreeBSD
+      uses: vmactions/freebsd-vm@v1.5.9
+      with:
+        release: "15.1"
+        copyback: false
+        prepare: |
+          pkg install -y python312 py312-pip py312-aiohttp
+        run: |
+          python3.12 -m pip install -e ".[dev]"
+          # The Cython extensions fall back to pure Python silently on import
+          # failure, so make sure they actually load.
+          python3.12 -c "import thriftpy2.protocol.cybin.cybin, thriftpy2.transport.framed.cyframed"
+          cd tests
+          python3.12 -m pytest -v
+
   typecheck:
     runs-on: ubuntu-24.04
     steps:
