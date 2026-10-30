@@ -4,6 +4,10 @@ Changelog
 .. note::
    Future release notes will be available at https://github.com/Thriftpy/thriftpy2/releases
 
+- Add ``load_str`` API to load thrift IDL from a string, via `#290`_.
+
+.. _#290: https://github.com/Thriftpy/thriftpy2/issues/290
+
 0.5.x
 ~~~~~
 
