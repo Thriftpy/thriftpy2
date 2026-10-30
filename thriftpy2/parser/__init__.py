@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import io
 import os
 import sys
 import types
@@ -70,6 +71,14 @@ def load_fp(source: TextIO, module_name: str) -> types.ModuleType:
     """Load thrift file like object as a module.
     """
     thrift = parse_fp(source, module_name)
+    sys.modules[module_name] = thrift
+    return thrift
+
+
+def load_str(source: str, module_name: str) -> types.ModuleType:
+    """Load thrift IDL from a string as a module.
+    """
+    thrift = parse_fp(io.StringIO(source), module_name)
     sys.modules[module_name] = thrift
     return thrift
 
