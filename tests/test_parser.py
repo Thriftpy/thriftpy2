@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from thriftpy2.thrift import TType
-from thriftpy2.parser import load, load_fp
+from thriftpy2.parser import load, load_fp, load_str
 from thriftpy2.parser.exc import ThriftParserError, ThriftGrammarError
 
 TEST_DIR = Path(__file__).parent
@@ -357,6 +357,41 @@ def test_load_fp():
     assert thrift.__thrift_file__ is None
     assert thrift.__thrift_meta__['structs'] == [thrift.SharedStruct]
     assert thrift.__thrift_meta__['services'] == [thrift.SharedService]
+
+
+def test_load_str():
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
+
+    path = TEST_DIR / 'parser-cases/shared.thrift'
+    source = path.read_text(encoding='utf-8')
+    thrift = load_str(source, 'shared_from_str_thrift')
+    assert thrift.__name__ == 'shared_from_str_thrift'
+    assert thrift.__thrift_file__ is None
+    assert thrift.__thrift_meta__['structs'] == [thrift.SharedStruct]
+    assert thrift.__thrift_meta__['services'] == [thrift.SharedService]
+
+
+def test_load_str_cache_disabled_by_default():
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
+
+    first = load_str('const i32 X = 1', 'str_nocache_thrift')
+    second = load_str('const i32 X = 2', 'str_nocache_thrift')
+    assert first.X == 1
+    assert second.X == 2
+    assert 'str_nocache_thrift' not in _parser._thrift_cache
+
+
+def test_load_str_enable_cache():
+    from thriftpy2.parser import parser as _parser
+    _parser._thrift_cache.clear()
+
+    first = load_str('const i32 X = 1', 'str_cache_thrift', enable_cache=True)
+    second = load_str('const i32 X = 2', 'str_cache_thrift',
+                      enable_cache=True)
+    assert second is first
+    assert second.X == 1
 
 
 def test_e_load_fp():
