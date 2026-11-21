@@ -367,6 +367,22 @@ def test_e_load_fp():
                 'from file like object.') == str(excinfo.value)
 
 
+def test_set_type():
+    thrift = load(TEST_DIR / 'parser-cases/set_type.thrift')
+    assert thrift.Set.thrift_spec == {
+        1: (TType.SET, 'a_set', TType.STRING, True)}
+
+
+def test_recursive_definition():
+    thrift = load(TEST_DIR / 'parser-cases/recursive_definition.thrift')
+    assert thrift.Bar.thrift_spec == {
+        1: (TType.STRUCT, 'test', thrift.Foo, False)}
+    assert thrift.Foo.thrift_spec == {
+        1: (TType.STRUCT, 'test', thrift.Bar, False),
+        2: (TType.LIST, 'some_int', TType.I32, False)}
+    assert thrift.SOME_INT == [1, 2, 3]
+
+
 def test_recursive_union():
     thrift = load(TEST_DIR / 'parser-cases/recursive_union.thrift')
     assert thrift.Dynamic.thrift_spec == {
