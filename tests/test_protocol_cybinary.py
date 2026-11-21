@@ -10,6 +10,7 @@ from thriftpy2._compat import CYTHON
 from thriftpy2.thrift import TDecodeException, TPayload, TType
 from thriftpy2.transport import TServerSocket, TSocket
 from thriftpy2.utils import hexlify
+from test_protocol_binary import INVALID_TYPE_CASES
 if CYTHON:
     from thriftpy2.protocol import cybin as proto
     from thriftpy2.transport.buffered import TCyBufferedTransport
@@ -632,3 +633,17 @@ def test_max_depth_is_configurable():
     p = factory.get_protocol(TCyMemoryBuffer(blob))
     assert p.max_depth == depth + 1
     assert tree_depth(p.read_struct(TTree())) == depth
+
+
+@pytest.mark.parametrize("data", list(INVALID_TYPE_CASES.values()),
+                         ids=list(INVALID_TYPE_CASES))
+def test_read_struct_rejects_invalid_type(data):
+    p = proto.TCyBinaryProtocol(TCyMemoryBuffer(data))
+    with pytest.raises(proto.ProtocolError, match="Invalid Thrift type"):
+        p.read_struct(TItem())
+
+
+def test_skip_rejects_invalid_type():
+    p = proto.TCyBinaryProtocol(TCyMemoryBuffer())
+    with pytest.raises(proto.ProtocolError, match="Invalid Thrift type"):
+        p.skip(5)

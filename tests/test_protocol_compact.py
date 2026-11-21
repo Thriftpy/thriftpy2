@@ -3,6 +3,7 @@ from io import BytesIO
 import pytest
 
 from thriftpy2.protocol import compact
+from thriftpy2.protocol.exc import TProtocolException
 from thriftpy2.thrift import TPayload, TType
 from thriftpy2.utils import hexlify
 
@@ -269,3 +270,31 @@ def test_write_huge_struct():
     b, proto = gen_proto()
     item = TItem(id=12345, phones=["1234567890"] * 100000)
     proto.write_struct(item)
+
+
+# Compact type 0xd is unassigned. Each payload ends with STOP, so silently
+# skipping the invalid type would make read_struct return normally.
+INVALID_TYPE_CASES = {
+    "field": b"\x3d\x00",
+    "list": b"\x39\x1d\x00",
+    "set": b"\x3a\x1d\x00",
+    "map_key": b"\x3b\x01\xd3\x00",
+    "map_value": b"\x3b\x01\x3d\x00",
+}
+
+
+@pytest.mark.parametrize("data", list(INVALID_TYPE_CASES.values()),
+                         ids=list(INVALID_TYPE_CASES))
+def test_read_struct_rejects_invalid_type(data):
+    _, proto = gen_proto(data)
+    with pytest.raises(TProtocolException) as exc:
+        proto.read_struct(TItem())
+    assert exc.value.type == TProtocolException.INVALID_DATA
+
+
+@pytest.mark.parametrize("ttype", [TType.STOP, 5])
+def test_skip_rejects_invalid_type(ttype):
+    _, proto = gen_proto()
+    with pytest.raises(TProtocolException) as exc:
+        proto.skip(ttype)
+    assert exc.value.type == TProtocolException.INVALID_DATA

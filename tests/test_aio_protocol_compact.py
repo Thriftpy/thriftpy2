@@ -4,7 +4,9 @@ import pytest
 
 from thriftpy2.thrift import TType, TPayload
 from thriftpy2.contrib.aio.protocol import compact
+from thriftpy2.protocol.exc import TProtocolException
 from test_aio_protocol_binary import AsyncBytesIO, TIntKeyMap, TStringKeyMap
+from test_protocol_compact import INVALID_TYPE_CASES
 
 
 class TItem(TPayload):
@@ -65,3 +67,22 @@ async def test_read_struct_skips_list_with_mismatched_element_type():
     obj = TIntList()
     await proto.read_struct(obj)
     assert obj == TIntList(l=[], x=99)
+
+
+@pytest.mark.parametrize("data", list(INVALID_TYPE_CASES.values()),
+                         ids=list(INVALID_TYPE_CASES))
+@pytest.mark.asyncio
+async def test_read_struct_rejects_invalid_type(data):
+    _, proto = gen_proto(data)
+    with pytest.raises(TProtocolException) as exc:
+        await proto.read_struct(TItem())
+    assert exc.value.type == TProtocolException.INVALID_DATA
+
+
+@pytest.mark.parametrize("ttype", [TType.STOP, 5])
+@pytest.mark.asyncio
+async def test_skip_rejects_invalid_type(ttype):
+    _, proto = gen_proto()
+    with pytest.raises(TProtocolException) as exc:
+        await proto.skip(ttype)
+    assert exc.value.type == TProtocolException.INVALID_DATA

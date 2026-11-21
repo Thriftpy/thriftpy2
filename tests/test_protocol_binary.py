@@ -6,6 +6,7 @@ import pytest
 from thriftpy2 import _compat
 from thriftpy2 import load
 from thriftpy2.protocol import binary as proto
+from thriftpy2.protocol.exc import TProtocolException
 from thriftpy2.thrift import TPayload, TType
 from thriftpy2.utils import hexlify, serialize
 from thriftpy2.transport.memory import TMemoryBuffer
@@ -427,3 +428,29 @@ def test_read_struct_skips_field_with_mismatched_type():
     obj = TIntThenInt()
     proto.TBinaryProtocol(b).read_struct(obj)
     assert obj == TIntThenInt(a=None, b=7)
+
+
+# Type 5 is unassigned. Each payload ends with STOP, so silently
+# skipping the invalid type would make read_struct return normally.
+INVALID_TYPE_CASES = {
+    "field": b"\x05\x00\x03\x00",
+    "list": b"\x0f\x00\x03\x05\x00\x00\x00\x01\x00",
+    "set": b"\x0e\x00\x03\x05\x00\x00\x00\x01\x00",
+    "map_key": b"\x0d\x00\x03\x05\x08\x00\x00\x00\x01\x00",
+    "map_value": b"\x0d\x00\x03\x08\x05\x00\x00\x00\x01"
+                 b"\x00\x00\x00\x00\x00",
+}
+
+
+@pytest.mark.parametrize("data", list(INVALID_TYPE_CASES.values()),
+                         ids=list(INVALID_TYPE_CASES))
+def test_read_struct_rejects_invalid_type(data):
+    with pytest.raises(TProtocolException) as exc:
+        proto.TBinaryProtocol(BytesIO(data)).read_struct(TItem())
+    assert exc.value.type == TProtocolException.INVALID_DATA
+
+
+def test_skip_rejects_invalid_type():
+    with pytest.raises(TProtocolException) as exc:
+        proto.TBinaryProtocol(BytesIO()).skip(5)
+    assert exc.value.type == TProtocolException.INVALID_DATA

@@ -4,6 +4,8 @@ import pytest
 
 from thriftpy2.thrift import TType, TPayload, TMessageType
 from thriftpy2.contrib.aio.protocol import binary as proto
+from thriftpy2.protocol.exc import TProtocolException
+from test_protocol_binary import INVALID_TYPE_CASES
 
 
 class TItem(TPayload):
@@ -212,3 +214,21 @@ async def test_read_struct_skips_map_with_mismatched_key_type():
     blob = encode(TStringKeyMap(m={"abcd": 1, "efgh": 2}, x=5))
     obj = await decode(blob, TIntKeyMap)
     assert obj == TIntKeyMap(m={}, x=5)
+
+
+@pytest.mark.parametrize("data", list(INVALID_TYPE_CASES.values()),
+                         ids=list(INVALID_TYPE_CASES))
+@pytest.mark.asyncio
+async def test_read_struct_rejects_invalid_type(data):
+    p = proto.TAsyncBinaryProtocol(AsyncBytesIO(BytesIO(data)))
+    with pytest.raises(TProtocolException) as exc:
+        await p.read_struct(TItem())
+    assert exc.value.type == TProtocolException.INVALID_DATA
+
+
+@pytest.mark.asyncio
+async def test_skip_rejects_invalid_type():
+    p = proto.TAsyncBinaryProtocol(AsyncBytesIO(BytesIO()))
+    with pytest.raises(TProtocolException) as exc:
+        await p.skip(5)
+    assert exc.value.type == TProtocolException.INVALID_DATA
