@@ -272,8 +272,8 @@ def test_write_huge_struct():
     proto.write_struct(item)
 
 
-# Compact type 0xd is unassigned. Each payload ends with STOP, so silently
-# skipping the invalid type would make read_struct return normally.
+# Compact type 0xd is unassigned and must be rejected while reading a
+# field header or a container header.
 INVALID_TYPE_CASES = {
     "field": b"\x3d\x00",
     "list": b"\x39\x1d\x00",
