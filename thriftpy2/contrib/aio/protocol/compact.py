@@ -252,7 +252,9 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
 
     async def skip(self, ttype):
         if ttype == TType.STOP:
-            return
+            raise TProtocolException(
+                TProtocolException.INVALID_DATA,
+                "Cannot skip STOP as a Thrift value")
 
         elif ttype == TType.BOOL:
             await self._read_bool()
@@ -300,6 +302,10 @@ class TAsyncCompactProtocol(TCompactProtocol,  # Inherit all of the writing
             for i in range(size):
                 await self.skip(etype)
             self._read_collection_end()
+        else:
+            raise TProtocolException(
+                TProtocolException.INVALID_DATA,
+                f"Invalid type {ttype} while skipping a Thrift value")
 
 
 class TAsyncCompactProtocolFactory(object):
