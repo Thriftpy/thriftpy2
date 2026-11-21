@@ -248,6 +248,10 @@ async def skip(inbuf, ftype, budget=DEFAULT_MAX_DEPTH):
             if f_type == TType.STOP:
                 break
             await skip(inbuf, f_type, budget - 1)
+    else:
+        raise TProtocolException(
+            TProtocolException.INVALID_DATA,
+            f"Invalid type {ftype} while skipping a Thrift value")
 
 
 class TAsyncBinaryProtocol(TAsyncProtocolBase):

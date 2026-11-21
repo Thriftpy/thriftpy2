@@ -133,7 +133,13 @@ class _TCompactProtocolBase:
         self.strict_decode = strict_decode
 
     def _get_ttype(self, byte):
-        return TTYPES[byte & 0x0f]
+        ctype = byte & 0x0f
+        try:
+            return TTYPES[ctype]
+        except KeyError:
+            raise TProtocolException(
+                TProtocolException.INVALID_DATA,
+                f"Invalid compact type {ctype}") from None
 
     def _read_field_end(self):
         pass
@@ -545,7 +551,9 @@ class TCompactProtocol(_TCompactProtocolBase, TProtocolBase):
 
     def skip(self, ttype):
         if ttype == TType.STOP:
-            return
+            raise TProtocolException(
+                TProtocolException.INVALID_DATA,
+                "Cannot skip STOP as a Thrift value")
 
         elif ttype == TType.BOOL:
             self._read_bool()
@@ -593,6 +601,10 @@ class TCompactProtocol(_TCompactProtocolBase, TProtocolBase):
             for i in range(size):
                 self.skip(etype)
             self._read_collection_end()
+        else:
+            raise TProtocolException(
+                TProtocolException.INVALID_DATA,
+                f"Invalid type {ttype} while skipping a Thrift value")
 
 
 class TCompactProtocolFactory:

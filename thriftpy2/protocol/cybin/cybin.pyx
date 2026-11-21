@@ -485,6 +485,8 @@ cdef int c_skip(CyTransportBase buf, TType ttype, int budget) except -1:
                 break
             read_i16(buf)
             c_skip(buf, f_type, budget)
+    else:
+        raise ProtocolError('Invalid Thrift type %d while skipping a value' % ttype)
     return 0
 
 
